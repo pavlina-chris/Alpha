@@ -1,0 +1,439 @@
+\documentclass{article}
+\newcommand{\R}[1]{\mathtt{#1}}
+\newcommand{\K}[1]{\mathrm{#1}}
+\newcommand{\both}{\leftrightarrow}
+\usepackage[pdfborder={0 0 0}]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[nodayofweek]{datetime}
+\usepackage[letterpaper,margin=1in]{geometry}
+
+\newdateformat{isodate}{\THEYEAR-\twodigit{\THEMONTH}-\twodigit{\THEDAY}}
+
+\title{Alpha Language Standard}
+\author{Christopher Pavlina}
+\date{\isodate\today: Ed. 1} %FIXME
+
+\pagestyle{fancy}
+\makeatletter
+\lhead{\@title}
+\rhead{\thesubsection}
+\lfoot{\@date}
+\cfoot{}
+\rfoot{\thepage}
+\makeatother
+\begin{document}
+
+\makeatletter
+\thispagestyle{empty}
+\begin{center}
+\huge{\@title} \\
+\Large{\@author} \\
+\large{First Edition: \today}
+\end{center}
+\hrule
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PREFACE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\phantomsection
+\addcontentsline{toc}{section}{Preface}
+\section*{Preface}
+\label{sec:preface}
+Blah.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INTRODUCTION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+\label{sec:intro}
+Blah.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% GRAMMAR SPECIFICATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Grammar specification}
+\label{sec:grammar}
+The grammar for Alpha is specified in a rough Extended Backus-Naur Form. I'll
+spare you an introduction to it, but here is a rough table of the allowed
+symbols.
+
+\begin{tabular}{|l|c|}
+\hline
+Definition & \texttt{=} \\
+Concatenation & \texttt{,} \\
+End of definition & \texttt{;} \\
+Choice of & \texttt{|} \\
+Optional & \texttt{[} ... \texttt{]} \\
+Repeating (one or more) & \texttt{\{} ... \texttt{\}} \\
+Grouped & \texttt{(} ... \texttt{)} \\
+String & \texttt{"} ... \texttt{"} \\
+ASCII char $xx$ & \texttt{\textbackslash xx} \\
+Comment & \texttt{(*} ... \texttt{*)} \\
+Exclude & \texttt{-} ... \\
+Through & ... \texttt{>} ... \\
+\hline
+\end{tabular}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LEXICALS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lexicals}
+\label{sec:lexicals}
+
+\subsection{Encoding}
+\label{sec:encoding}
+While Alpha has Unicode support in compiled programs, the source code itself
+must be ASCII.
+\begin{verbatim}
+Newline = [\0D], \0A ;
+\end{verbatim}
+
+\subsection{Tokens}
+\label{sub:lexicals:tokens}
+\begin{verbatim}
+digit       = "0" | "1" > "9" ;
+alpha       = "A" > "Z" | "a" > "z" ;
+printable   = \20 > \7E ;
+exponent    = ("e" | "E"), [("+" | "-")], {digit} ;
+Real        = [{digit}], ".", {digit}, [exponent] ;
+hex         = digit | "A" > "F" | "a" > "f" ;
+dec         = digit ;
+oct         = digit -("8" | "9") ;
+bin         = "0" | "1" ;
+Integer     = (  (( "0X" | "0x" ), { hex })
+               | ([ "0D" | "0d" ], { dec })
+               | (( "0O" | "0o" ), { oct })
+               | (( "0B" | "0b" ), { bin }) ) ;
+WordExclAt  = (alpha | "_"), [{digit | alpha | "_"}] ;
+Word        = ["@"], WordExclAt ;
+uarithop    = "++" | "--" | "~" | "-" ;
+barithop    = "*" | "/" | "%" | "%%" | "+" | "-" | "<<" | ">>" | "&" |
+              "^" | "|" ;
+logop       = "!" | "&&" | "||" ;
+eqop        = "<" | "<=" | ">" | ">=" | "==" | "!=" | "is" | "isnot" ;
+assignop    = [barithop], "=" ;
+typeop      = "sizeof" | "new" | "delete" | "hastype" | "typename" |
+              "as" ;
+umemop      = "*" | "&" ;
+sepop       = "(" | ")" | "[" | "]" | "{" | "}" | "," | "." ;
+Operator    = uarithop | barithop | logop | eqop | assignop | typeop |
+              umemop | sepop ;
+escape      = "\", ("a" | "b" | "f" | "n" | "r" | "t" | "v" | "'" |
+                    \22 | "\" | ("x", hex, hex)) ;
+(* \22 is " *)
+String      = \22, [{(printable -("\" | \22)) | escape}], \22 ;
+Character   = "'", ((printable -("\" | "'")) | escape), "'" ;
+Token       = Real | Integer | Word | Operator | String | Character ;
+\end{verbatim}
+
+\subsection{Whitespace}
+\label{sub:lexicals:whitespace}
+\begin{verbatim}
+(* space, hor. tab, newline, vert. tab, formfeed, carraige return *)
+Whitespace = " " | \09 | \0A | \0B | \0C | \0D ;
+\end{verbatim}
+All whitespace is ignored; it has no effect on lexical analysis.
+
+\subsection{Comments}
+\label{sub:lexicals:comments}
+\begin{verbatim}
+linecomment  = "//", rest_of_line ;
+blockcomment = "/*", anything, "*/" ;
+Comment      = linecomment | blockcomment ;
+\end{verbatim}
+Note that \texttt{anything} above implies that block comments may be nested.
+Comments are to be treated as whitespace.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TYPES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Types}
+\label{sec:types}
+
+%%%%%%%%%%%%%%%%%%%%%%
+% IN-DOCUMENT NOTATION
+\subsection{In-document notation}
+\label{sub:types:indoc}
+The following notation will be used in this document for types:
+
+\begin{tabular}{|l|l|}
+\hline
+Signed int, $n$ bits & $\R{SI}_n$ \\
+Unsigned int, $n$ bits & $\R{UI}_n$ \\
+Floating point, $n$ bits & $\R{FP}_n$ \\
+Pointer to $T$ & $T^*$ \\
+Array of $T$ & $T^{[]}$ \\
+Constant $T$ & $\overline{T}$ \\
+Class $\R{c}$ & $\K{c}$ \\
+Class $\R{c} \textrm{ with arguments } k, \ldots, k$ & $\K{c}(k, \ldots, k)$ \\
+Null type & $\emptyset$ \\
+\hline
+\end{tabular}
+
+For example, \texttt{map$<$string, int$>$} is
+$\K{map}(\K{string}, \R{SI}_{32})$.
+
+%%%%%%%
+% NAMES
+\subsection{Names}
+\label{sub:types:names}
+Following is a correlation of types to their Alpha names:
+
+\begin{tabular}{|l|l|}
+\hline
+$\R{SI}_8$ & \texttt{i8} \\
+$\R{SI}_{16}$ & \texttt{i16} \\
+$\R{SI}_{32}$ & \texttt{i32} or \texttt{int} \\
+$\R{SI}_{64}$ & \texttt{i64} \\
+$\R{UI}_8$ & \texttt{u8} \\
+$\R{UI}_{16}$ & \texttt{u16} \\
+$\R{UI}_{32}$ & \texttt{u32} or \texttt{unsigned} \\
+$\R{UI}_{64}$ & \texttt{u64} \\
+$\R{FP}_{32}$ & \texttt{float} \\
+$\R{FP}_{64}$ & \texttt{double} \\
+$T^{[]}$ & $T$\texttt{[]} \\
+$T^*$ & $T$\texttt{*} \\
+$\overline{T}$ & $T$ \texttt{const} \\
+$\mathrm{c}$ & \texttt{c} \\
+$\mathrm{c}(k,\ldots,k)$ & \texttt{c$<$k,~...,~k$>$} \\
+\hline
+\end{tabular}
+
+%%%%%%%%%%
+% LITERALS
+\subsection{Literals}
+\label{sub:types:literals}
+\begin{verbatim}
+nullLit   = "null" ;
+charLit   = Character ;
+intLit    = Integer ;
+floatLit  = Real ;
+arrayLit  = "c{", [Literal, [{",", Literal}]], "}" ;
+stringLit = String ;
+Literal   = nullLit | intLit | floatLit | arrayLit | stringLit ;
+\end{verbatim}
+
+\begin{itemize}
+  \item{The null literal \texttt{nullLit} is the only value of type $\emptyset$.}
+  \item{Character literals are of type $\R{UI}_{8}$ and contain the ASCII value
+    of the character.}
+  \item{String literals are of type $\overline{\R{UI}_{8}\,\!^{[]}}$, and contain
+    the given sequence of character codes, followed by 0.}
+  \item{Array literals are of type $\overline{T}$, where $T$ is the type of the
+    contained elements. It is a compile-time error for the elements not to all
+    share a type.}
+  \item{Integer literals are, of course, integers. They are resolved to a type
+    after the arithmetic folding (\ref{sub:passes:arithfold}). The type of an
+    integer literal is the first of $\R{SI}_{32}$, $\R{SI}_{64}$, $\R{UI}_{64}$
+    which can contain the value.}
+  \item{Float literals are always of type $\R{FP}_{64}$, never $\R{FP}_{32}$.}
+\end{itemize}
+
+%%%%%%%%%
+% CASTING
+\subsection{Casting}
+\label{sub:types:casting}
+\subsubsection{Allowed casts}
+See \ref{sub:operators:cast}.
+All casts not explicitly permitted are forbidden. The following casts are
+permitted:
+\begin{itemize}
+  \item{$T \both T$ \\
+    This cast must do nothing.}
+  \item{$\R{SI}_a \both \R{UI}_a$ \\
+    Re-interpret the binary encoding of one as the other. For example,
+    the $\R{SI}_8$ $-128$ casts to the $\R{UI}_8$ $255$ because both are
+    encoded as $\mathrm{FF}_{16}$.}
+  \item{$\R{SI}_a \both \R{SI}_b$ \\
+    If casting from narrow to wide, return the wider $\R{SI}$ which represents
+    the same number. In other words, if $b > a$, $\R{SI}_a\,N$ must always cast
+    to $\R{SI}_b\,N$. \\
+    If casting from wide to narrow, truncate the integer from the most
+    significant end to fit.}
+  \item{$\R{UI}_a \both \R{UI}_b$ \\
+    If casting from narrow to wide, return the wider $\R{UI}$ which represents
+    the same number. In other words, if $b > a$, $\R{UI}_a\,N$ must always cast
+    to $\R{UI}_b\,N$. \\
+    If casting from wide to narrow, truncate the integer from the most
+    significant end to fit.}
+  \item{$\R{SI}_\mathrm{any} \both \R{FP}_\mathrm{any}$ \\
+    Perform the architecture's usual conversion between signed integer and
+    floating point. For example, the compiler as of this writing uses the
+    LLVM instructions \texttt{sitofp} and \texttt{fptosi}.}
+  \item{$\R{UI}_\mathrm{any} \both \R{FP}_\mathrm{any}$ \\
+    Perform the architecture's usual conversion between unsigned integer and
+    floating point. For example, the compiler as of this writing uses the
+    LLVM instructions \texttt{uitofp} and \texttt{fptoui}.}
+  \item{$\R{FP}_a \both \R{FP}_b$ \\
+    Extend or truncate the floating-point value to the desired size. This
+    operation should only change the precision of the float (with the exception
+    of values outside the range of the wider number).}
+  \item{$T^* \both U^*$ \\
+    Return a pointer to the same memory address, of the new type.}
+  \item{$T^* \both \R{UI}_a$, where $a > \textrm{width of pointer}$ \\
+    Ensure: $[T^*\;x \to \R{UI}_a\;y \to T^*\;z] \Rightarrow [x = z]$}
+  \item{$T^{[]} \to T^*$ \\
+    If the $T^{[]}$ is null, the $T^*$ should be the null pointer, otherwise,
+    the $T^*$ should point to the first element of the $T^{[]}$.}
+  \item{$\overline{T} \both T$ \\
+    Add or remove the \texttt{const} specifier.}
+  \item{$\emptyset \to \R{SI}_a$ \\
+    Return $0$.}
+  \item{$\emptyset \to \R{UI}_a$ \\
+    Return $0$.}
+  \item{$\emptyset \to T$ where $T$ is a class \\
+    Return the null reference of type $T$.}
+  \item{$\emptyset \to T^{[]}$ \\
+    Return the null reference of type $T^{[]}$.}
+  \item{$\emptyset \to T^*$ \\
+    Return the null pointer. This should be the pointer $T^*\;x$ such that
+    $x \to \R{UI}_n = 0$.}
+\end{itemize}
+Note that $\R{SI}_a \both \R{UI}_b$ is disallowed because sign casts and width
+casts are not commutative. You must perform one of
+$\R{SI}_a \to \R{UI}_a \to \R{UI}_b$ or $\R{SI}_a \to \R{SI}_b \to \R{UI}_b$.
+\subsubsection{Implicit casts}
+The following casts may be performed implicitly. That is, if the cast
+$A \to B$ appears below, it is possible to assign a value of type $A$ directly
+to a variable of type $B$, or use it as an argument to a parameter of type
+$B$. The compiler should insert the cast implicitly.
+
+\begin{itemize}
+\item{$\R{SI}_a \to \R{SI}_b$, where $b \geq a$}
+\item{$\R{UI}_a \to \R{UI}_b$, where $b \geq a$}
+\item{Integer literal $\in \R{SI}_a \to \R{SI}_a$}
+\item{Integer literal $\in \R{UI}_a \to \R{UI}_a$}
+\item{$T^{[]} \to T^*$}
+\item{$\emptyset \to \R{SI}_a$}
+\item{$\emptyset \to \R{UI}_a$}
+\item{$\emptyset \to T$ where $T$ is a class}
+\item{$\emptyset \to T^{[]}$}
+\item{$\emptyset \to T^*$}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%
+% CONSTANT TYPES
+\subsection{Constant types}
+\label{sub:types:const}
+See \ref{sub:statements:vardecl}.
+A constant type $\overline{T}$ may be specified as $T$~\texttt{const}. A
+``variable'' declared constant may be stored in a read-only area in the
+program's memory, and it is a compile-time error to assign to it.
+This constant specifier may be casted off. Compilers are forbidden from
+emitting warnings or errors if this is done. The result of the following
+is undefined:
+\begin{verbatim}
+const x: 2;
+let xp: &x as int*;
+*xp = 3;
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OPERATORS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Operators}
+\label{sec:operators}
+
+\subsection{Cast (\texttt{as})}
+\label{sub:operators:cast}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% EXPRESSIONS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Expressions}
+\label{sec:expressions}
+
+\subsection{Names}
+\label{sub:expressions:names}
+\begin{verbatim}
+localName   = WordExclAt ;
+classVar    = "@", WordExclAt ;
+className   = WordExclAt ;
+packageName = WordExclAt ;
+classDbl    = className, ".", packageName ;
+packageTpl  = packageName, ".", classDbl ;
+\end{verbatim}
+
+Note that \texttt{localName}, \texttt{className}, and \texttt{packageName} are
+defined the same. A package triple (\texttt{packageTpl}) is a fully qualified
+name. Packages may not be nested; if you desire nested packages to clarify your
+code, consider using an underscore to separate name parts.
+
+Alpha is designed to always have clarity between names and types; there should
+never be a question as to whether something is a name or a type. When resolving
+names and types, more local should be considered before more distant.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% STATEMENTS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Statements}
+\label{sec:statements}
+
+\subsection{Variable and constant declaration (\texttt{let} and \texttt{const})}
+\label{sub:statements:vardecl}
+\begin{verbatim}
+localname =;
+VarDecl   = "let", ["volatile"], WordExclAt, [typename], ":", Expression,
+            [{",", ["volatile"], WordExclAt, [typename], ":", Expression}]
+ConstDecl = "const", ["volatile"], WordExclAt, [typename], ":", Expression,
+            [{",", ["volatile"], WordExclAt, [typename], ":", Expression}]
+\end{verbatim}
+Note the general format:
+\begin{verbatim}
+let varA: 2, varB i8: 3 + someOtherVar;
+const cstA: 3, cstB: 5 + varB;
+\end{verbatim}
+A VarDecl declares all of its variables for use in the current scope. The
+expression, which is required, is evaluated at runtime and assigned to the
+variable.
+
+A ConstDecl declares all of its constants for use in the current scope, with the
+additional requirement that they be globally usable (but not by name). That is,
+if you declare \texttt{const~x:~3;}, you can only access the constant by name in
+the scope in which it was declared, but the value of \texttt{\&x} will be valid
+globally.
+
+The expression for a constant need not be constant itself; it will be evaluated
+at runtime. If a constant is not declared volatile and the compiler is not being
+run in debug mode, the compiler may fold constants which are known at compile time
+into literals. However, it is not required to do this.
+
+Note that because constants are globally available, yet assigned at runtime, a
+constant is only valid after its declaration. Despite being a constant, the
+assignment shall be executed every time the program passes over the \texttt{const}
+line.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SCOPE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Scope}
+\label{sec:scope}
+\begin{verbatim}
+Scope = ("{", [{(Scope}], "}" |
+         ((Statement | Expression), ";") ) ;
+\end{verbatim}
+A scope is a block of code and all associated variables and constants. When a
+variable or constant is declared, it is valid in the scope in which it is declared,
+and in all child scopes. A variable may be redeclared in a scope, which overrides
+the declaration for that scope and its children. For example:
+\begin{verbatim}
+{
+    let x: 2;
+    // x is 2 here
+    {
+        let x: "Hello";
+        // x is "Hello" here
+    }
+    // x is still 2 here
+}
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CLASSES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Classes}
+\label{sec:classes}
+
+\end{document}

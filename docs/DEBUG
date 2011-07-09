@@ -1,0 +1,124 @@
+Rather than use a traditional debugger, Alpha uses (and will provide,
+eventually) an "omniscient" debugger. This is a debugger which just runs the
+program, noting everything it does, and then presents a "time machine"-type
+interface to navigate through the program's execution. It supports the
+following modes:
+
+Alpha provides its own debugger (it is not compatible with GDB and never will
+be). The Alpha debugger has two modes: execution recording and in-time
+debugging.
+
+    Execution recording: Record everything of interest (assignments, calls,
+        branches), either in the entire program, or in a specified area. The
+        debugger then presents a "time machine" interface, which can look at
+        the program at any point in its execution.
+
+    In-time debugging: Traditional debugging. This runs the program, and
+        allows stepping through the program by line, setting breakpoints,
+        etc. It is not as useful (execution recording is much easier to work
+        with, at least IMHO). The main purpose is for debugging non-Alpha code
+        which interacts with Alpha (the debugger GUI can attach GDB to the
+        process to debug external functions).
+
+
+NOTE: The Alpha debugger does not use hardware debugging. Therefore, it may be
+confused if you call various long-jump functions (why would you do that?).
+
+
+
+API:
+
+The debug API is used by debug-instrumented programs and libraries to report
+their state to the debugger. Currently, it is defined in C, not Alpha. Much
+of the information is gleaned from the source by the debugger, rather than from
+the binary.
+
+// Report entering a method.
+// filename: pointer to the full path of the file.
+// line, col: zero-based coordinates of the method declaration
+void ALPHA_DEBUG_ENTER_METHOD
+    (const char *filename, unsigned line, unsigned col);
+
+// Report leaving a method. Goes right before the return statement.
+// line, col: zero-based coordinates of the return statement (can be the coords
+//  of the closing brace for the implicit return
+// type, val: Alpha dynamic-typing data for the value returned
+void ALPHA_DEBUG_LEAVE_METHOD
+    (unsigned line, unsigned col, uint64_t type, uint64_t val);
+
+// Declare a variable. Goes right before the declaration.
+// line, col: zero-based coords of the let statement or the function argument
+// sline, scol: zero-based coords of the start of area where valid
+// eline, ecol: zero-based coords of the end of area where valid
+// type, val: Alpha dynamic-typing data for the value assigned
+void ALPHA_DEBUG_DECLARE_VAR
+    (unsigned line, unsigned col, unsigned sline, unsigned scol,
+     unsigned eline, unsigned ecol, uint64_t type, uint64_t val);
+
+// Assign a variable. Goes right before the assignment.
+// line, col: zero-based coords of the variable name
+// type, val: Alpha dynamic-typing data for the value assigned
+void ALPHA_DEBUG_ASSIGN_VAR
+    (unsigned line, unsigned col, uint64_t type, uint64_t val);
+
+// Assign an array element. Goes right before the assignment.
+// line, col, zero-based coords of the array name
+// index: array index
+// type, val: Alpha dynamic-typing data for the value assigned
+void ALPHA_DEBUG_ASSIGN_ELEMENT
+    (unsigned line, unsigned col, uint64_t index,
+     uint64_t type, uint64_t val);
+
+// Call a function. Goes right before the call.
+// line, col: zero-based coords of the function name
+// type, val...: Variadic pairs of dynamic-typing data, followed by a (-1, -1)
+//  sentinel.
+void ALPHA_DEBUG_CALL
+    (unsigned line, unsigned col, uint64_t type, uint64_t val, ...);
+
+// Report a function's return value. Goes right after the call. Though the
+// debugger will know the return value through ALPHA_DEBUG_LEAVE_METHOD if the
+// function has debug info, it should always know return values.
+// line, col: zero-based coords of the function name
+// type, val: Alpha dynamic-typing data for the value returned
+void ALPHA_DEBUG_CALL_RETVAL
+    (unsigned line, unsigned col, uint64_t type, uint64_t val);
+
+// Branch 'true' in an if statement.
+// line, col: zero-based coords of the if statement
+// dline, dcol: zero-based coords of the destination block/statement
+void ALPHA_DEBUG_IF_TRUE
+    (unsigned line, unsigned col, unsigned dline, unsigned dcol);
+
+// Branch 'false' in an if statement.
+// line, col: zero-based coords of the if statement
+// dline, dcol: zero-based coords of the destination block/statement
+void ALPHA_DEBUG_IF_FALSE
+    (unsigned line, unsigned col, unsigned dline, unsigned dcol);
+
+// Enter a loop body.
+// line, col: zero-based coords of the loop statement
+// dline, dcol: zero-based coords of the destination block/statement
+void ALPHA_DEBUG_LOOP_ENTER
+    (unsigned line, unsigned col, unsigned dline, unsigned dcol);
+
+// Continue in a loop. This goes at the bottom of the loop body whenever
+// repeating, or at a continue statement. This should not be followed by
+// another enter-loop (you don't re-enter).
+// line, col: zero-based coords of the continue statement or bottom brace
+// dline, dcol: zero-based coords of the destination block/statement
+void ALPHA_DEBUG_LOOP_CONTINUE
+    (unsigned line, unsigned col, unsigned dline, unsigned dcol);
+
+// Exit a loop. This goes at the bottom of the loop body whenever exiting, or
+// at a break statement.
+// line, col: zero-based coords of the break statement or bottom brace
+// dline, dcol: zero-based coords of the bottom brace
+void ALPHA_DEBUG_LOOP_EXIT
+    (unsigned line, unsigned col, unsigned dline, unsigned dcol);
+
+// Branch in a switch statement. This goes after any comparisons.
+// line, col: zero-based coords of the switch statement
+// dline, dcol: zero-based coords of the case statement
+void ALPHA_DEBUG_SWITCH_BRANCH
+    (unsigned line, unsigned col, unsigned dline, unsigned dcol);

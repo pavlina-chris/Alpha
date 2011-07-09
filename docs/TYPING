@@ -1,0 +1,74 @@
+Alpha's type system is strong and both dynamic and static. Static typing is
+encouraged because it results in cleaner code. Also, static typing is
+significantly faster for primitives, and slightly faster for objects.
+If you must use dynamic typing for mathematical functions (you should use
+overloading instead), the following is more efficient than the obvious:
+
+float sine (float x) {
+    // Calculate sine
+}
+
+double sine (double x) {
+    // Calculate sine
+}
+
+var sine (var x) {
+    if (x hastype float) {
+        return sine (x:float);
+    } else if (x hastype double) {
+        return sine (x:double);
+    } else {
+        // Generic calculation using dynamic types
+    }
+}
+
+
+Type coercion
+=============
+While the type system is mostly strong, there are some coercion rules to make
+coding a bit easier:
+
+    Two different int types of the same sign: promote the smaller to the
+    larger.
+
+    Two different float types: promote the smaller to the larger.
+
+    Small unsigned, large signed: promote the smaller to the larger.
+
+    Other signed/unsigned: error
+
+    Float and int (other than 'size'): convert int to float, emit warning
+
+    Pointer and signed int: promote signed int to ssize; if signed int is
+    longer than ssize, error.
+
+    Pointer and unsigned int: promote unsigned int to size; if unsigned int is
+    longer than size, error.
+
+
+Valid arithmetic
+================
+The following operations are valid:
+
+Int:      ++ -- -(neg) * / % %% + - << >> < <= > >= == != & ^ | && ||
+Float:    ++ -- -(neg) * / % %% + -       < <= > >= == !=
+
+Additionally:
+
+    Pointer ± size: Multiply size by (sizeof *p)
+    Pointer - pointer: Pointers must be of same type. The result will be
+        divided by (sizeof *p), and be of type ssize.
+
+    Array + Array: Arrays must be of same type (no coercion of elements is
+        performed, even if otherwise possible: int[] + i64[] cannot be done).
+        Return a new, concatenated array.
+
+    Array * int: Returns a new array, consisting of the old array repeated n
+        times. Returns null and triggers error detection if n is negative. If
+        the int type is unsigned, this check will be skipped, which allows a
+        small bit of optimisation.
+
+    Array % int: Returns a new array, truncated to length n. Returns null and
+        triggers error detection if n is negative (as above, skipped if
+        unsigned). If n is greater than the current length, the array is
+        expanded and the new contents uninitialised.

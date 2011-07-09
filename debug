@@ -1,0 +1,5 @@
+#!/bin/sh
+
+java -classpath build/jar:$HOME/SpiderOak/ODB1.5.jar \
+    com.lambda.Debugger.Debugger me.pavlina.alco.compiler.Compiler \
+    "$@"

@@ -1,0 +1,6 @@
+ALPHA is a new programming language. It is meant to be good for both systems
+and general purpose programming. It is garbage-collected, though you may free
+memory manually if you choose, and you may elect to compile without GC.
+
+ALPHA is roughly object-based, but not object-oriented - there is no class
+hierarchy.

@@ -1,0 +1,35 @@
+AlCo is written in Java. Compile requirements:
+
+    Make
+    C compiler
+    JDK
+    Python 2 or 3
+
+Run requirements:
+
+    JRE
+    LLVM
+    binutils
+
+To build, just type "make". Two files will be generated:
+
+    alco.jar: compiler code
+    alco: compiler launcher
+
+    'alco' launches "java -jar JARFILE", where JARFILE is ./alco.jar
+    if present, or else /usr/lib/alco.jar.
+
+
+NOTE ABOUT JCOMMANDER:
+
+    AlCo uses JCommander. The source is included under jcommander/. If you
+    replace this source with new, make sure to copy over jcommander/build.py
+    and jcommander/Makefile. JCommander uses Maven, which is obnoxiously huge
+    and requires massive amounts of downloaded crap, so I replaced its build
+    system.
+
+NOTE ABOUT DOCUMENTATION:
+
+    "make alcodoc" documents the internal AlCo code, not the Alpha language.
+    I haven't written the alpha docs yet. If you need a quick visual look at
+    the AlCo code, then do "make alcodoc".
