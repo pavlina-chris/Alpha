@@ -89,6 +89,6 @@ public class NameValue extends Expression
     }
 
     public String getPointer (Env env, LLVMEmitter emitter, Function function) {
-        return "%" + realName;
+        return realName;
     }
 }

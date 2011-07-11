@@ -128,7 +128,7 @@ public class StLet extends Statement
         for (int i = 0; i < names.size (); ++i) {
             new alloca (emitter, function)
                 .type (LLVMType.getLLVMName (types.get (i)))
-                .result ("%" + realNames.get (i))
+                .result (realNames.get (i))
                 .build ();
             
             expressions.get (i).genLLVM (env, emitter, function);
@@ -142,7 +142,7 @@ public class StLet extends Statement
                 
                 String val = expressions.get (i).getValueString ();
                 new store (emitter, function)
-                    .pointer ("%" + realNames.get (i))
+                    .pointer (realNames.get (i))
                     .value (LLVMType.getLLVMName (types.get (i)), val)
                     .build ();
             }
@@ -151,14 +151,14 @@ public class StLet extends Statement
             else if (NullValue.class.isInstance (expressions.get (i))) {
                 String elem1 = new getelementptr (emitter, function)
                     .type ("%.nonprim")
-                    .pointer ("%" + realNames.get (i))
+                    .pointer (realNames.get (i))
                     .inbounds (true)
                     .addIndex (0).addIndex (0)
                     .build ();
 
                 String elem2 = new getelementptr (emitter, function)
                     .type ("%.nonprim")
-                    .pointer ("%" + realNames.get (i))
+                    .pointer (realNames.get (i))
                     .inbounds (true)
                     .addIndex (0).addIndex (1)
                     .build ();
@@ -179,10 +179,10 @@ public class StLet extends Statement
                      enc == Type.Encoding.OBJECT) {
                 String valueString = expressions.get (i).getValueString ();
                 String pdestElem1 = new getelementptr (emitter, function)
-                    .type ("%.nonprim").pointer ("%" + realNames.get (i))
+                    .type ("%.nonprim").pointer (realNames.get (i))
                     .inbounds (true).addIndex (0).addIndex (0).build ();
                 String pdestElem2 = new getelementptr (emitter, function)
-                    .type ("%.nonprim").pointer ("%" + realNames.get (i))
+                    .type ("%.nonprim").pointer (realNames.get (i))
                     .inbounds (true).addIndex (0).addIndex (1).build ();
                 String psrcElem1 = new getelementptr (emitter, function)
                     .type ("%.nonprim").pointer (valueString)

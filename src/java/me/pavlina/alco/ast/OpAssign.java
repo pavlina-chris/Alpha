@@ -5,11 +5,11 @@ import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.lex.TokenStream;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
+import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.Resolver;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -19,6 +19,8 @@ import java.util.Arrays;
 public class OpAssign extends Expression.Operator {
     private Token token;
     private Expression[] children;
+    List<Expression> srcs, dests;
+    String valueString;
 
     public static Expression.OperatorCreator CREATOR;
 
@@ -46,7 +48,7 @@ public class OpAssign extends Expression.Operator {
     }
 
     public String getValueString () {
-        return null;
+        return valueString;
     }
 
     public Type getType () {
@@ -56,6 +58,28 @@ public class OpAssign extends Expression.Operator {
     public void checkTypes (Env env, Resolver resolver) throws CError {
         children[0].checkTypes (env, resolver);
         children[1].checkTypes (env, resolver);
+        dests = new ArrayList<Expression> ();
+        srcs = new ArrayList<Expression> ();
+        
+        if (OpComma.class.isInstance (children[0])) {
+            ((OpComma) children[0]).unpack (dests);
+        } else {
+            dests.add (children[0]);
+        }
+
+        if (OpComma.class.isInstance (children[1])) {
+            ((OpComma) children[1]).unpack (srcs);
+        } else {
+            srcs.add (children[1]);
+        }
+
+        for (Expression i: dests)
+            i.checkPointer (true, token);
+
+        if (srcs.size () != dests.size ()) {
+            env.warning_at ("multiple assign is not symmetric; matching "
+                            + "pairs will be assigned", token);
+        }
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
@@ -73,6 +97,26 @@ public class OpAssign extends Expression.Operator {
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+        int limit = (srcs.size () < dests.size ())
+            ? srcs.size ()
+            : dests.size ();
+        String[] pointers = new String[limit];
+        String[] values = new String[limit];
+        for (int i = 0; i < limit; ++i) {
+            srcs.get (i).genLLVM (env, emitter, function);
+            values[i] = srcs.get (i).getValueString ();
+        }
+        valueString = values[0];
+        for (int i = 0; i < limit; ++i) {
+            pointers[i] = dests.get (i).getPointer (env, emitter, function);
+        }
+        for (int i = 0; i < limit; ++i) {
+            new store (emitter, function)
+                .pointer (pointers[i])
+                .value (LLVMType.getLLVMName (srcs.get (i).getType ()),
+                        values[i])
+                .build ();
+        }
     }
 
     @SuppressWarnings("unchecked") // :-( I'm sorry.

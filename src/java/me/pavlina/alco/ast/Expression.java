@@ -188,6 +188,8 @@ public abstract class Expression extends AST implements HasType
                     creator = BINOPS.get (token.value);
                     message = "binary operator";
                 }
+                callPossible = false;
+                unaryPossible = true;
 
                 if (creator == null)
                     throw Unexpected.at (message, token);
@@ -412,6 +414,7 @@ public abstract class Expression extends AST implements HasType
         BINOPS.put (",", OpComma.CREATOR);
         // Yes, it's unary, but it is placed like a binary
         BINOPS.put ("as", OpCast.CREATOR);
+        //BINOPS.put (".", OpMember.CREATOR);
         
         UNOPS.put ("*", OpDeref.CREATOR);
     }
