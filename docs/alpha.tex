@@ -568,6 +568,40 @@ line.
 % RETURN
 \subsection{Return (\texttt{return})}
 \label{sub:statements:return}
+\begin{verbatim}
+ReturnVoid = "return"
+Return     = "return", Expression
+\end{verbatim}
+
+The \texttt{return} statement defined above as Return is used to return a
+value from a method. For a method which returns multiple values,
+\texttt{return} should be given a tuple. See:
+\begin{verbatim}
+int returnsOne () {
+    return 2;
+}
+
+(int, float) returnsTwo () {
+    return 42, 2.71828;
+}
+\end{verbatim}
+
+The values passed to \texttt{return} must match the method's declaration in
+number, and be equal in type or implicitly castable to the declared types.
+
+The statement defined above as ReturnVoid is used to return early from a
+method declared \texttt{void}. It must not take a value.
+
+Return with expression may only be used in a function which is not declared
+\texttt{void}, and ReturnVoid may only be used in a function which is declared
+\texttt{void}.
+
+It is not an error for a function, even one which should return a value, not
+to have a \texttt{return} statement. A compiler must not emit an error, though
+it may emit a warning. Even though the compiler must allow this, the effect of
+it is undefined. The current compiler implicitly returns the
+zero/\texttt{null} values of the proper types; while this is not required, it
+is good precedent to follow.
 
 %%%%%%%%
 % SWITCH
