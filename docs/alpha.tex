@@ -389,6 +389,15 @@ let xp: &x as int*;
 % NULL
 \subsection{The null type}
 \label{sub:types:null}
+The type denoted in this document as $\emptyset$ is the null type. It is an
+unnamed type in Alpha, and has only a single value, denoted as
+\texttt{null}. As shown in the cast listings above, it can implicitly cast
+to any reference or pointer type, as well as an integer type to allow its use
+in conditionals.
+
+The \texttt{null} value is used to denote the absence of a value. For example,
+when the compiler is in manual memory mode, the \texttt{new} operator returns
+\texttt{null} if no memory is available when requested.
 
 %%%%%%%%%
 % RECORDS
