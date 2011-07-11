@@ -8,6 +8,11 @@ jars/jcommander.jar:
 	make -C jcommander
 	mv jcommander/jcommander.jar jars/
 
+doc:
+	cd docs; \
+	pdflatex alpha.tex; \
+	pdflatex alpha.tex
+
 alcodoc:
 	doxygen
 

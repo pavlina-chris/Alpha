@@ -4,6 +4,7 @@
 \newcommand{\both}{\leftrightarrow}
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \usepackage{fancyhdr}
+\usepackage{threeparttable}
 \usepackage[nodayofweek]{datetime}
 \usepackage[letterpaper,margin=1in]{geometry}
 
@@ -336,8 +337,93 @@ let xp: &x as int*;
 \section{Operators}
 \label{sec:operators}
 
+\subsection{Precedence}
+\label{sub:operators:precedence}
+\begin{center}
+  \begin{threeparttable}
+    \caption{Operator precedence, high to low}
+    \begin{tabular}{|c|c|c|l|}
+      \hline
+      \texttt{*} & Unary & R$\to$L & Dereference \\ \hline
+      \texttt{\&} & Unary & R$\to$L & Address of \\ \hline
+      \texttt{as} $type$ & Unary$^\dagger$ & L$\to$R & Cast to $type$ \\ \hline
+      \texttt{=} & Binary & R$\to$L & Assignment \\ \hline
+      \texttt{,} & Binary & L$\to$R & Comma (function arguments, assignment tuples) \\ \hline
+    \end{tabular}
+    \begin{tablenotes}
+      \item{$\dagger$ \small{The cast operator is technically unary, but comes
+          \emph{after}
+          the value in question, and functions as a binary operator. Because the current
+          compiler code treats arity and number of operands separately, it is implemented
+          as a binary operator which accepts one operand.}}
+    \end{tablenotes}
+  \end{threeparttable}
+\end{center}
+
 \subsection{Cast (\texttt{as})}
 \label{sub:operators:cast}
+
+\subsection{Assign (\texttt{=})}
+\label{sub:operators:assign}
+The assignment operator (\texttt{=}) is used to assign a value to any item with
+a writable pointer (usually variables). Additionally, it can be used to assign
+a tuple of values, or a function returning multiple values.
+Examples:
+\begin{verbatim}
+(int, int) returnsTwo () {
+    return 2, 3;
+}
+
+int main (u8[][] argv) {
+    let x: 5, y: 6, z: 7;
+
+    z = 8;
+    // z now contains 8
+
+    (x, y) = (y, x);
+    // x now contains 6, and y contains 5
+
+    (x, y) = returnsTwo ();
+    // x now contains 2, and y contains 3
+}
+\end{verbatim}
+
+Note that because the comma has a lower precedence than the equals sign,
+parentheses must be used to group the tuples. If a multiple assignment is
+asymmetric (the number of values does not equal the number of destinations),
+the minimum of the two shall be assigned, and any unused values shall not be
+evaluated:
+\begin{verbatim}
+(x, y, z) = (1, 2);
+// z is untouched
+
+(x, y) = (1, 2, withSideEffects ());
+// The side effects never happen because withSideEffects () is never
+// evaluated.
+\end{verbatim}
+
+The assignment operator is just that --- an operator --- and any use of it has
+a value. For a single assignment, the value of the assignment is the value
+assigned. For a multiple assignment, the value of the assignment is the first
+of the values assigned. Examples:
+\begin{verbatim}
+let x: 0, y: 0;
+
+x = y = 3;  // Equivalent to x = (y = 3)
+// x and y now both contain 3
+
+let z: (x, y) = (5, 6);
+// z now contains 5
+
+// WARNING: The following does not do what it looks like (see above:
+// the value of a multiple assignment is the first assigned value,
+// and extraneous items on either side are ignored):
+(x, y) = (y, x) = (z, y);
+// Result:
+//   Assign x := y, y := z
+//   Assign x := y
+// In the end, x, y, and z all have the same value.
+\end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % EXPRESSIONS
