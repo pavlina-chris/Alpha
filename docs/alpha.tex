@@ -148,6 +148,60 @@ Note that \texttt{anything} above implies that block comments may be nested.
 Comments are to be treated as whitespace.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% KEYWORDS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Keywords}
+\label{sec:keywords}
+The following words are keywords. They are invalid for use as type or variable
+names.
+
+\texttt{class} (\ref{sub:classes:definition}),
+\texttt{method} (\ref{sub:methods:definition}),
+\texttt{extern} (\ref{sub:methods:extern}),
+\texttt{return} (\ref{sub:statements:return}),
+\texttt{let} (\ref{sub:statements:vardecl}),
+\texttt{const} (\ref{sub:statements:vardecl}, \ref{sub:types:const}),
+\texttt{static} (\ref{sub:methods:static}, \ref{sub:classes:static}),
+\texttt{nomangle} (\ref{sub:methods:mangle}),
+\texttt{threadlocal} (\ref{sub:globals:threadlocal},
+                      \ref{sub:classes:threadlocal}),
+\texttt{null} (\ref{sub:types:null}),
+\texttt{record} (\ref{sub:types:record}),
+\texttt{switch} (\ref{sub:statements:switch}),
+\texttt{case} (\ref{sub:statements:switch}),
+\texttt{default} (\ref{sub:statements:switch}),
+\texttt{if} (\ref{sub:statements:if}),
+\texttt{else} (\ref{sub:statements:if}),
+\texttt{for} (\ref{sub:statements:for}),
+\texttt{foreach} (\ref{sub:statements:foreach}),
+\texttt{do} (\ref{sub:statements:do}),
+\texttt{while} (\ref{sub:statements:while}, \ref{sub:statements:do}),
+\texttt{as} (\ref{sub:operators:cast})
+
+\ \\
+
+The following words are primitive type names. They are invalid for use as
+variable names. Note that user-defined types may also be used as variable names;
+the language design does not allow ambiguities.
+
+\texttt{i8},
+\texttt{i16},
+\texttt{i32},
+\texttt{i64},
+\texttt{u8},
+\texttt{u16},
+\texttt{u32},
+\texttt{u64},
+\texttt{ssize},
+\texttt{int},
+\texttt{size},
+\texttt{unsigned},
+\texttt{float},
+\texttt{double},
+\texttt{var},
+\texttt{void}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TYPES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Types}
@@ -331,6 +385,16 @@ let xp: &x as int*;
 *xp = 3;
 \end{verbatim}
 
+%%%%%%
+% NULL
+\subsection{The null type}
+\label{sub:types:null}
+
+%%%%%%%%%
+% RECORDS
+\subsection{Records}
+\label{sub:types:record}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % OPERATORS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -491,6 +555,41 @@ constant is only valid after its declaration. Despite being a constant, the
 assignment shall be executed every time the program passes over the \texttt{const}
 line.
 
+%%%%%%%%
+% RETURN
+\subsection{Return (\texttt{return})}
+\label{sub:statements:return}
+
+%%%%%%%%
+% SWITCH
+\subsection{Value-based branch (\texttt{switch})}
+\label{sub:statements:switch}
+
+%%%%
+% IF
+\subsection{Conditional (\texttt{if}---\texttt{else})}
+\label{sub:statements:if}
+
+%%%%%
+% FOR
+\subsection{Value-based iteration (\texttt{for})}
+\label{sub:statements:for}
+
+%%%%%%%%%
+% FOREACH
+\subsection{Sequence-based iteration (\texttt{foreach})}
+\label{sub:statements:foreach}
+
+%%%%
+% DO
+\subsection{Post-conditional loop (\texttt{do}---\texttt{while})}
+\label{sub:statements:do}
+
+%%%%%%%
+% WHILE
+\subsection{Pre-conditional loop (\texttt{while})}
+\label{sub:statements:while}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SCOPE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -517,9 +616,63 @@ the declaration for that scope and its children. For example:
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% GLOBALS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Globals}
+\label{sec:globals}
+
+\subsection{Package-local globals}
+\label{sub:globals:local}
+
+\subsection{Externally visible globals}
+\label{sub:globals:visible}
+
+\subsection{Package-external globals}
+\label{sub:globals:extern}
+
+\subsection{Thread-local globals}
+\label{sub:globals:threadlocal}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CLASSES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Classes}
 \label{sec:classes}
+
+\subsection{Defining classes}
+\label{sub:classes:definition}
+
+\subsection{Static variables}
+\label{sub:classes:static}
+
+\subsection{Thread-local static variables}
+\label{sub:classes:threadlocal}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% METHODS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Defining methods}
+\label{sub:methods:definition}
+
+\subsection{Package-external methods}
+\label{sub:methods:extern}
+
+\subsection{Static methods}
+\label{sub:methods:static}
+
+\subsection{Name mangling and \texttt{nomangle}}
+\label{sub:methods:mangle}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% COMPILE PASSES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Compile passes}
+\label{sec:passes}
+
+\subsection{Arithmetic folding}
+\label{sub:passes:arithfold}
 
 \end{document}
