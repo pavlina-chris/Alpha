@@ -2,6 +2,7 @@
 \newcommand{\R}[1]{\mathtt{#1}}
 \newcommand{\K}[1]{\mathrm{#1}}
 \newcommand{\both}{\leftrightarrow}
+\newcommand{\textref}[2]{\hyperref[#1]{\underline{\ref*{#1}:~#2}}}
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \usepackage{fancyhdr}
 \usepackage{threeparttable}
@@ -83,6 +84,8 @@ Through & ... \texttt{>} ... \\
 \section{Lexicals}
 \label{sec:lexicals}
 
+%%%%%%%%%%
+% ENCODING
 \subsection{Encoding}
 \label{sec:encoding}
 While Alpha has Unicode support in compiled programs, the source code itself
@@ -91,6 +94,8 @@ must be ASCII.
 Newline = [\0D], \0A ;
 \end{verbatim}
 
+%%%%%%%%
+% TOKENS
 \subsection{Tokens}
 \label{sub:lexicals:tokens}
 \begin{verbatim}
@@ -126,7 +131,9 @@ escape      = "\", ("a" | "b" | "f" | "n" | "r" | "t" | "v" | "'" |
 (* \22 is " *)
 String      = \22, [{(printable -("\" | \22)) | escape}], \22 ;
 Character   = "'", ((printable -("\" | "'")) | escape), "'" ;
-Token       = Real | Integer | Word | Operator | String | Character ;
+ExtrastandardToken = "$$", WordExclAt ;
+Token       = Real | Integer | Word | Operator | String | Character
+               | ExtrastandardToken ;
 \end{verbatim}
 
 \subsection{Whitespace}
@@ -162,7 +169,7 @@ names.
 \texttt{let} (\ref{sub:statements:vardecl}),
 \texttt{const} (\ref{sub:statements:vardecl}, \ref{sub:types:const}),
 \texttt{static} (\ref{sub:methods:static}, \ref{sub:classes:static}),
-\texttt{nomangle} (\ref{sub:methods:mangle}),
+\texttt{nomangle} (\ref{sub:cconv:nomangle}),
 \texttt{threadlocal} (\ref{sub:globals:threadlocal},
                       \ref{sub:classes:threadlocal}),
 \texttt{null} (\ref{sub:types:null}),
@@ -291,7 +298,7 @@ Literal   = nullLit | intLit | floatLit | arrayLit | stringLit ;
 \subsection{Casting}
 \label{sub:types:casting}
 \subsubsection{Allowed casts}
-See \ref{sub:operators:cast}.
+See \textref{sub:operators:cast}{Cast}.
 All casts not explicitly permitted are forbidden. The following casts are
 permitted:
 \begin{itemize}
@@ -658,6 +665,9 @@ the declaration for that scope and its children. For example:
 }
 \end{verbatim}
 
+\subsection{Name resolution}
+\label{sub:scope:resolution}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % GLOBALS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -692,9 +702,9 @@ the declaration for that scope and its children. For example:
 \label{sub:classes:threadlocal}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% METHODS
+% METHODS AND FUNCTIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Methods}
+\section{Methods and functions}
 \label{sec:methods}
 
 \subsection{Defining methods}
@@ -703,11 +713,208 @@ the declaration for that scope and its children. For example:
 \subsection{Package-external methods}
 \label{sub:methods:extern}
 
+\subsection{Method attributes}
+\label{sub:methods:attributes}
+Method attributes are keywords which come immediately after the closing
+parenthesis of a function/method declaration. See:
+\begin{verbatim}
+int f(int x) nomangle {
+    return x %% 2;
+}
+\end{verbatim}
+
+A compiler may, of course, add attributes, per
+\textref{sub:implementation:extrastandard}{Extrastandard features}.
+Standard-defined attributes are:
+\begin{center}
+\begin{tabular}{|l|p{4in}|}
+\hline
+\texttt{nomangle} & Do not mangle function name. See
+  \textref{sub:cconv:nomangle}{Non-mangled functions and \texttt{nomangle}}. \\
+\texttt{allowconflict} & Allow defining a \texttt{nomangle} function with the
+  same name as a mangled function, or {\it vice versa}. Functions declared
+  \texttt{nomangle} always take resolver precedence (see
+  \textref{sub:scope:resolution}{Name resolution}), so if you use this,
+  functions with mangled names will not be callable within the translation
+  unit. Note that from outside the translation unit, the effect is exactly
+  opposite: \texttt{nomangle} functions are never implicitly imported. \\
+\texttt{global} & The function shall be outside the package. It can be called
+  without specifying a package name. The standard library uses this to provide
+  builtins like \texttt{print()}. It is still necessary to \texttt{import} the
+  package to bring these names into the resolver (with the exception of the
+  standard library). This attribute may only be used on functions, not methods,
+  and is implicit on operators. \\
+\hline
+\end{tabular}
+\end{center}
+
 \subsection{Static methods}
 \label{sub:methods:static}
 
-\subsection{Name mangling and \texttt{nomangle}}
-\label{sub:methods:mangle}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CALLING CONVENTION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Calling convention}
+\label{sec:cconv}
+The Alpha calling convention is based on the local C calling convention. A
+method's equivalent call in C is equivalent to:
+
+\begin{verbatim}
+firstReturn mangledName ([this], [secondReturn*]..., arguments...);
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%
+% Multiple returns
+\subsection{Multiple return values}
+\label{sub:cconv:multiple}
+A function in Alpha may return multiple values. This is accomplished by
+returning the first value normally, and passing pointers to receive further
+values as arguments. The pointers are not required to be different (the
+compiler may optimise by repeating a pointer for multiple ignored values), so
+it is not allowed to depend on a value being present during the function.
+A return value pointer may be assumed not to be \texttt{null}; the compiler
+should allocate temporary variables for ignored values.
+
+%%%%%%%%%%%%%%%
+% Name mangling
+\subsection{Name mangling}
+\label{sub:cconv:mangling}
+
+To allow for overloading, packages and methods, Alpha method names must be
+mangled. Name mangling is as follows:
+
+\begin{verbatim}
+operatorId                = "A" > "Z" ;  (* SEE BELOW *)
+type                      = ("A" > "Z" - "C") | ("C", classPair)
+                             | ("c", packagePair, classPair) ;  (* SEE BELOW *)
+pair                      = {"0" > "9"} (* LENGTH OF NAME *),
+                             WordExclAt (* NAME *) ;
+returnType                = type ;
+argType                   = type ;
+classPair                 = pair ;
+methodPair                = pair ;
+functionPair              = pair ;
+packagePair               = pair ;
+
+MangledOperator           = "$O", operatorId, returnType, ["$", {argType}] ;
+MangledGlobalClassMethod  = "$K", classPair, methodPair, [{returnType}],
+                             ["$", {argType}] ;
+MangledPackageClassMethod = "$C", packagePair, classPair, methodPair,
+                             [{returnType}], ["$", {argType}] ;
+MangledGlobalClassCtor    = "$N", classPair, [{argType}] ;
+MangledPackageClassCtor   = "$M", packagePair, classPair, [{argType}] ;
+MangledGlobalFunction     = "$G", functionPair, [{returnType}],
+                             ["$", {argType}] ;
+MangledPackageFunction    = "$F", packagePair, functionPair, [{returnType}],
+                             ["$", {argType}] ;
+SpecialAlphaInternal      = "$$", WordExclAt ;
+\end{verbatim}
+
+\texttt{operatorId} is an identifier for one of the operator overloads. The
+identifiers are:
+\newcommand{\QQ}[2]{\texttt{#1} & #2 &}
+\begin{center}
+\begin{tabular}{|cc|cc|cc|cc|cc|cc|cc|cc|l}
+\cline{1-16}
+\QQ{$\sim$}{A}  \QQ{neg}{B} \QQ{*}{C}  \QQ{/}{D}  \QQ{\%}{E}  \QQ{\%\%}{F}  \QQ{+}{G}  \QQ{-}{H} \\
+\QQ{<<}{I}      \QQ{>>}{J}  \QQ{\&}{K} \QQ{\^}{L} \QQ{|}{M}   \QQ{<}{N}     \QQ{<=}{O} \QQ{>}{P} \\
+\QQ{>=}{Q}      \QQ{==}{R}  \QQ{!=}{S} &&&&&&&&&& \\
+\cline{1-16}
+\end{tabular}
+\end{center}
+
+\texttt{type} is one of the following:
+\begin{center}
+\begin{tabular}{|cc|cc|cc|cc|cc|cc|cc|cc|l}
+\cline{1-16}
+$\R{SI}_8$ & A &
+$\R{SI}_{16}$ & B &
+$\R{SI}_{32}$ & C &
+$\R{SI}_{64}$ & D &
+$\R{UI}_8$ & E &
+$\R{UI}_{16}$ & F &
+$\R{UI}_{32}$ & G &
+$\R{UI}_{64}$ & H & \\
+$\R{FP}_{32}$ & I &
+$\R{FP}_{64}$ & J &
+$T^*$ & P $t$ &
+$T^{[]}$ & Q $t$ &
+$\overline{T}$ & K $t$ &&&&&& \\
+\cline{1-16}
+\multicolumn{8}{|c|}{Global class} &
+\multicolumn{8}{c|}{\texttt{"C", classPair}} \\
+\multicolumn{8}{|c|}{Package class} &
+\multicolumn{8}{c|}{\texttt{"c", packagePair, classPair}} \\
+\multicolumn{8}{|c|}{Last type mentioned} &
+\multicolumn{8}{c|}{Y} \\
+\multicolumn{8}{|c|}{Type of \texttt{this} (methods and ctors only)} &
+\multicolumn{8}{c|}{Z} \\
+\cline{1-16}
+\end{tabular}
+\end{center}
+
+Because the index overload \texttt{[]} is really just a method with a
+secret hidden name, define it exactly as a method, using the hidden name:
+\texttt{\$I} % Full stop omitted for clarity
+
+Here are some methods, operators and constructors with their corresponding
+overloads:
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+double Math.sin (double) & \texttt{\$F4Math3sinJ\$J} \\ \hline
+u8 String.\texttt{[]} (size) & \texttt{\$K6String2\$IE\$H} (on 64-bit platforms) \\ \hline
+String + (String, String) & \texttt{\$OGC6String\$YY} \\ \hline
+Math.Complex.new (double, double) & \texttt{\$M4Math7ComplexJJ} (or \texttt{\$M4Math7ComplexJY}) \\ \hline
+void abort () global & \texttt{\$G5abort} \\ \hline
+size IO.File.write (u8[] const) & \texttt{\$C2IO4File5writeH\$KQE} (on 64-bit platforms) \\ \hline
+\end{tabular}
+\end{center}
+
+%%%%%%%%%%
+% nomangle
+\subsection{Non-mangled functions and \texttt{nomangle}}
+\label{sub:cconv:nomangle}
+The function attribute \texttt{nomangle} may be used to specify that a function
+name must not be mangled. Because type information cannot be inferred,
+\texttt{nomangle} functions are not brought in by the \texttt{import} statement.
+The only way to import an external non-mangled function is with the
+\texttt{extern} statement.
+
+A typical use of \texttt{nomangle} is implementation of various extra functions.
+For example, the following code has an automatically generated function added
+like this:
+
+\begin{verbatim}
+executable hello;
+
+int main (u8[][] args) {
+    print ("Hello, world! My arguments are:\n");
+    foreach (u8[] i: args) {
+        print ("    ", i);
+    }
+    return 0;
+}
+
+// Added automatically by the compiler
+extern size strlen (u8*);
+extern u8* strcpy (u8*, u8*);
+int main (int argc, u8** argv) nomangle allowconflict {
+    u8[][] args = new u8[][] (argc);
+    for (let i: 0; i < argc; ++i) {
+        let len: strlen (argv[i]);
+        u8[i] = new u8[] (len + 1);
+        strcpy (u8[i], argv[i]);
+    }
+    return $$name "$F5hello4mainC$PPE" (args);
+}
+\end{verbatim}
+
+Note \texttt{allowconflict} and \texttt{\$\$name}. \texttt{allowconflict} is
+another function attribute (see
+\textref{sub:methods:attributes}{Method attributes}.
+\texttt{\$\$name} is an extrastandard feature
+(see \textref{sub:implementation:extrastandard}{Extrastandard features}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % COMPILE PASSES
@@ -717,5 +924,76 @@ the declaration for that scope and its children. For example:
 
 \subsection{Arithmetic folding}
 \label{sub:passes:arithfold}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% IMPLEMENTATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation}
+\label{sec:implementation}
+
+\subsection{Compiler identification}
+\label{sub:implementation:ident}
+The following features are for compiler identification. They are defined
+like extrastandard features, but are not (sorry!).
+
+\begin{center}
+\begin{tabular}{|l|p{4in}|}
+\hline
+\texttt{\$\$COMPILER\_NAME} & Expands at compile time to a string constant
+  containing the name of the compiler. Not required to be unique. The compiler
+  must give this in its version information (the text dumped by, e.g., the
+  \texttt{-version} command line option). Example: AlCo gives
+  \texttt{"AlCo"}. \\
+\texttt{\$\$COMPILER\_ID} & Reverse-domain ID of the compiler. This should be
+  based on a domain you actually own, or at least which identifies you
+  (for example, Sourceforge allows using \texttt{net.sf.{\it projectname}}).
+  The compiler must give this in its version information.
+  Example: AlCo gives \texttt{"me.pavlina.alco"}. \\
+\texttt{\$\$COMPILER\_VERSION} & Integer version of the compiler. This should
+  be comparable with basic integer operations. A suggestion is to use two
+  hexadecimal digits per section of the version number. The compiler must give
+  this in its version information.
+  Example: AlCo 1.3 would give \texttt{0x0103}. \\
+\texttt{\$\$COMPILER\_REQUIRED} & Require a given compiler. Format is
+  \texttt{\$\$COMPILER\_REQUIRED ({\it compilerID} {\it compare}
+  {\it version})}. Example: to require AlCo 1.3 or higher, use:
+  \texttt{\$\$COMPILER\_REQUIRED("me.pavlina.alco" >= 0x0103)}
+
+  A compiler which does not match the requirement must give an error here. \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Extrastandard features}
+\label{sub:implementation:extrastandard}
+Compilers are allowed to implement so-called {\it extrastandard} features. These
+are features which are outside of, but not in violation of, the Alpha standard.
+
+\begin{verbatim}
+ExtrastandardToken = "$$", WordExclAt ;
+\end{verbatim}
+
+Extrastandard features must be labelled with an \texttt{ExtrastandardToken}.
+They must not change the behaviour of any code which does not include any.
+The syntax of any extrastandard feature is unspecified, to be defined by the
+implementation. Obviously, any code using an extrastandard feature may be
+syntactically invalid on a compiler which does not provide it.
+
+\subsection{AlCo extrastandard features}
+\label{sub:implementation:alcoextra}
+These extrastandard features are present in AlCo. \textbf{Note that this is not
+part of the standard. Compiler implementers are not required to follow this,
+though it may help to ensure compatibility.}
+
+\begin{center}
+\begin{tabular}{|l|p{4in}|}
+\hline
+\texttt{\$\$name} & Use the next token's value (usually a string constant) as
+  a symbol name. This allows using invalid characters in the name, and is
+  usually used by the runtime library's code to manually call mangled and/or
+  internal (special-name) functions. \\
+\hline
+\end{tabular}
+\end{center}
 
 \end{document}
