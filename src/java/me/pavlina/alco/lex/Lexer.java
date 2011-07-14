@@ -139,6 +139,9 @@ public class Lexer implements ErrorAnnotator
                 case 'z':
                     consumeWord ();
                     break;
+                case '$':
+                    consumeExtrastandard ();
+                    break;
                 case '/':
                     consumeOperOrComment ();
                     break;
@@ -479,6 +482,134 @@ public class Lexer implements ErrorAnnotator
         String val = collector.toString ();
         collector.clear ();
         tokens.add (new Token (Token.WORD, val, line, firstCol, this));
+    }
+
+    private void consumeExtrastandard () throws CError {
+        boolean breakFor = false;
+        boolean hasAt = false;
+        int firstCol = col;
+        for (; col < lines.get (line).length (); ++col) {
+            // The first two characters must be $$
+            char ch = lines.get (line).charAt (col);
+            if (col == firstCol || col == (firstCol + 1)) {
+                if (ch != '$')
+                    throw new UnexpectedChar
+                        (ch, line, col, this,
+                         "Extrastandard identifier must start with $$");
+                collector.append (ch);
+                continue;
+            }
+            switch (ch) {
+            case ' ':
+            case 0x0009:
+            case 0x000a:
+            case 0x000b:
+            case 0x000c:
+            case 0x000d:
+            case '/':
+            case '~':
+            case '*':
+            case '%':
+            case '<':
+            case '>':
+            case '&':
+            case '^':
+            case '|':
+            case '!':
+            case '=':
+            case '(':
+            case ')':
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+            case ',':
+            case '+':
+            case '-':
+                // Stop character. Move col back and break out of the loop
+                --col;
+                breakFor = true;
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                // Not valid as the first character after $$
+                if (col == firstCol + 2)
+                    throw new UnexpectedChar (ch, line, col, this);
+                collector.append (ch);
+                break;
+            case '_':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z':
+                collector.append (ch);
+                break;
+            default:
+                --col;
+                breakFor = true;
+                break;
+            }
+            if (breakFor) break;
+        }
+        String val = collector.toString ();
+        collector.clear ();
+        tokens.add (new Token (Token.EXTRA, val, line, firstCol, this));
     }
 
     private void consumeOperOrComment () throws CError {

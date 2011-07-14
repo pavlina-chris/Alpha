@@ -24,6 +24,7 @@ public class Token
     public static final int INT = 3;     /**< Integer. */
     public static final int REAL = 4;    /**< Real number (float). */
     public static final int OPER = 5;    /**< Operator. */
+    public static final int EXTRA = 6;   /**< Extrastandard identifier. */
     public static final int NO_MORE = 0; /**< No token (EOF). */
     /** @} */
 
@@ -129,6 +130,7 @@ public class Token
         case INT:     t = "INT";     break;
         case REAL:    t = "REAL";    break;
         case OPER:    t = "OPER";    break;
+        case EXTRA:   t = "EXTRA";   break;
         case NO_MORE: t = "NO_MORE"; break;
         default:
             throw new RuntimeException ("invalid token type");
