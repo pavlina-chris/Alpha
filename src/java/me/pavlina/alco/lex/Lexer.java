@@ -495,7 +495,7 @@ public class Lexer implements ErrorAnnotator
                 if (ch != '$')
                     throw new UnexpectedChar
                         (ch, line, col, this,
-                         "Extrastandard identifier must start with $$");
+                         "extrastandard identifier must start with $$");
                 collector.append (ch);
                 continue;
             }

@@ -42,7 +42,7 @@ public class UnexpectedChar extends CError
     public UnexpectedChar (char ch, int line, int col, ErrorAnnotator annotator,
                            String msg) {
         super ();
-        message = "unexpected '" + Character.toString (ch) + "' " + msg;
+        message = "unexpected '" + Character.toString (ch) + "': " + msg;
         this.line = line;
         this.col = col;
         start = 0;
