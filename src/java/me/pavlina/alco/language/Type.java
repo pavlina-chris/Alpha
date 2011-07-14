@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Chris Pavlina. All rights reserved.
+// Copyright (c) 2011, Christopher Pavlina. All rights reserved.
 
 package me.pavlina.alco.language;
 import me.pavlina.alco.compiler.Env;
@@ -155,144 +155,99 @@ public class Type implements HasType {
     /**
      * Get the encoded type name. This is used in code, both in the dynamic
      * type system and in method name mangling. It is fully reversible
-     * (see fromEncodedName()). */
+     * (see fromEncodedName()). See Standard:CallingConvention:NameMangling */
     public String getEncodedName () {
-        // This table gives encodings for various types. See ENCODED_NAMES
-        // for the table as used in the code.
-        //         1  2  4  8
-        // OBJECT        O  O
-        // POINTER       p  p
-        // ARRAY         q  q
-        // FLOAT         F  f
-        // SINT    A  B  C  D
-        // UINT    a  b  c  d
-        //
-        // Arrays and pointers take their subtype after their name. int*[] is
-        // encoded as qpC.
-        // Objects are encoded in a special way:
-        // O {objectname} $ {arg} {arg} {arg}... Z
-        // Therefore, the encoded name of map<string, int> is:
-        // Omap$Ostring$ZCZ
-        if (encoding == Encoding.OBJECT) {
-            if (subtypes == null) {
-                return "O" + name + "$Z";
-            }
-            String encName = "O" + name + "$";
-            for (Type i: subtypes) {
-                encName = encName + i.getEncodedName ();
-            }
-            encName = encName + "Z";
-            return encName;
-        } else {
-            int sizeLog2;
+        // Standard:CallingConvention:NameMangling
+        if (encoding == Encoding.SINT) {
             switch (size) {
-            case 1: sizeLog2 = 0; break;
-            case 2: sizeLog2 = 1; break;
-            case 4: sizeLog2 = 2; break;
-            case 8: sizeLog2 = 3; break;
-            default: throw new RuntimeException ("invalid size");
+            case 1: return "A";
+            case 2: return "B";
+            case 4: return "C";
+            case 8: return "D";
             }
-            if (encoding == Encoding.POINTER || encoding == Encoding.ARRAY)
-                return ENCODED_NAMES.get (encoding)[sizeLog2] +
-                    subtypes.get (0).getEncodedName ();
-            else
-                return ENCODED_NAMES.get (encoding)[sizeLog2];
+        } else if (encoding == Encoding.UINT) {
+            switch (size) {
+            case 1: return "E";
+            case 2: return "F";
+            case 4: return "G";
+            case 5: return "H";
+            }
+        } else if (encoding == Encoding.FLOAT) {
+            switch (size) {
+            case 4: return "I";
+            case 8: return "J";
+            }
+        } else if (encoding == Encoding.POINTER) {
+            return "P" + subtypes.get (0).getEncodedName ();
+        } else if (encoding == Encoding.ARRAY) {
+            return "Q" + subtypes.get (0).getEncodedName ();
+        } else if (encoding == Encoding.OBJECT) {
+            return "M" + Integer.toString (name.length ()) + name;
         }
+        throw new RuntimeException ("getEncodedName() on invalid type");
     }
 
     /**
-     * Used internally by fromEncodedName(String). int[] pos is a cheap hack
-     * for pointers in Java. Yeah yeah, I know, it's bad programming practice.
-     * Sue me. */
-    private static Type fromEncodedName (Env env, String name, int[] pos) {
-        Type type, subtype;
-        if (pos[0] >= name.length ()) return null;
-        ++pos[0];
-        switch (name.charAt (pos[0])) {
-        case 'A':
-            type = new Type (env, "i8", null, (Modifier[]) null); break;
-        case 'B':
-            type = new Type (env, "i16", null, (Modifier[]) null); break;
-        case 'C':
-            type = new Type (env, "int", null, (Modifier[]) null); break;
-        case 'D':
-            type = new Type (env, "i64", null, (Modifier[]) null); break;
-        case 'a':
-            type = new Type (env, "u8", null, (Modifier[]) null); break;
-        case 'b':
-            type = new Type (env, "u16", null, (Modifier[]) null); break;
-        case 'c':
-            type = new Type (env, "unsigned", null, (Modifier[]) null); break;
-        case 'd':
-            type = new Type (env, "u64", null, (Modifier[]) null); break;
-        case 'F':
-            type = new Type (env, "float", null, (Modifier[]) null); break;
-        case 'f':
-            type = new Type (env, "double", null, (Modifier[]) null); break;
-        case 'q':
-            type = new Type ();
-            type.size = Type.OBJECT_SIZE;
-            type.encoding = Encoding.ARRAY;
-            type.subtypes = new ArrayList<Type> (1);
-            subtype = fromEncodedName (env, name, pos);
-            if (subtype == null) return null;
-            type.subtypes.add (subtype);
-            return type;
-        case 'p':
-            type = new Type ();
-            type.size = env.getBits () / 8;
-            type.encoding = Encoding.POINTER;
-            type.subtypes = new ArrayList<Type> (1);
-            subtype = fromEncodedName (env, name, pos);
-            if (subtype == null) return null;
-            type.subtypes.add (subtype);
-            return type;
-        case 'O':
-            {
-                String basename;
-                List<Type> args;
-                int dollarSign = name.indexOf ('$', pos[0]);
-                if (dollarSign == -1) return null;
-                basename = name.substring (pos[0], dollarSign);
-                pos[0] = dollarSign + 1;
-                if (name.charAt (pos[0]) == 'Z') {
-                    args = null;
-                } else {
-                    args = new ArrayList<Type> ();
-                    boolean foundEnd = false;
-                    while (pos[0] < name.length ()) {
-                        if (name.charAt (pos[0]) == 'Z') {
-                            foundEnd = true;
-                            break;
-                        }
-                        subtype = fromEncodedName (env, name, pos);
-                        if (subtype == null) return null;
-                        args.add (subtype);
-                    }
-                    if (!foundEnd) return null;
+     * Get a Type from an encoded type name. Returns null on error.
+     * Create a MangleReader to read from the encoded name. A single
+     * MangleReader can be used to get multiple types from one string. */
+    public static Type fromEncodedName (Env env, MangleReader reader) {
+        try {
+            char ch = reader.nextChar ();
+            switch (ch) {
+            case 'A': return new Type (env, "i8", null);
+            case 'B': return new Type (env, "i16", null);
+            case 'C': return new Type (env, "int", null);
+            case 'D': return new Type (env, "i64", null);
+            case 'E': return new Type (env, "u8", null);
+            case 'F': return new Type (env, "u16", null);
+            case 'G': return new Type (env, "unsigned", null);
+            case 'H': return new Type (env, "u64", null);
+            case 'I': return new Type (env, "float", null);
+            case 'J': return new Type (env, "double", null);
+            case 'P':
+                {
+                    Type baseType = Type.fromEncodedName (env, reader);
+                    if (baseType == null) return null;
+                    Type ty = new Type ();
+                    ty.name = "";
+                    ty.subtypes = new ArrayList<Type> (1);
+                    ty.subtypes.add (baseType);
+                    ty.size = env.getBits () / 8;
+                    ty.encoding = Encoding.POINTER;
+                    return ty;
                 }
-                type = new Type ();
-                type.size = Type.OBJECT_SIZE;
-                type.name = basename;
-                type.encoding = Encoding.OBJECT;
-                type.subtypes = args;
-                return type;
+            case 'Q':
+                {
+                    Type baseType = Type.fromEncodedName (env, reader);
+                    if (baseType == null) return null;
+                    Type ty = new Type ();
+                    ty.name = "";
+                    ty.subtypes = new ArrayList<Type> (1);
+                    ty.subtypes.add (baseType);
+                    ty.size = Type.OBJECT_SIZE;
+                    ty.encoding = Encoding.ARRAY;
+                    return ty;
+                }
+            case 'M':
+                {
+                    int len = reader.nextInt ();
+                    String name = reader.nextString (len);
+                    Type ty = new Type ();
+                    ty.name = name;
+                    ty.subtypes = null;
+                    ty.size = Type.OBJECT_SIZE;
+                    ty.encoding = Encoding.OBJECT;
+                    return ty;
+                }
+            default:
+                return null;
             }
-        default:
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        } catch (NumberFormatException e) {
             return null;
         }
-        return type;
-    }
-
-    /**
-     * Get a Type from an encoded type name. Returns null on error. */
-    public static Type fromEncodedName (Env env, String name) {
-        int[] pos = new int[1];
-        pos[0] = 0;
-        Type t = fromEncodedName (env, name, pos);
-        if (t == null) return null;
-        if (pos[0] != (name.length () - 1)) return null;
-        return t;
     }
 
     /**
@@ -536,3 +491,4 @@ public class Type implements HasType {
         ENCODED_NAMES.put (Encoding.UINT,    new String[] {"a", "b", "c", "d"});
     }
 }
+

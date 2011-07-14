@@ -171,11 +171,14 @@ public abstract class FunctionLike extends AST
         if (nomangle)
             return name;
         StringBuilder sb = new StringBuilder ();
-        sb.append ("_M").append (name).append ('.');
+        sb.append ("$G");
+        sb.append (name.length ());
+        sb.append (name);
         if (type != null)
             sb.append (type.getEncodedName ());
+        sb.append ('$');
         for (Type i: argtypes)
-            sb.append ('.').append (i.getEncodedName ());
+            sb.append (i.getEncodedName ());
         return sb.toString ();
     }
 
