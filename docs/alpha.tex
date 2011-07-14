@@ -8,6 +8,9 @@
 \usepackage{threeparttable}
 \usepackage[nodayofweek]{datetime}
 \usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{bytefield}
+\usepackage{color}
+\definecolor{lightgrey}{gray}{0.9}
 
 \newdateformat{isodate}{\THEYEAR-\twodigit{\THEMONTH}-\twodigit{\THEDAY}}
 
@@ -368,6 +371,7 @@ $B$. The compiler should insert the cast implicitly.
 \item{Integer literal $\in \R{SI}_a \to \R{SI}_a$}
 \item{Integer literal $\in \R{UI}_a \to \R{UI}_a$}
 \item{$T^{[]} \to T^*$}
+\item{$T \to \overline{T}$}
 \item{$\emptyset \to \R{SI}_a$}
 \item{$\emptyset \to \R{UI}_a$}
 \item{$\emptyset \to T$ where $T$ is a class}
@@ -392,6 +396,13 @@ let xp: &x as int*;
 *xp = 3;
 \end{verbatim}
 
+Note that \texttt{const~x:~2;} and \texttt{let~x~int~const:~2;} are not the
+same. The former actually declares a constant, which is globally accessible and
+possibly stored in read-only memory. The latter is a variable, but one that will
+cause a compiler error if you assign to it. The latter will always be assignable
+if you cast off the \texttt{const}, while the former may cause a segmentation
+fault if that is done.
+
 %%%%%%
 % NULL
 \subsection{The null type}
@@ -410,6 +421,88 @@ when the compiler is in manual memory mode, the \texttt{new} operator returns
 % RECORDS
 \subsection{Records}
 \label{sub:types:record}
+
+%%%%%%%%%%%%%
+% OBJECT TYPE
+\subsection{Object type}
+\label{sub:types:object}
+The ``object'' type is used for storing arrays, class instances, and variants.
+It is defined as follows:
+\begin{center}
+  \textbf{Main object struct} \\ \vspace{1em}
+  \begin{bytefield}{32}
+    \bitheader{0-31} \\
+    \wordbox[tlr]{1}{Pointer to type struct} \\
+    \wordbox[blr]{1}{\emph{continuation of pointer if 64-bit, else unused}} \\
+    \wordbox[tlr]{1}{Union of types (see below)} \\
+    \wordbox[blr]{1}{$\cdots$} \\
+  \end{bytefield}
+
+  \vspace{1em}
+  \textbf{(Union) Integers and floats} \\ \vspace{1em}
+  \begin{bytefield}{32}
+    \bitheader{0-31} \\
+    \bitbox{8}{$\R{UI}_8$, $\R{SI}_8$} &
+    \bitbox{8}{\dots $\R{UI}_{16}$, $\R{SI}_{16}$} &
+    \bitbox{16}{\dots $\R{UI}_{32}$, $\R{SI}_{32}$, $\R{FP}_{32}$} \\
+    \bitbox{32}{\dots $\R{UI}_{64}$, $\R{SI}_{64}$, $\R{FP}_{64}$} \\
+  \end{bytefield}
+
+  \vspace{1em}
+  \textbf{(Union) Array, object, pointer} \\ \vspace {1em}
+  \begin{bytefield}{32}
+    \bitheader{0-31} \\
+    \wordbox[tlr]{1}{Pointer to array struct, object struct, various data} \\
+    \wordbox[blr]{1}{\emph{continuation of pointer if 64-bit, else unused}} \\
+  \end{bytefield}
+
+  \vspace{1em}
+  \textbf{(Union) Null} \\ \vspace{1em}
+  \begin{bytefield}{32}
+    \bitheader{0-31} \\
+    \wordbox[tlr]{1}{\color{lightgrey}\rule{\width}{\height}} \\
+    \wordbox[blr]{1}{\color{lightgrey}\rule{\width}{\height}} \\
+  \end{bytefield}
+
+  \vspace{1em}
+  \textbf{Type struct} \\ \vspace{1em}
+  \begin{bytefield}{32}
+    \bitheader{0-31} \\
+    \wordbox{1}{Type ID (see below)} \\
+    \wordbox[tlr]{1}{Pointer to child type struct} \\
+    \wordbox[blr]{1}{\emph{continuation of pointer if 64-bit, else unused}} \\
+    \wordbox[tlr]{1}{Pointer to sibling type struct} \\
+    \wordbox[blr]{1}{\emph{continuation of pointer if 64-bit, else unused}} \\
+  \end{bytefield}
+
+  \vspace{1em}
+  \textbf{Array struct} \\ \vspace{1em}
+  \begin{bytefield}{32}
+    \bitheader{0-31} \\
+    \wordbox[tlr]{1}{64-bit length of array (in elements, not bytes)} \\
+    \wordbox[blr]{1}{$\cdots$} \\
+    \wordbox[tlr]{1}{Pointer to first array element} \\
+    \wordbox[blr]{1}{\emph{continuation of pointer if 64-bit, else unused}} \\
+  \end{bytefield}
+\end{center}
+
+Type IDs are:
+\begin{center}
+\begin{tabular}{|c|p{4in}|}
+\hline
+0 & Untyped \texttt{null} --- only used when \texttt{null} is put in a
+  variant. \\
+1 & i8 \\ 2 & i16 \\ 3 & i32 \\ 4 & i64 \\
+5 & u8 \\ 6 & u16 \\ 7 & u32 \\ 8 & u64 \\
+9 & Array of \emph{child} \\
+10 & Pointer to \emph{child} \\
+11 & Object. Use \emph{child} to point to the first type argument (for
+  parameterised types), and connect further arguments as a singly-linked list
+  by the \emph{sibling} field. \\
+\texttt{id | 0x8000} & Constant \texttt{id} \\
+\hline
+\end{tabular}
+\end{center}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % OPERATORS
@@ -771,6 +864,10 @@ method's equivalent call in C is equivalent to:
 \begin{verbatim}
 firstReturn mangledName ([this], [secondReturn*]..., arguments...);
 \end{verbatim}
+
+For any dynamic, class or array arguments, the value is split into two
+$\R{UI}_{64}$ values (see
+\textref{sub:types:object}{Object type}).
 
 %%%%%%%%%%%%%%%%%%
 % Multiple returns

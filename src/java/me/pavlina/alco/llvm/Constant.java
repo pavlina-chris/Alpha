@@ -5,21 +5,21 @@ import java.io.PrintStream;
 import me.pavlina.alco.llvm.FHead.*;
 
 /**
- * Global. */
-public class Global extends RootCodeObj
+ * Global constant. */
+public class Constant extends RootCodeObj
 {
     String name;
     String type;
     String value;
     Linkage linkage;
-    
+
     /**
-     * Create a global.
-     * @param name Global name. Should start with @.
-     * @param type Global type.
-     * @param value Global value. Remember "zeroinitializer"
+     * Create a constant.
+     * @param name Constant name. Should start with @.
+     * @param type Constant type.
+     * @param value Constant value.
      * @param linkage Linkage type. */
-    public Global (String name, String type, String value, Linkage linkage) {
+    public Constant (String name, String type, String value, Linkage linkage) {
         this.name = name;
         this.type = type;
         this.value = value;
@@ -27,13 +27,13 @@ public class Global extends RootCodeObj
     }
 
     /**
-     * Create an unnamed global.
-     * @param name Counter to get number from
-     * @param type Global type.
-     * @param value Global value. Remember "zeroinitializer"
+     * Create an unnamed constant.
+     * @param counter Counter to get number from
+     * @param type Constant type.
+     * @param value Constant value.
      * @param linkage Linkage type. */
-    public Global (Counter counter, String type, String value,
-                   Linkage linkage)
+    public Constant (Counter counter, String type, String value,
+                     Linkage linkage)
     {
         this.name = "@" + Integer.toString (counter.getTemporary ("@"));
         this.type = type;
@@ -41,8 +41,6 @@ public class Global extends RootCodeObj
         this.linkage = linkage;
     }
 
-    /**
-     * Get the name */
     public String getName () {
         return name;
     }
@@ -52,6 +50,6 @@ public class Global extends RootCodeObj
     }
 
     public void write (PrintStream out) {
-        out.printf ("%s = %s global %s %s\n", name, linkage, type, value);
+        out.printf ("%s = %s constant %s %s\n", name, linkage, type, value);
     }
 }

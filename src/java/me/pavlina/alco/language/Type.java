@@ -28,6 +28,7 @@ public class Type implements HasType {
     private List<Type> subtypes;
     private int size;
     private Encoding encoding;
+    private boolean isConst;
 
 
     /**
@@ -41,26 +42,34 @@ public class Type implements HasType {
      * @param args Array arguments: {Type("string"), Type("int")}
      * @param mods Modifiers: {ARRAY, POINTER, ARRAY} */
     public Type (Env env, String name, List<Type> args, Modifier... mods) {
+        
+        int modsLength = mods.length;
+        isConst = false;
+        // Eat any 'const' keywords
+        while (modsLength != 0 && mods[modsLength - 1] == Modifier.CONST) {
+            isConst = true;
+        }
+
         // If there are no mods, type creation is simple.
-        if (mods == null || mods.length == 0) {
+        if (modsLength == 0) {
             this.baseType (env, name, args);
         }
 
         // Otherwise, the root type is the last mod, and recurse.
-        else if (mods[mods.length - 1] == Modifier.ARRAY) {
+        else if (mods[modsLength - 1] == Modifier.ARRAY) {
             this.name = "";
             this.size = Type.OBJECT_SIZE;
             this.encoding = Encoding.ARRAY;
             this.subtypes = new ArrayList<Type> (1);
             this.subtypes.add (new Type (env, name, args, Arrays.copyOf
-                                         (mods, mods.length - 1)));
+                                         (mods, modsLength - 1)));
         } else /* Modifier.POINTER */ {
             this.name = "";
             this.size = env.getBits () / 8;
             this.encoding = Encoding.POINTER;
             this.subtypes = new ArrayList<Type> (1);
             this.subtypes.add (new Type (env, name, args, Arrays.copyOf
-                                         (mods, mods.length - 1)));
+                                         (mods, modsLength - 1)));
         }
     }
 
@@ -153,36 +162,55 @@ public class Type implements HasType {
     }
 
     /**
+     * Get whether the type is constant */
+    public boolean isConst () {
+        return isConst;
+    }
+
+    /**
+     * Return a copy of this which is constant. */
+    public Type getConst () {
+        Type t = new Type ();
+        t.name = name;
+        t.subtypes = subtypes;
+        t.size = size;
+        t.encoding = encoding;
+        t.isConst = true;
+        return t;
+    }
+
+    /**
      * Get the encoded type name. This is used in code, both in the dynamic
      * type system and in method name mangling. It is fully reversible
      * (see fromEncodedName()). See Standard:CallingConvention:NameMangling */
     public String getEncodedName () {
         // Standard:CallingConvention:NameMangling
+        String prefix = (isConst ? "K" : "");
         if (encoding == Encoding.SINT) {
             switch (size) {
-            case 1: return "A";
-            case 2: return "B";
-            case 4: return "C";
-            case 8: return "D";
+            case 1: return prefix + "A";
+            case 2: return prefix + "B";
+            case 4: return prefix + "C";
+            case 8: return prefix + "D";
             }
         } else if (encoding == Encoding.UINT) {
             switch (size) {
-            case 1: return "E";
-            case 2: return "F";
-            case 4: return "G";
-            case 5: return "H";
+            case 1: return prefix + "E";
+            case 2: return prefix + "F";
+            case 4: return prefix + "G";
+            case 5: return prefix + "H";
             }
         } else if (encoding == Encoding.FLOAT) {
             switch (size) {
-            case 4: return "I";
-            case 8: return "J";
+            case 4: return prefix + "I";
+            case 8: return prefix + "J";
             }
         } else if (encoding == Encoding.POINTER) {
-            return "P" + subtypes.get (0).getEncodedName ();
+            return prefix + "P" + subtypes.get (0).getEncodedName ();
         } else if (encoding == Encoding.ARRAY) {
-            return "Q" + subtypes.get (0).getEncodedName ();
+            return prefix + "Q" + subtypes.get (0).getEncodedName ();
         } else if (encoding == Encoding.OBJECT) {
-            return "M" + Integer.toString (name.length ()) + name;
+            return prefix + "M" + Integer.toString (name.length ()) + name;
         }
         throw new RuntimeException ("getEncodedName() on invalid type");
     }
@@ -264,6 +292,11 @@ public class Type implements HasType {
             // Same type - no cast
             return value;
 
+        } else if (vtype.equalsNoConst (dtype) && !vtype.isConst () &&
+                   dtype.isConst ()) {
+            // T to T const
+            return creator.cast (value, dtype, env);
+
         } else if (vtype.encoding == Encoding.SINT
             && dtype.encoding == vtype.encoding
             && vtype.size <= dtype.size) {
@@ -333,6 +366,11 @@ public class Type implements HasType {
             // Same type - no cast
             return dtype;
 
+        } else if (vtype.equalsNoConst (dtype) && !vtype.isConst ()
+                   && dtype.isConst ()) {
+            // T to T const
+            return dtype;
+
         } else if (vtype.encoding == Encoding.SINT
             && dtype.encoding == vtype.encoding
             && vtype.size <= dtype.size) {
@@ -365,15 +403,43 @@ public class Type implements HasType {
 
     /**
      * Return whether two types are equivalent.
-     *  - Integer: size and sign are equal
-     *  - Float: size is equal
-     *  - Array: subtype is equal
-     *  - Pointer: subtype is equal
-     *  - Object: name is equal and arguments are equal
+     *  - Integer: size, sign and const are equal
+     *  - Float: size and const are equal
+     *  - Array: subtype and const are equal
+     *  - Pointer: subtype and const are equal
+     *  - Object: name, arguments and const are equal
      *
      * Therefore: i32 == int, i32* == int*, list&lt;i32&gt; == list&lt;int&gt;
+     *  i32 const != i32
      */
     public boolean equals (Type type) {
+        if (type.encoding != encoding) return false;
+        if (encoding == Encoding.UINT ||
+            encoding == Encoding.SINT ||
+            encoding == Encoding.FLOAT) {
+            return size == type.size && isConst == type.isConst;
+        }
+        else if (encoding == Encoding.ARRAY ||
+                 encoding == Encoding.POINTER) {
+            return subtypes.get (0).equals (type.subtypes.get (0))
+                && isConst == type.isConst;
+        }
+        else if (encoding == Encoding.OBJECT) {
+            if (!name.equals (type.name)) return false;
+            if (subtypes.size () != type.subtypes.size ()) return false;
+            if (isConst != type.isConst) return false;
+            for (int i = 0; i < subtypes.size (); ++i) {
+                if (! subtypes.get (i).equals (type.subtypes.get (i)))
+                    return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Return whether two types are equivalent, ignoring const. */
+    public boolean equalsNoConst (Type type) {
         if (type.encoding != encoding) return false;
         if (encoding == Encoding.UINT ||
             encoding == Encoding.SINT ||
@@ -395,6 +461,8 @@ public class Type implements HasType {
         }
         return false;
     }
+
+
 
     /**
      * Return a string representing the type.
@@ -443,7 +511,7 @@ public class Type implements HasType {
 
     /**
      * Type modifiers */
-    public enum Modifier { ARRAY, POINTER }
+    public enum Modifier { ARRAY, POINTER, CONST }
 
     private static Map<String, Encoding> PRIMITIVE_ENCODINGS;
     private static Map<String, Integer> PRIMITIVE_SIZES;

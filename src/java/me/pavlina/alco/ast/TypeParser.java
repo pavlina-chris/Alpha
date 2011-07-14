@@ -72,6 +72,8 @@ public class TypeParser {
                 else if (!token.is (Token.OPER, "]"))
                     throw Unexpected.after ("]", stream.last ());
                 mods.add (Type.Modifier.ARRAY);
+            } else if (token.is (Token.WORD, "const")) {
+                mods.add (Type.Modifier.CONST);
             } else {
                 stream.putback (token);
                 break;

@@ -69,7 +69,7 @@ public class OpCast extends Expression.Operator {
         Type.Encoding dstE = dstT.getEncoding ();
 
         // See Standard:Types:Casting:AllowedCasts
-        if (srcT.equals (dstT)) {
+        if (srcT.equalsNoConst (dstT)) {
             // T to T
             // OK
    

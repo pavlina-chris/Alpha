@@ -205,7 +205,7 @@ public class StLet extends Statement
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Assign");
+        out.println ("Let");
         for (int i = 0; i < names.size (); ++i) {
             out.println ("  " + names.get (i));
             expressions.get (i).print (out, 4);

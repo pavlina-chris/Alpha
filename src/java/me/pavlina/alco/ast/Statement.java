@@ -50,6 +50,7 @@ public abstract class Statement extends AST
         STATEMENTS = new HashMap<String, StatementCreator> ();
         
         STATEMENTS.put ("let", StLet.CREATOR);
+        STATEMENTS.put ("const", StConst.CREATOR);
         STATEMENTS.put ("return", StReturn.CREATOR);
     }
 

@@ -20,12 +20,14 @@ public class Resolver
 {
     private Map<String, Variable> variables;
     private List<FunctionLike> functions;
+    private int[] globalCounter;
 
     /**
      * Create a brand new resolver, with no names at all */
     public Resolver () {
         variables = new HashMap<String, Variable> ();
         functions = new ArrayList<FunctionLike> ();
+        globalCounter = new int[] {0};
     }
 
     /**
@@ -35,6 +37,7 @@ public class Resolver
     public Resolver (Resolver other) {
         variables = new HashMap<String, Variable> (other.variables);
         functions = new ArrayList<FunctionLike> (other.functions);
+        globalCounter = other.globalCounter;
     }
 
     /**
@@ -49,6 +52,18 @@ public class Resolver
         }
         variables.put (name, newvar);
         return newvar;
+    }
+
+    /**
+     * Add a globally available local variable to the resolver. This is a
+     * variable whose name is only resolvable locally, but whose pointer can
+     * be accessed globally. It is technically a global with a numeric name.
+     */
+    public Variable addGlobalLocal (String name, Type type) {
+        int num = globalCounter[0]++;
+        Variable var = new Variable (Integer.toString (num), 0, type, "@");
+        variables.put (name, var);
+        return var;
     }
 
     /**
@@ -139,6 +154,7 @@ public class Resolver
         private String name;
         private int disambigCounter;
         private Type type;
+        private String prefix;
 
         /**
          * Initialise the variable from a given name, counter, and type.
@@ -153,15 +169,27 @@ public class Resolver
             this.name = name;
             this.disambigCounter = disambigCounter;
             this.type = type;
+            this.prefix = "%";
+        }
+
+        /**
+         * Initialise the variable with a given prefix, other than "%".
+         */
+        public Variable (String name, int disambigCounter, Type type,
+                         String prefix) {
+            this.name = name;
+            this.disambigCounter = disambigCounter;
+            this.type = type;
+            this.prefix = prefix;
         }
 
         /**
          * Return the real name of the variable */
         public String getName () {
             if (disambigCounter == 0)
-                return "%" + name;
+                return prefix + name;
             else
-                return "%" + name + "." + Integer.toString (disambigCounter);
+                return prefix + name + "." + Integer.toString (disambigCounter);
         }
 
         /**

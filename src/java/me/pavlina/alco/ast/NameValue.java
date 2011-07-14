@@ -94,7 +94,8 @@ public class NameValue extends Expression
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
-        // Valid here!
+        if (type.isConst () && write)
+            throw CError.at ("cannot assign to constant", token);
     }
 
     public String getPointer (Env env, LLVMEmitter emitter, Function function) {
