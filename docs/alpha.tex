@@ -417,6 +417,8 @@ when the compiler is in manual memory mode, the \texttt{new} operator returns
 \section{Operators}
 \label{sec:operators}
 
+%%%%%%%%%%%%
+% PRECEDENCE
 \subsection{Precedence}
 \label{sub:operators:precedence}
 \begin{center}
@@ -443,6 +445,8 @@ when the compiler is in manual memory mode, the \texttt{new} operator returns
 \subsection{Cast (\texttt{as})}
 \label{sub:operators:cast}
 
+%%%%%%%%
+% ASSIGN
 \subsection{Assign (\texttt{=})}
 \label{sub:operators:assign}
 The assignment operator (\texttt{=}) is used to assign a value to any item with
@@ -504,6 +508,11 @@ let z: (x, y) = (5, 6);
 //   Assign x := y
 // In the end, x, y, and z all have the same value.
 \end{verbatim}
+
+%%%%%
+% NEW
+\subsection{New (\texttt{new})}
+\label{sub:operators:new}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % EXPRESSIONS
@@ -931,6 +940,8 @@ another function attribute (see
 \section{Implementation}
 \label{sec:implementation}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% Compiler identification
 \subsection{Compiler identification}
 \label{sub:implementation:ident}
 The following features are for compiler identification. They are defined
@@ -964,6 +975,8 @@ like extrastandard features, but are not (sorry!).
 \end{tabular}
 \end{center}
 
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Extrastandard features
 \subsection{Extrastandard features}
 \label{sub:implementation:extrastandard}
 Compilers are allowed to implement so-called {\it extrastandard} features. These
@@ -979,6 +992,8 @@ The syntax of any extrastandard feature is unspecified, to be defined by the
 implementation. Obviously, any code using an extrastandard feature may be
 syntactically invalid on a compiler which does not provide it.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% AlCo extrastandard features
 \subsection{AlCo extrastandard features}
 \label{sub:implementation:alcoextra}
 These extrastandard features are present in AlCo. \textbf{Note that this is not
@@ -992,6 +1007,43 @@ though it may help to ensure compatibility.}
   a symbol name. This allows using invalid characters in the name, and is
   usually used by the runtime library's code to manually call mangled and/or
   internal (special-name) functions. \\
+\hline
+\end{tabular}
+\end{center}
+
+%%%%%%%%%%%%%%%%%%
+% Compiler options
+\subsection{Compiler options}
+\label{sub:implementation:options}
+Compilers must provide the following command-line options. It is acceptable to
+give them aliases following precedent on the platform (e.g. forward slashes
+on Windows), but these names must be present.
+
+\begin{center}
+\begin{tabular}{|l|p{4in}|}
+\hline
+\texttt{-version} & Emit version information. Certain things must be present;
+  see \textref{sub:implementation:ident}{Compiler identification}. \\
+\texttt{-o {\it file}} & Place the output into {\it file}, whether or not
+  the file is properly named. \\
+\texttt{-c} & Do not link; only output an object code file (extension
+  \texttt{.o} on Unix-like systems). \\
+\texttt{-l {\it lib}} & Link with system library {\it lib}. This is assumed
+  to be a C library, and if you want to use its functions, you'll have to
+  declare them \texttt{extern}. \\
+\texttt{-P {\it path}} & Add {\it path} to the search path for Alpha
+  packages. \\
+\texttt{-nolibs} & Do not link in the standard implicitly linked libraries.
+  These usually include libc, libm, libgc, libpthread, and the Alpha
+  standard library. \\
+\texttt{-noimport} & Do not import the runtime implicitly. It will still be
+  linked in, unless you also specify \texttt{-nolibs}. \\
+\texttt{-nogc} & Do not use garbage collection in this compile unit. The system
+  \texttt{malloc()} and \texttt{free()} will be used for \texttt{new} and
+  \texttt{delete}, and it will be necessary to use \texttt{delete}. \\
+\texttt{-nomemabort} & Do not automatically display an error message on
+  out-of-memory and abort. Instead, \texttt{new} should return \texttt{null}
+  in this case. See \textref{sub:operators:new}{New (\texttt{new})}. \\
 \hline
 \end{tabular}
 \end{center}
