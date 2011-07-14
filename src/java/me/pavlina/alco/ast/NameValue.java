@@ -30,11 +30,20 @@ public class NameValue extends Expression
      * Create a NameValue from the stream */
     public NameValue (Env env, TokenStream stream) throws CError {
         token = stream.next ();
-        if (!token.is (Token.WORD))
-            throw new RuntimeException ("NameValue created for non-name");
-        if (Keywords.isKeyword (token.value, true))
-            throw Unexpected.at ("name", token);
-        name = token.value;
+        if (token.is (Token.EXTRA, "$$name")) {
+            // Extrastandard id $$name allows using anything as a name
+            Token nextToken = stream.next ();
+            if (nextToken.is (Token.NO_MORE))
+                throw UnexpectedEOF.after ("name", token);
+            name = nextToken.value;
+
+        } else {
+            if (!token.is (Token.WORD))
+                throw new RuntimeException ("NameValue created for non-name");
+            if (Keywords.isKeyword (token.value, true))
+                throw Unexpected.at ("name", token);
+            name = token.value;
+        }
     }
 
     /**

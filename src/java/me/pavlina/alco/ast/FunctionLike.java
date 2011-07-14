@@ -77,7 +77,15 @@ public abstract class FunctionLike extends AST
 
         // Name
         token = stream.next ();
-        if (!token.is (Token.WORD) || Keywords.isKeyword (token.value, true)) {
+        if (token.is (Token.EXTRA, "$$name")) {
+            token = stream.next ();
+            if (token.is (Token.NO_MORE))
+                throw Unexpected.after ("name", stream.last ());
+            name = token.value;
+        } else if (token.is (Token.NO_MORE)) {
+            throw Unexpected.after ("name", stream.last ());
+        } else if (!token.is (Token.WORD) ||
+                   Keywords.isKeyword (token.value, true)) {
             throw Unexpected.at ("name", token);
         }
         name = token.value;
@@ -114,6 +122,11 @@ public abstract class FunctionLike extends AST
                 argtypes.add (type);
                 argnames.add (name);
                 break;
+            } else if (token.is (Token.EXTRA, "$$name")) {
+                token = stream.next ();
+                if (token.is (Token.NO_MORE))
+                    throw UnexpectedEOF.after ("name", stream.last ());
+                name = token.value;
             } else if (!token.is (Token.WORD) || Keywords.isKeyword
                        (token.value, true)) {
                 if (allowUnnamed)

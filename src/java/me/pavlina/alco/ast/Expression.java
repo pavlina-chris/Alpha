@@ -72,6 +72,12 @@ public abstract class Expression extends AST implements HasType
                 output.push (new NullValue (env, stream));
                 callPossible = unaryPossible = false;
 
+            
+            } else if (token.is (Token.EXTRA, "$$name")) {
+                output.push (new NameValue (env, stream));
+                callPossible = true;
+                unaryPossible = false;
+
             } else if (token.is (Token.WORD) &&
                        !Keywords.isKeyword (token.value)) {
                 output.push (new NameValue (env, stream));
