@@ -455,7 +455,6 @@ public class Type implements HasType {
                 throw new RuntimeException ("Bad type size");
             if (min.compareTo (val) <= 0
                 && max.compareTo (val) >= 0) {
-                iv.setType (dtype);
                 return true;
             }
         } else if (IntValue.class.isInstance (value)
@@ -486,7 +485,6 @@ public class Type implements HasType {
                 throw new RuntimeException ("Bad type size");
             if (min.compareTo (val) <= 0
                 && max.compareTo (val) >= 0) {
-                iv.setType (dtype);
                 return true;
             }
         } else if (vtype.encoding == Encoding.ARRAY
