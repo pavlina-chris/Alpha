@@ -401,6 +401,16 @@ For example, the addition operator gives a special meaning to the addition of
 (pointer + int). Normally, non-numeric types (including pointers)
 cannot be used in arithmetic.
 
+Additionally, any operation which performs coercion should convert its
+result type to non-\texttt{const}. Therefore, the type of \texttt{z} below
+is \texttt{int}, not \texttt{int~const}:
+
+\begin{verbatim}
+const x: 1;
+const y: 2;
+let z: x + y;
+\end{verbatim}
+
 %%%%%%%%%%%%%%%%
 % CONSTANT TYPES
 \subsection{Constant types}
