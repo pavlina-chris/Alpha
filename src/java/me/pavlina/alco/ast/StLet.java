@@ -112,10 +112,8 @@ public class StLet extends Statement
             if (types.get (i) == null) {
                 types.set (i, expressions.get (i).getType ());
             } else {
-                expressions.set
-                    (i, (Expression) Type.coerce
-                     (expressions.get (i), types.get (i),
-                      castcreator, env));
+                expressions.set (i, new OpCast
+                                 (expressions.get (i), types.get (i), env));
             }
             realNames.set
                 (i, resolver.addVariable

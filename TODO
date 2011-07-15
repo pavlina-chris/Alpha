@@ -1,4 +1,3 @@
-"let" uses implicit cast rules for explicit type
 Cannot implicitly cast integer literal to i8 (per standard)
 OpAssign doesn't coerce
 Compiler does not accept .o files to link with
