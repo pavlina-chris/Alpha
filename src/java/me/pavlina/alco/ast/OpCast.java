@@ -354,8 +354,9 @@ public class OpCast extends Expression.Operator {
         String chPtr = children[0].getPointer (env, emitter, function);
         String ptr = new Conversion (emitter, function)
             .operation (Conversion.ConvOp.BITCAST)
-            .source (LLVMType.getLLVMName (children[0].getType ()), chPtr)
-            .dest (LLVMType.getLLVMName (type))
+            .source (LLVMType.getLLVMName (children[0].getType ()) + "*",
+                     chPtr)
+            .dest (LLVMType.getLLVMName (type) + "*")
             .build ();
         return ptr;
     }
