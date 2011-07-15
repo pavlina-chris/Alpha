@@ -56,8 +56,6 @@ public class OpAssign extends Expression.Operator {
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
-        children[0].checkTypes (env, resolver);
-        children[1].checkTypes (env, resolver);
         dests = new ArrayList<Expression> ();
         srcs = new ArrayList<Expression> ();
         
@@ -73,8 +71,12 @@ public class OpAssign extends Expression.Operator {
             srcs.add (children[1]);
         }
 
-        for (Expression i: dests)
+        for (Expression i: srcs)
+            i.checkTypes (env, resolver);
+        for (Expression i: dests) {
+            i.checkTypes (env, resolver);
             i.checkPointer (true, token);
+        }
 
         if (srcs.size () != dests.size ()) {
             env.warning_at ("multiple assign is not symmetric; matching "

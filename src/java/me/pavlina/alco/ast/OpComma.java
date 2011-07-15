@@ -53,9 +53,7 @@ public class OpComma extends Expression.Operator {
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
-        if (children == null) return;
-        children[0].checkTypes (env, resolver);
-        children[1].checkTypes (env, resolver);
+        throw CError.at ("performing operation on a tuple", token);
     }
 
     public String getValueString () {

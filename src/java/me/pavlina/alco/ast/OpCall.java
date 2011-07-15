@@ -51,7 +51,6 @@ public class OpCall extends Expression.Operator {
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
-        children[1].checkTypes (env, resolver);
         if (!NameValue.class.isInstance (children[0])) {
             throw Unexpected.at ("name", children[0].getToken ());
         }
@@ -61,6 +60,8 @@ public class OpCall extends Expression.Operator {
         } else {
             args.add ((Expression) children[1]);
         }
+        for (Expression i: args)
+            i.checkTypes (env, resolver);
         List<Type> types = new ArrayList<Type> (args.size ());
         for (Expression i: args) {
             types.add (i.getType ());
