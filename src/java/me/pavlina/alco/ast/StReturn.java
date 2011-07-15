@@ -22,7 +22,7 @@ import java.util.Arrays;
 public class StReturn extends Statement
 {
     private Token token;
-    private Expression value;
+    private Expression[] value;
     private Method method;
 
     public StReturn (Env env, TokenStream stream, Method method) throws CError {
@@ -31,7 +31,8 @@ public class StReturn extends Statement
         if (!token.is (Token.WORD, "return"))
             throw new RuntimeException ("StReturn instantiated without kwd");
 
-        value = Expression.parse (env, stream, ";"); // Allow null
+        value = new Expression[]
+            {Expression.parse (env, stream, ";")}; // Allow null
 
         Token temp = stream.next ();
         if (temp.is (Token.NO_MORE))
@@ -50,29 +51,29 @@ public class StReturn extends Statement
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
-        value.checkTypes (env, resolver);
-        value = (Expression) Type.coerce (value, method.getType (),
-                                          OpCast.CASTCREATOR, env);
+        value[0].checkTypes (env, resolver);
+        value[0] = (Expression) Type.coerce (value[0], method.getType (),
+                                             OpCast.CASTCREATOR, env);
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        if (value == null)
+        if (value[0] == null)
             new ret (emitter, function).build ();
         else {
-            value.genLLVM (env, emitter, function);
-            String valueString = value.getValueString ();
+            value[0].genLLVM (env, emitter, function);
+            String valueString = value[0].getValueString ();
             new ret (emitter, function)
-                .value (LLVMType.getLLVMName (value.getType ()), valueString)
+                .value (LLVMType.getLLVMName (value[0].getType ()), valueString)
                 .build ();
         }
     }
 
     public void print (java.io.PrintStream out) {
-        if (value == null)
+        if (value[0] == null)
             out.println ("Return void");
         else {
             out.println ("Return");
-            value.print (out, 2);
+            value[0].print (out, 2);
 
         }
     }

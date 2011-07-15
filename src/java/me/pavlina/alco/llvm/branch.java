@@ -39,18 +39,7 @@ public class branch
         return this;
     }
 
-    /**
-     * Set result register */
-    public branch result (String result) {
-        this.result = result;
-        return this;
-    }
-
-    public String build () {
-        if (result == null) {
-            result = "%" + counter.getTemporary ("%");
-        }
-
+    public void build () {
         String text;
         if (cond == null)
             text = String.format ("br label %s\n", ifTrue);
@@ -58,7 +47,5 @@ public class branch
             text = String.format ("br i1 %s, label %s, label %s\n",
                                   cond, ifTrue, ifFalse);
         function.add (text);
-
-        return result;
     }
 }

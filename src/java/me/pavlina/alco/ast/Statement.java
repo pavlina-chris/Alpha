@@ -52,6 +52,7 @@ public abstract class Statement extends AST
         STATEMENTS.put ("let", StLet.CREATOR);
         STATEMENTS.put ("const", StConst.CREATOR);
         STATEMENTS.put ("return", StReturn.CREATOR);
+        STATEMENTS.put ("if", StIf.CREATOR);
     }
 
 }

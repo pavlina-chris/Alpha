@@ -87,7 +87,8 @@ public class Method extends FunctionLike
         emitter.add (func);
 
         // Save the counter
-        Object countSave = emitter.resetCount ("%");
+        Object countSave1 = emitter.resetCount ("%");
+        Object countSave2 = emitter.resetCount ("%.L");
         
         // Copy arguments into local variables
         for (int i = 0; i < argtypes.size (); ++i) {
@@ -131,7 +132,8 @@ public class Method extends FunctionLike
         }
 
         // Restore the counter
-        emitter.setCount ("%", countSave);
+        emitter.setCount ("%", countSave1);
+        emitter.setCount ("%.L", countSave2);
     }
 
     public void print (PrintStream out) {
