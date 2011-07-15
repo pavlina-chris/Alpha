@@ -98,6 +98,7 @@ public class Resolver
         // 5: Types require promotion to dynamic
         // 6: Variadic requiring promotion to dynamic
         List<FunctionLike> matches = new ArrayList<FunctionLike> ();
+        List<FunctionLike> candidates = new ArrayList<FunctionLike> ();
         int matchlvl = 7;
 
         List<Type> argTypes = new ArrayList<Type> (args.size ());
@@ -107,6 +108,8 @@ public class Resolver
         for (FunctionLike i: functions) {
             List<Type> iArgs = i.getArgTypes ();
             if (! i.getName ().equals (name)) continue;
+            candidates.add (i);
+
             // Level 1: Perfect
             if (iArgs.equals (argTypes)) {
                 if (matchlvl > 1) {
@@ -137,14 +140,33 @@ public class Resolver
         }
 
         if (matches.size () == 0) {
-            throw CError.at ("cannot resolve function name", token);
+            StringBuilder sb = new StringBuilder ();
+            sb.append ("cannot resolve call: ");
+            sb.append (name).append (" (");
+            boolean first = true;
+            for (Expression i: args) {
+                if (first) first = false;
+                else sb.append (", ");
+                sb.append (i.getType ());
+            }
+            sb.append (")\nCandidates were:\n");
+            for (FunctionLike i: candidates) {
+                sb.append ("  ").append (i).append ("\n");
+            }
+            throw CError.at (sb.toString (), token);
         } else if (matches.size () > 1) {
-            StringBuilder sb = new StringBuilder
-                ("ambiguous function name; the following are candidates:\n");
+            StringBuilder sb = new StringBuilder ();
+            sb.append ("ambiguous call: ");
+            sb.append (name).append (" (");
+            boolean first = true;
+            for (Expression i: args) {
+                if (first) first = false;
+                else sb.append (", ");
+                sb.append (i.getType ());
+            }
+            sb.append (")\nMatches were:\n");
             for (FunctionLike i: matches) {
-                sb.append (" - ");
-                sb.append (i.toString ());
-                sb.append ("\n");
+                sb.append ("  ").append (i.toString ()).append ("\n");
             }
             throw CError.at (sb.toString (), token);
         }
