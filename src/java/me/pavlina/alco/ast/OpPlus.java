@@ -18,6 +18,9 @@ import java.util.Arrays;
 public class OpPlus extends Expression.Operator {
     Token token;
     Expression[] children;
+    Expression pointer;
+    Expression integer;
+    boolean pointerAdd;
     Type type;
     String valueString;
 
@@ -49,6 +52,40 @@ public class OpPlus extends Expression.Operator {
     public void checkTypes (Env env, Resolver resolver) throws CError {
         children[0].checkTypes (env, resolver);
         children[1].checkTypes (env, resolver);
+
+        // Try checking for addition of (pointer + int) first
+        boolean foundPointer = false, foundInt = false;
+        for (int i = 0; i < 2; ++i) {
+            if (children[i].getType ().getEncoding () ==
+                Type.Encoding.POINTER) {
+                foundPointer = true;
+                pointer = children[i];
+
+            } else if (children[i].getType ().getEncoding () ==
+                     Type.Encoding.UINT) {
+                if (children[i].getType ().getSize () > (env.getBits () / 8))
+                    throw CError.at
+                        ("cannot add pointer to wider integer", token);
+                children[i] = (Expression) Type.coerce
+                    (children[i], new Type (env, "size", null),
+                     OpCast.CASTCREATOR, env);
+                integer = children[i];
+                foundInt = true;
+
+            } else if (children[i].getType ().getEncoding () ==
+                       Type.Encoding.SINT) {
+                if (children[i].getType ().getSize () > (env.getBits () / 8))
+                    throw CError.at
+                        ("cannot add pointer to wider integer", token);
+                children[i] = (Expression) Type.coerce
+                    (children[i], new Type (env, "ssize", null),
+                     OpCast.CASTCREATOR, env);
+                integer = children[i];
+                foundInt = true;
+            }
+        }
+        pointerAdd = (foundPointer && foundInt);
+        if (pointerAdd) return;
 
         // Coercion: rank types by this list (see
         // Standard:Types:Casting:Coercion):
@@ -105,6 +142,45 @@ public class OpPlus extends Expression.Operator {
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+        if (pointerAdd) genLLVM_pointerAdd (env, emitter, function);
+        else genLLVM_normal (env, emitter, function);
+    }
+
+    private void genLLVM_pointerAdd (Env env, LLVMEmitter emitter,
+                                     Function function)
+    {
+        // Multiply the integer by the pointer width, then add it
+        pointer.genLLVM (env, emitter, function);
+        integer.genLLVM (env, emitter, function);
+        String ptrV = pointer.getValueString ();
+        String intV = integer.getValueString ();
+
+        String ptrAsInt = new Conversion (emitter, function)
+            .operation (Conversion.ConvOp.PTRTOINT)
+            .source (LLVMType.getLLVMName (pointer.getType ()), ptrV)
+            .dest (LLVMType.getLLVMName (integer.getType ()))
+            .build ();
+        String intByWidth = new Binary (emitter, function)
+            .operation (Binary.BinOp.MUL)
+            .type (LLVMType.getLLVMName (integer.getType ()))
+            .operands (intV,
+                       Integer.toString (pointer.getType ().getSize ()))
+            .build ();
+        String newPtrInt = new Binary (emitter, function)
+            .operation (Binary.BinOp.ADD)
+            .type (LLVMType.getLLVMName (integer.getType ()))
+            .operands (intByWidth, ptrAsInt)
+            .build ();
+        valueString = new Conversion (emitter, function)
+            .operation (Conversion.ConvOp.INTTOPTR)
+            .source (LLVMType.getLLVMName (integer.getType ()), newPtrInt)
+            .dest (LLVMType.getLLVMName (pointer.getType ()))
+            .build ();
+    }
+
+    private void genLLVM_normal (Env env, LLVMEmitter emitter,
+                                 Function function)
+    {
         Binary.BinOp operation;
         Type.Encoding enc = children[0].getType ().getEncoding ();
         if (enc == Type.Encoding.FLOAT)
