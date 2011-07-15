@@ -82,23 +82,15 @@ public class OpPlus extends Expression.Operator {
 
         if (ranks[0] < ranks[1]) {
             // Coerce rhs to lhs
-            Type.CastCreator castcreator = new Type.CastCreator () {
-                    public HasType cast (HasType value, Type type, Env env) {
-                        return new OpCast (value, type, env);
-                    }
-                };
             children[1] = (Expression) Type.coerce
-                (children[1], children[0].getType (), castcreator, env);
+                (children[1], children[0].getType (),
+                 OpCast.CASTCREATOR, env);
 
         } else if (ranks[1] < ranks[0]) {
             // Coerce lhs to rhs
-            Type.CastCreator castcreator = new Type.CastCreator () {
-                    public HasType cast (HasType value, Type type, Env env) {
-                        return new OpCast (value, type, env);
-                    }
-                };
             children[0] = (Expression) Type.coerce
-                (children[0], children[1].getType (), castcreator, env);
+                (children[0], children[1].getType (),
+                 OpCast.CASTCREATOR, env);
 
         }
         // else: no coercion required

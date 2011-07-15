@@ -85,15 +85,10 @@ public class OpAssign extends Expression.Operator {
         int limit = (srcs.size () < dests.size ())
             ? srcs.size ()
             : dests.size ();
-        Type.CastCreator castcreator = new Type.CastCreator () {
-                public HasType cast (HasType value, Type type, Env env) {
-                    return new OpCast (value, type, env);
-                }
-            };
         for (int i = 0; i < limit; ++i) {
             srcs.set (i, (Expression) Type.coerce
-                      (srcs.get (i), dests.get (i).getType (), castcreator,
-                       env));
+                      (srcs.get (i), dests.get (i).getType (),
+                       OpCast.CASTCREATOR, env));
         }
 
         // Symmetry

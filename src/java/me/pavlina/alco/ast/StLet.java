@@ -102,12 +102,6 @@ public class StLet extends Statement
             i.checkTypes (env, resolver);
         }
 
-        Type.CastCreator castcreator = new Type.CastCreator () {
-                public HasType cast (HasType value, Type type,
-                                          Env env) {
-                    return new OpCast (value, type, env);
-                }
-            };
         for (int i = 0; i < names.size (); ++i) {
             if (types.get (i) == null) {
                 types.set (i, expressions.get (i).getType ());

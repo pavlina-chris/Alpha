@@ -51,13 +51,8 @@ public class StReturn extends Statement
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
         value.checkTypes (env, resolver);
-        Type.CastCreator castcreator = new Type.CastCreator () {
-                public HasType cast (HasType value, Type type, Env env) {
-                    return new OpCast (value, type, env);
-                }
-            };
         value = (Expression) Type.coerce (value, method.getType (),
-                                          castcreator, env);
+                                          OpCast.CASTCREATOR, env);
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {

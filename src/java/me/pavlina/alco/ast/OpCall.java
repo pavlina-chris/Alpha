@@ -68,15 +68,11 @@ public class OpCall extends Expression.Operator {
 
         // Coerce all arguments to the proper types
         List<Type> destTypes = function.getArgTypes ();
-        Type.CastCreator castcreator = new Type.CastCreator () {
-                public HasType cast (HasType value, Type type,
-                                          Env env) {
-                    return new OpCast (value, type, env);
-                }
-            };
         for (int i = 0; i < args.size (); ++i) {
-            args.set (i, (Expression) Type.coerce
-                      (args.get (i), destTypes.get (i), castcreator, env));
+            Expression coerced = (Expression)
+                Type.coerce (args.get (i), destTypes.get (i),
+                             OpCast.CASTCREATOR, env);
+            args.set (i, coerced);
         }
     }
 

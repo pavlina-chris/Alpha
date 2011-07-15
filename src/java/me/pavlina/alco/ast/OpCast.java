@@ -24,6 +24,7 @@ public class OpCast extends Expression.Operator {
     private String valueString;
 
     public static Expression.OperatorCreator CREATOR;
+    public static Type.CastCreator CASTCREATOR;
 
     /**
      * Generate a cast from an expression at typecheck time. This is used
@@ -384,6 +385,11 @@ public class OpCast extends Expression.Operator {
                 public Operator create (Env env, TokenStream stream)
                     throws CError {
                     return new OpCast (env, stream);
+                }
+            };
+        CASTCREATOR = new Type.CastCreator () {
+                public HasType cast (HasType value, Type type, Env env) {
+                    return new OpCast (value, type, env);
                 }
             };
     }
