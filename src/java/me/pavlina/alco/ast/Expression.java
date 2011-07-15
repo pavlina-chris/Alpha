@@ -201,6 +201,12 @@ public abstract class Expression extends AST implements HasType
                     throw Unexpected.at (message, token);
 
                 Operator oper = creator.create (env, stream);
+                // Because of the funny positioning of the 'as' operator, we
+                // need to set unary 'false' as if the operator is a value
+                // token.
+                if (OpCast.class.isInstance (oper))
+                    unaryPossible = false;
+
                 shuntOper (oper, stack, output);
             }
 
