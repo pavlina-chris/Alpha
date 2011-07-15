@@ -7,6 +7,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.language.Type;
+import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
 import java.util.List;
 import java.util.ArrayList;
@@ -59,6 +60,7 @@ public class OpAssign extends Expression.Operator {
         dests = new ArrayList<Expression> ();
         srcs = new ArrayList<Expression> ();
         
+        // Unpack tuples
         if (OpComma.class.isInstance (children[0])) {
             ((OpComma) children[0]).unpack (dests);
         } else {
@@ -71,6 +73,7 @@ public class OpAssign extends Expression.Operator {
             srcs.add (children[1]);
         }
 
+        // Check types
         for (Expression i: srcs)
             i.checkTypes (env, resolver);
         for (Expression i: dests) {
@@ -78,8 +81,24 @@ public class OpAssign extends Expression.Operator {
             i.checkPointer (true, token);
         }
 
+        // Implicit cast
+        int limit = (srcs.size () < dests.size ())
+            ? srcs.size ()
+            : dests.size ();
+        Type.CastCreator castcreator = new Type.CastCreator () {
+                public HasType cast (HasType value, Type type, Env env) {
+                    return new OpCast (value, type, env);
+                }
+            };
+        for (int i = 0; i < limit; ++i) {
+            srcs.set (i, (Expression) Type.coerce
+                      (srcs.get (i), dests.get (i).getType (), castcreator,
+                       env));
+        }
+
+        // Symmetry
         if (srcs.size () != dests.size ()) {
-            env.warning_at ("multiple assign is not symmetric; matching "
+            env.warning_at ("multiple assign is not symmetric; only matching "
                             + "pairs will be assigned", token);
         }
     }
