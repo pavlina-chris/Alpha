@@ -89,13 +89,14 @@ public class Compiler
             return this.dump_tokens ();
         }
         if ((rc = this.parse ()) != 0) return rc;
+
+        // Resolution/checking
+        if ((rc = this.checkTypes ()) != 0) return rc;
+
         if (args.ast) {
             // Debug option: dump AST and quit
             return this.dump_ast ();
         }
-
-        // Resolution/checking
-        if ((rc = this.checkTypes ()) != 0) return rc;
 
         // Generate LLVM
         if ((rc = this.genLLVM ()) != 0) return rc;

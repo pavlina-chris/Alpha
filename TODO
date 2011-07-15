@@ -1,4 +1,6 @@
 Subtraction
+NullPointerException: "putint (*(argv + 1) = *argv)"
+Binary ops: constness of result?
 Mul/div
 Assign arith operators (+=, etc)
 Proper method attributes

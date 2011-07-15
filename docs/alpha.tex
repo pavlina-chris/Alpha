@@ -630,7 +630,18 @@ The addition operator is ``\texttt{+}''. When both operands are numeric, it
 applies \textref{ssb:types:casting:coercion}{standard coercion rules}, then
 performs addition. When one operand is a pointer and the other is an integer,
 it multiplies the integer by the width of the type pointed to, then adds it to
-the integer value of the pointer.
+the integer value of the pointer. This means that if \texttt{p} points to some
+item, \texttt{p~+~1} points to the next.
+
+\subsection{Subtraction (\texttt{-})}
+\label{sub:operators:sub}
+The subtraction operator is ``\texttt{-}''. When both operands are numeric, it
+applies \textref{ssb:types:casting:coercion}{standard coercion rules}, then
+performs subtraction. When both operands are pointers of the same type, it
+subtracts the pointers and divides by the width of the subtype, yielding a
+value of type $\R{SI}_{\textrm{pointer width}}$ (\texttt{ssize}). This means
+that if \texttt{p} and \texttt{q} point to two elements in a sequence,
+\texttt{q~-~p} is the number of elements from \texttt{p} to \texttt{q}.
 
 %%%%%
 % NEW

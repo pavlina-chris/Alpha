@@ -13,21 +13,18 @@ import java.util.List;
 import java.util.Arrays;
 
 /**
- * Addition operator.
+ * Subtraction operator.
  */
-public class OpPlus extends Expression.Operator {
+public class OpMinus extends Expression.Operator {
     Token token;
     Expression[] children;
-    Expression pointer;
-    Expression integer;
-    boolean pointerAdd;
+    boolean pointerSub;
     Type type;
     String valueString;
 
     public static Expression.OperatorCreator CREATOR;
 
-
-    public OpPlus (Env env, TokenStream stream) throws CError {
+    public OpMinus (Env env, TokenStream stream) throws CError {
         token = stream.next ();
         children = new Expression[2];
     }
@@ -53,39 +50,18 @@ public class OpPlus extends Expression.Operator {
         children[0].checkTypes (env, resolver);
         children[1].checkTypes (env, resolver);
 
-        // Try checking for addition of (pointer + int) first
-        boolean foundPointer = false, foundInt = false;
-        for (int i = 0; i < 2; ++i) {
-            if (children[i].getType ().getEncoding () ==
-                Type.Encoding.POINTER) {
-                foundPointer = true;
-                pointer = children[i];
-
-            } else if (children[i].getType ().getEncoding () ==
-                     Type.Encoding.UINT) {
-                if (children[i].getType ().getSize () > (env.getBits () / 8))
-                    throw CError.at
-                        ("cannot add pointer to wider integer", token);
-                children[i] = (Expression) Type.coerce
-                    (children[i], new Type (env, "size", null),
-                     OpCast.CASTCREATOR, env);
-                integer = children[i];
-                foundInt = true;
-
-            } else if (children[i].getType ().getEncoding () ==
-                       Type.Encoding.SINT) {
-                if (children[i].getType ().getSize () > (env.getBits () / 8))
-                    throw CError.at
-                        ("cannot add pointer to wider integer", token);
-                children[i] = (Expression) Type.coerce
-                    (children[i], new Type (env, "ssize", null),
-                     OpCast.CASTCREATOR, env);
-                integer = children[i];
-                foundInt = true;
+        // Check for pointer subtraction
+        if (children[0].getType ().getEncoding () == Type.Encoding.POINTER
+            && children[1].getType ().getEncoding () == Type.Encoding.POINTER) {
+            if (!children[0].getType ().getSubtype ().equalsNoConst
+                (children[1].getType ().getSubtype ())) {
+                throw CError.at ("subtraction of pointers: must be same type",
+                                 token);
             }
+            type = new Type (env, "ssize", null);
+            pointerSub = true;
+            return;
         }
-        pointerAdd = (foundPointer && foundInt);
-        if (pointerAdd) return;
 
         // Coercion: rank types by this list (see
         // Standard:Types:Casting:Coercion):
@@ -131,6 +107,8 @@ public class OpPlus extends Expression.Operator {
 
         }
         // else: no coercion required
+
+        type = children[0].getType ();
     }
 
     public String getValueString () {
@@ -138,44 +116,50 @@ public class OpPlus extends Expression.Operator {
     }
 
     public Type getType () {
-        return children[0].getType ();
+        return type;
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        if (pointerAdd) genLLVM_pointerAdd (env, emitter, function);
+        if (pointerSub) genLLVM_pointerSub (env, emitter, function);
         else genLLVM_normal (env, emitter, function);
     }
 
-    private void genLLVM_pointerAdd (Env env, LLVMEmitter emitter,
+    private void genLLVM_pointerSub (Env env, LLVMEmitter emitter,
                                      Function function)
     {
-        // Multiply the integer by the pointer width, then add it
-        pointer.genLLVM (env, emitter, function);
-        integer.genLLVM (env, emitter, function);
-        String ptrV = pointer.getValueString ();
-        String intV = integer.getValueString ();
+        // Subtract the pointers, then divide by the pointer width
+        children[0].genLLVM (env, emitter, function);
+        children[1].genLLVM (env, emitter, function);
+        String lhsV = children[0].getValueString ();
+        String rhsV = children[1].getValueString ();
+        Type lhsT = children[0].getType ();
+        Type rhsT = children[1].getType ();
+        String intermedT = "i" + Integer.toString (env.getBits ());
 
-        String ptrAsInt = new Conversion (emitter, function)
+        String lhsAsInt = new Conversion (emitter, function)
             .operation (Conversion.ConvOp.PTRTOINT)
-            .source (LLVMType.getLLVMName (pointer.getType ()), ptrV)
-            .dest (LLVMType.getLLVMName (integer.getType ()))
+            .source (LLVMType.getLLVMName (lhsT), lhsV)
+            .dest (intermedT)
             .build ();
-        String intByWidth = new Binary (emitter, function)
-            .operation (Binary.BinOp.MUL)
-            .type (LLVMType.getLLVMName (integer.getType ()))
-            .operands (intV,
+
+        String rhsAsInt = new Conversion (emitter, function)
+            .operation (Conversion.ConvOp.PTRTOINT)
+            .source (LLVMType.getLLVMName (rhsT), rhsV)
+            .dest (intermedT)
+            .build ();
+
+        String difference = new Binary (emitter, function)
+            .operation (Binary.BinOp.SUB)
+            .type (intermedT)
+            .operands (lhsAsInt, rhsAsInt)
+            .build ();
+
+        valueString = new Binary (emitter, function)
+            .operation (Binary.BinOp.SDIV)
+            .type (intermedT)
+            .operands (difference,
                        Integer.toString
-                       (pointer.getType ().getSubtype ().getSize ()))
-            .build ();
-        String newPtrInt = new Binary (emitter, function)
-            .operation (Binary.BinOp.ADD)
-            .type (LLVMType.getLLVMName (integer.getType ()))
-            .operands (intByWidth, ptrAsInt)
-            .build ();
-        valueString = new Conversion (emitter, function)
-            .operation (Conversion.ConvOp.INTTOPTR)
-            .source (LLVMType.getLLVMName (integer.getType ()), newPtrInt)
-            .dest (LLVMType.getLLVMName (pointer.getType ()))
+                       (children[0].getType ().getSubtype ().getSize ()))
             .build ();
     }
 
@@ -185,11 +169,11 @@ public class OpPlus extends Expression.Operator {
         Binary.BinOp operation;
         Type.Encoding enc = children[0].getType ().getEncoding ();
         if (enc == Type.Encoding.FLOAT)
-            operation = Binary.BinOp.FADD;
+            operation = Binary.BinOp.FSUB;
         else if (enc == Type.Encoding.SINT || enc == Type.Encoding.UINT)
-            operation = Binary.BinOp.ADD;
+            operation = Binary.BinOp.SUB;
         else
-            throw new RuntimeException ("Adding unsupported items");
+            throw new RuntimeException ("Subtracting unsupported items");
 
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
@@ -216,13 +200,13 @@ public class OpPlus extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Add");
+        out.println ("Subtract");
         children[0].print (out, 2);
         children[1].print (out, 2);
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
-        throw CError.at ("cannot assign to addition", token);
+        throw CError.at ("cannot assign to subtraction", token);
     }
 
     public String getPointer (Env env, LLVMEmitter emitter, Function function) {
@@ -233,7 +217,7 @@ public class OpPlus extends Expression.Operator {
         CREATOR = new Expression.OperatorCreator () {
                 public Operator create (Env env, TokenStream stream)
                     throws CError {
-                    return new OpPlus (env, stream);
+                    return new OpMinus (env, stream);
                 }
             };
     }
