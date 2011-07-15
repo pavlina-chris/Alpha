@@ -821,6 +821,28 @@ is good precedent to follow.
 % IF
 \subsection{Conditional (\texttt{if}---\texttt{else})}
 \label{sub:statements:if}
+\begin{verbatim}
+ifTrueBlock  = "if", "(", Expression, ")", Scope ;
+ifFalseBlock = "else", Scope ;
+If           = ifTrueBlock, [ifFalseBlock] ;
+\end{verbatim}
+
+A conditional implicitly casts the expression in parentheses to $\R{B}$. If
+the expression evaluates \texttt{true}, the scope in the \texttt{ifTrueBlock}
+is run. Otherwise, the scope in the \texttt{ifFalseBlock} is run, if present.
+For example:
+
+\begin{verbatim}
+if (evaluatesTrue) {
+    thisWillRun ();
+} else {
+    thisWillNotRun ();
+}
+
+if (evaluatesFalse)
+    thisWillNotRun ();
+\end{verbatim}
+
 
 %%%%%
 % FOR
@@ -848,8 +870,8 @@ is good precedent to follow.
 \section{Scope}
 \label{sec:scope}
 \begin{verbatim}
-Scope = ("{", [{(Scope}], "}" |
-         ((Statement | Expression), ";") ) ;
+Scope = ("{", [{(Scope}], "}") |
+         ((Statement | Expression), ";") ;
 \end{verbatim}
 A scope is a block of code and all associated variables and constants. When a
 variable or constant is declared, it is valid in the scope in which it is declared,
