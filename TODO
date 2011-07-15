@@ -1,0 +1,9 @@
+OpAssign doesn't coerce
+OpCast has no central CastCreator
+Addition of pointers
+Subtraction
+Mul/div
+Proper method attributes
+Multiple returns
+Static and threadlocal variables
+%/%%

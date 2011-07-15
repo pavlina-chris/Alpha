@@ -359,6 +359,7 @@ permitted:
 Note that $\R{SI}_a \both \R{UI}_b$ is disallowed because sign casts and width
 casts are not commutative. You must perform one of
 $\R{SI}_a \to \R{UI}_a \to \R{UI}_b$ or $\R{SI}_a \to \R{SI}_b \to \R{UI}_b$.
+
 \subsubsection{Implicit casts}
 The following casts may be performed implicitly. That is, if the cast
 $A \to B$ appears below, it is possible to assign a value of type $A$ directly
@@ -378,6 +379,25 @@ $B$. The compiler should insert the cast implicitly.
 \item{$\emptyset \to T^{[]}$}
 \item{$\emptyset \to T^*$}
 \end{itemize}
+
+\subsubsection{Coercion}
+Coercion is an implicit cast performed on one operand of a binary operation.
+Whenever a binary operation, such as \texttt{+}, is performed on values of
+different types, the ``lesser'' type will be implicitly cast to the
+``greater'' (as long as it is allowed per ``Implicit casts'' above).
+Types higher in the following list are ``greater''. If two values are of the
+same type class but different width, the wider is ``greater''.
+
+\begin{itemize}
+\item{$\R{FP}$}
+\item{$\R{UI}$}
+\item{$\R{SI}$}
+\end{itemize}
+
+Note that a few operations define special semantics for certain combinations.
+For example, the addition operator gives a special meaning to the addition of
+(pointer + int). Normally, non-numeric types (including pointers)
+cannot be used in arithmetic.
 
 %%%%%%%%%%%%%%%%
 % CONSTANT TYPES

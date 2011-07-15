@@ -427,6 +427,7 @@ public abstract class Expression extends AST implements HasType
         // Yes, it's unary, but it is placed like a binary
         BINOPS.put ("as", OpCast.CREATOR);
         //BINOPS.put (".", OpMember.CREATOR);
+        BINOPS.put ("+", OpPlus.CREATOR);
         
         UNOPS.put ("*", OpDeref.CREATOR);
     }
