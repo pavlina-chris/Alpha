@@ -13,6 +13,8 @@ import java.io.PrintStream;
 import java.nio.channels.FileChannel;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Scanner;
 import me.pavlina.alco.ast.AST;
 import me.pavlina.alco.ast.Package;
@@ -70,6 +72,12 @@ public class Compiler
         if (args.sources.isEmpty ()) {
             System.err.println ("Error: no sources to compile");
             return 1;
+        }
+        for (String i: args.sources) {
+            if (!i.endsWith (".al") && !i.endsWith (".o")) {
+                System.err.println ("Unknown source type: " + i);
+                return 1;
+            }
         }
         if ((rc = this.check_paths ()) != 0) return rc;
 
@@ -295,6 +303,7 @@ public class Compiler
     {
         streams = new HashMap<File, TokenStream> ();
         for (String i: args.sources) {
+            if (!i.endsWith (".al")) continue;
             File file = new File (i);
             Lexer lexer;
             TokenStream stream;
@@ -492,38 +501,42 @@ public class Compiler
             throw new RuntimeException
                 ("Don't know linker emulation mode for architecture");
 
-        if (((Package) ast).isExecutable ()) {
-            try {
-                lastFile = xFile = File.createTempFile ("alco", null);
-                xFile.deleteOnExit ();
-                int rc = this.exec
-                    (paths.get ("ld"), "-m", emul,
-                     paths.get ("crt1"), paths.get ("crti"), oFile.getPath (),
-                     paths.get ("crtn"), "-lc", "-lm", "-lgc",
-                     "-dynamic-linker", paths.get ("ldso"),
-                     "-o", xFile.getPath ());
-                return rc;
-            } catch (IOException e) {
-                System.err.println (e);
-                return 1;
+        List<String> ldArgs = new ArrayList<String> ();
+
+        boolean isExecutable = ((Package) ast).isExecutable ();
+        try {
+            lastFile = xFile = File.createTempFile
+                ("alco", isExecutable ? null : ".so");
+            xFile.deleteOnExit ();
+            ldArgs.add (paths.get ("ld"));
+            ldArgs.add ("-m");
+            ldArgs.add (emul);
+            if (isExecutable)
+                ldArgs.add (paths.get ("crt1"));
+            ldArgs.add (paths.get ("crti"));
+            ldArgs.add (oFile.getPath ());
+            for (String i: args.sources) {
+                if (i.endsWith (".o"))
+                    ldArgs.add (i);
             }
-        } else {
-            try {
-                lastFile = xFile = File.createTempFile ("alco", ".so");
-                xFile.deleteOnExit ();
-                int rc = this.exec
-                    (paths.get ("ld"), "-m", emul,
-                     paths.get ("crti"), oFile.getPath (),
-                     paths.get ("crtn"), "-lc", "-lm", "-lgc",
-                     "-soname", ((Package) ast).getName () + ".alpha.so",
-                     "-shared",
-                     "-dynamic-linker", paths.get ("ldso"),
-                     "-o", xFile.getPath ());
-                return rc;
-            } catch (IOException e) {
-                System.err.println (e);
-                return 1;
+            ldArgs.add (paths.get ("crtn"));
+            ldArgs.add ("-lc");
+            ldArgs.add ("-lm");
+            ldArgs.add ("-lgc");
+            if (!isExecutable) {
+                ldArgs.add ("-soname");
+                ldArgs.add (((Package) ast).getName () + ".alpha.so");
+                ldArgs.add ("-shared");
             }
+            ldArgs.add ("-dynamic-linker");
+            ldArgs.add (paths.get ("ldso"));
+            ldArgs.add ("-o");
+            ldArgs.add (xFile.getPath ());
+            int rc = this.exec (ldArgs.toArray (new String[ldArgs.size ()]));
+            return rc;
+        } catch (IOException e) {
+            System.err.println (e);
+            return 1;
         }
     }
 
