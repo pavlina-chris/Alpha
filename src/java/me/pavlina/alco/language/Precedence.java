@@ -20,7 +20,7 @@ public class Precedence {
     public static final int INCR = 130;
     public static final int NEG = 130;
     public static final int DEREF = 130;
-    public static final int CAST = 130;
+    public static final int CAST = 135;
     public static final int MEMBER = 140;
     public static final int CALL = 140;
     public static final int INDEX = 140;
