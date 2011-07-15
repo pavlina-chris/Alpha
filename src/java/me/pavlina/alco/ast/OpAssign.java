@@ -53,7 +53,7 @@ public class OpAssign extends Expression.Operator {
     }
 
     public Type getType () {
-        return null;
+        return children[0].getType ();
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
