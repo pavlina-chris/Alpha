@@ -62,12 +62,8 @@ public class OpCall extends Expression.Operator {
         }
         for (Expression i: args)
             i.checkTypes (env, resolver);
-        List<Type> types = new ArrayList<Type> (args.size ());
-        for (Expression i: args) {
-            types.add (i.getType ());
-        }
         function = resolver.getFunction
-            (((NameValue) children[0]).getName (), types,
+            (((NameValue) children[0]).getName (), args,
              children[0].getToken ());
 
         // Coerce all arguments to the proper types

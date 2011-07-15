@@ -3,8 +3,9 @@
 // Resolver - variable and method name resolver
 package me.pavlina.alco.language;
 // I tried to keep the AST package out of the Language package, but it just made
-// more sense to allow Function in.
+// more sense to allow these in.
 import me.pavlina.alco.ast.FunctionLike;
+import me.pavlina.alco.ast.Expression;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.compiler.errors.*;
 import java.util.Map;
@@ -86,7 +87,7 @@ public class Resolver
 
     /**
      * Resolve the function call. */
-    public FunctionLike getFunction (String name, List<Type> args,
+    public FunctionLike getFunction (String name, List<Expression> args,
                                      Token token) throws CError
     {
         // Match levels:
@@ -99,11 +100,15 @@ public class Resolver
         List<FunctionLike> matches = new ArrayList<FunctionLike> ();
         int matchlvl = 7;
 
+        List<Type> argTypes = new ArrayList<Type> (args.size ());
+        for (Expression i: args)
+            argTypes.add (i.getType ());
+
         for (FunctionLike i: functions) {
             List<Type> iArgs = i.getArgTypes ();
             if (! i.getName ().equals (name)) continue;
             // Level 1: Perfect
-            if (iArgs.equals (args)) {
+            if (iArgs.equals (argTypes)) {
                 if (matchlvl > 1) {
                     matchlvl = 1;
                     matches.clear ();
@@ -116,8 +121,7 @@ public class Resolver
             if (matchlvl < 2) continue;
             boolean matchWithPromotion = args.size () == iArgs.size ();
             for (int arg = 0; arg < args.size () && matchWithPromotion; ++arg) {
-                Type coerced = Type.coerce (args.get (arg), iArgs.get (arg));
-                if (coerced == null)
+                if (!Type.canCoerce (args.get (arg), iArgs.get (arg)))
                     matchWithPromotion = false;
             }
             if (matchWithPromotion) {
