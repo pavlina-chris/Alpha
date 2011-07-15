@@ -198,7 +198,7 @@ public class OpCast extends Expression.Operator {
         Type.Encoding dstE = dstT.getEncoding ();
 
         // See Standard:Types:Casting:AllowedCasts
-        if (srcT.equals (dstT)) {
+        if (srcT.equalsNoConst (dstT)) {
             // T to T
             valueString = val;
    
@@ -340,9 +340,12 @@ public class OpCast extends Expression.Operator {
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
-        children[0].checkPointer (write, token);
-        if (type.getEncoding () != Type.Encoding.POINTER) {
-            throw CError.at ("cannot assign to non-pointer", this.token);
+        // If we are casting off const, lie to checkPointer about intent to
+        // read
+        if (!type.isConst () && children[0].getType ().isConst ()) {
+            children[0].checkPointer (false, token);
+        } else {
+            children[0].checkPointer (write, token);
         }
     }
 
