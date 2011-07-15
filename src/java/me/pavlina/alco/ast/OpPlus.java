@@ -54,7 +54,8 @@ public class OpPlus extends Expression.Operator {
         children[1].checkTypes (env, resolver);
 
         // Try checking for addition of (pointer + int) first
-        boolean foundPointer = false, foundInt = false;
+        boolean foundPointer = false;
+        int foundInt = -1; // Index at which int was found
         for (int i = 0; i < 2; ++i) {
             if (children[i].getType ().getEncoding () ==
                 Type.Encoding.POINTER) {
@@ -66,26 +67,31 @@ public class OpPlus extends Expression.Operator {
                 if (children[i].getType ().getSize () > (env.getBits () / 8))
                     throw CError.at
                         ("cannot add pointer to wider integer", token);
-                children[i] = (Expression) Type.coerce
-                    (children[i], new Type (env, "size", null),
-                     OpCast.CASTCREATOR, env);
                 integer = children[i];
-                foundInt = true;
+                foundInt = i;
 
             } else if (children[i].getType ().getEncoding () ==
                        Type.Encoding.SINT) {
                 if (children[i].getType ().getSize () > (env.getBits () / 8))
                     throw CError.at
                         ("cannot add pointer to wider integer", token);
-                children[i] = (Expression) Type.coerce
-                    (children[i], new Type (env, "ssize", null),
-                     OpCast.CASTCREATOR, env);
                 integer = children[i];
-                foundInt = true;
+                foundInt = i;
             }
         }
-        pointerAdd = (foundPointer && foundInt);
-        if (pointerAdd) return;
+        pointerAdd = (foundPointer && (foundInt != 0));
+        if (pointerAdd) {
+            String ty;
+            if (integer.getType ().getEncoding () == Type.Encoding.UINT)
+                ty = "size";
+            else
+                ty = "ssize";
+            children[foundInt] = (Expression) Type.coerce
+                (children[foundInt], new Type (env, ty, null),
+                 OpCast.CASTCREATOR, env);
+            type = pointer.getType ().getNotConst ();
+            return;
+        }
 
         // Coercion: rank types by this list (see
         // Standard:Types:Casting:Coercion):
