@@ -206,14 +206,14 @@ public abstract class Expression extends AST implements HasType
                     throw Unexpected.at (message, token);
 
                 Operator oper = creator.create (env, stream);
+                shuntOper (oper, stack, output);
+
                 // The 'as' operator expects a TypeValue.
                 if (OpCast.class.isInstance (oper)) {
                     output.push (new TypeValue (env, stream));
                     callPossible = true;
                     unaryPossible = false;
                 }
-
-                shuntOper (oper, stack, output);
             }
 
             // Anything else? It's invalid.

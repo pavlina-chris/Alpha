@@ -115,6 +115,10 @@ public class CmdlineArgs
     @Parameter(names = "-ast")
     public boolean      ast            = false;
 
+    /** Dump the AST before type checking, and quit */
+    @Parameter(names = "-pre-ast")
+    public boolean      pre_ast        = false;
+
     /** Force compiling on an unsupported platform */
     @Parameter(names = "-force-platform")
     public boolean      force_platform = false;

@@ -90,6 +90,11 @@ public class Compiler
         }
         if ((rc = this.parse ()) != 0) return rc;
 
+        if (args.pre_ast) {
+            // Debug option: dump AST and quit
+            return this.dump_ast ();
+        }
+
         // Resolution/checking
         if ((rc = this.checkTypes ()) != 0) return rc;
 

@@ -42,6 +42,7 @@ public class CmdlineHelpers {
       + "    -error-trace      print a stack trace for compiler errors\n"
       + "    -tokens           dump the token list after lexing, and quit\n"
       + "    -ast              dump the AST after parsing, and quit\n"
+      + "    -pre-ast          dump the AST before type checking, and quit\n"
       + "    -force-platform   force compiling on an unsupported platform\n";
 
     /**
