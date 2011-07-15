@@ -337,6 +337,37 @@ public class Type implements HasType {
                 iv.setType (dtype);
                 return value;
             }
+        } else if (IntValue.class.isInstance (value)
+                   && dtype.encoding == Encoding.SINT) {
+            // The standard mentions both:
+            //    IntValue within SIa to SIa
+            //    IntValue within UIa to UIa
+            // Because IntValues are implicitly i32/i64, the first one will
+            // be done by "SIa to SIb". However, "SIa to UIb" is normally
+            // illegal, so we have to specifically check for it.
+            
+            IntValue iv = (IntValue) value;
+            BigInteger val = iv.getValue (), min, max;
+
+            if (dtype.size == 1) {
+                min = I8_MIN;
+                max = I8_MAX;
+            } else if (dtype.size == 2) {
+                min = I16_MIN;
+                max = I16_MAX;
+            } else if (dtype.size == 4) {
+                min = I32_MIN;
+                max = I32_MAX;
+            } else if (dtype.size == 8) {
+                min = I64_MIN;
+                max = I64_MAX;
+            } else
+                throw new RuntimeException ("Bad type size");
+            if (min.compareTo (val) <= 0
+                && max.compareTo (val) >= 0) {
+                iv.setType (dtype);
+                return value;
+            }
         } else if (vtype.encoding == Encoding.ARRAY
                    && dtype.encoding == Encoding.POINTER
                    && vtype.getSubtype ().equals (dtype.getSubtype ())) {
