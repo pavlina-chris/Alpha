@@ -1,11 +1,12 @@
-Cannot implicitly cast integer literal to i8 (per standard)
 OpAssign doesn't coerce
+Cannot implicitly cast integer literal to i8 (per standard)
 Compiler does not accept .o files to link with
 Resolver has no "candidates" listing for "cannot resolve function name"
 OpCast has no central CastCreator
 Addition of pointers
 Subtraction
 Mul/div
+Assign arith operators (+=, etc)
 Proper method attributes
 Multiple returns
 Static and threadlocal variables
