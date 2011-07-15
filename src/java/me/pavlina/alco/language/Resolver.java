@@ -149,11 +149,19 @@ public class Resolver
                 else sb.append (", ");
                 sb.append (i.getType ());
             }
-            sb.append (")\nCandidates were:\n");
-            for (FunctionLike i: candidates) {
-                sb.append ("  ").append (i).append ("\n");
+            sb.append (")");
+            CError err = CError.at (sb.toString (), token);
+            
+            if (candidates.size () > 0) {
+                StringBuilder sbNote = new StringBuilder ("Candidates were:\n");
+                for (FunctionLike i: candidates) {
+                    sbNote.append ("  ").append (i).append ("\n");
+                }
+                err.setNote (sbNote.toString ());
             }
-            throw CError.at (sb.toString (), token);
+
+            throw err;
+
         } else if (matches.size () > 1) {
             StringBuilder sb = new StringBuilder ();
             sb.append ("ambiguous call: ");
@@ -164,11 +172,16 @@ public class Resolver
                 else sb.append (", ");
                 sb.append (i.getType ());
             }
-            sb.append (")\nMatches were:\n");
+            sb.append (")");
+
+            StringBuilder sbNote = new StringBuilder ("Matches were:\n");
             for (FunctionLike i: matches) {
-                sb.append ("  ").append (i.toString ()).append ("\n");
+                sbNote.append ("  ").append (i.toString ()).append ("\n");
             }
-            throw CError.at (sb.toString (), token);
+
+            CError err = CError.at (sb.toString (), token);
+            err.setNote (sbNote.toString ());
+            throw err;
         }
         return matches.get (0);
     }

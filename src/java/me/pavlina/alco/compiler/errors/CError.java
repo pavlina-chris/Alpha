@@ -46,11 +46,10 @@ public class CError extends Exception
         return new CError (message, line, col, start, stop, token.annotator);
     }
 
-    protected String         message;
-
+    protected String         message, note;
     protected int            line, col, start, stop;
-
     protected ErrorAnnotator annotator;
+
 
     /**
      * Do not initialise the CError. Some subclasses are limited by the fact
@@ -68,6 +67,7 @@ public class CError extends Exception
     {
         super ("uncaught compiler error");
         this.message = message;
+        this.note = "";
         line = col = start = stop = 0;
         annotator = null;
     }
@@ -86,6 +86,7 @@ public class CError extends Exception
     {
         super ("uncaught compiler error");
         this.message = message;
+        this.note = "";
         this.line = line;
         this.col = col;
         this.start = start;
@@ -94,12 +95,18 @@ public class CError extends Exception
     }
 
     /**
+     * Set a note to be displayed after the error message. */
+    public void setNote (String note) {
+        this.note = note;
+    }
+
+    /**
      * Print out the error message, fully annotated.
      * @param out PrintStream to which to output
      */
     public void print (PrintStream out)
     {
-        if (message == null) {
+        if (annotator == null) {
             out.print ("error: ");
             out.println (message);
         } else {
@@ -108,6 +115,7 @@ public class CError extends Exception
             out.println (message);
             annotator.annotate (line, col, start, stop, out);
         }
+        out.print (note);
     }
 
 }
