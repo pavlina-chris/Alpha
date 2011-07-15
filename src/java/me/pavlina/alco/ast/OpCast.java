@@ -154,6 +154,22 @@ public class OpCast extends Expression.Operator {
             // UI to T*
             // OK
 
+        } else if (srcE == Type.Encoding.UINT &&
+                   dstE == Type.Encoding.POINTER) {
+            throw CError.at ("invalid cast: narrow integer to pointer", token);
+
+        } else if (srcE == Type.Encoding.SINT &&
+                   dstE == Type.Encoding.POINTER) {
+            throw CError.at ("invalid cast: signed integer to pointer", token);
+
+        } else if (srcE == Type.Encoding.POINTER &&
+                   dstE == Type.Encoding.UINT) {
+            throw CError.at ("invalid cast: pointer to narrow integer", token);
+
+        } else if (srcE == Type.Encoding.POINTER &&
+                   dstE == Type.Encoding.SINT) {
+            throw CError.at ("invalid cast: pointer to signed integer", token);
+
         } else if (srcE == Type.Encoding.ARRAY &&
                    dstE == Type.Encoding.POINTER &&
                    srcT.getSubtype ().equals (dstT.getSubtype ())) {
