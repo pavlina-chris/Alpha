@@ -164,7 +164,8 @@ public class OpPlus extends Expression.Operator {
             .operation (Binary.BinOp.MUL)
             .type (LLVMType.getLLVMName (integer.getType ()))
             .operands (intV,
-                       Integer.toString (pointer.getType ().getSize ()))
+                       Integer.toString
+                       (pointer.getType ().getSubtype ().getSize ()))
             .build ();
         String newPtrInt = new Binary (emitter, function)
             .operation (Binary.BinOp.ADD)

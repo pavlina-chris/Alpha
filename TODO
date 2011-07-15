@@ -3,5 +3,7 @@ Mul/div
 Assign arith operators (+=, etc)
 Proper method attributes
 Multiple returns
+Constant arithmetic folding
 Static and threadlocal variables
 %/%%
+Volatile
