@@ -1,4 +1,3 @@
-Parser: "x as i8 + 1" gives AST: (cast i8 (add x 1))
 Cannot implicitly cast integer literal to i8 (per standard)
 Compiler does not accept .o files to link with
 Resolver has no "candidates" listing for "cannot resolve function name"

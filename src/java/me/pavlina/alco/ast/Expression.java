@@ -201,11 +201,12 @@ public abstract class Expression extends AST implements HasType
                     throw Unexpected.at (message, token);
 
                 Operator oper = creator.create (env, stream);
-                // Because of the funny positioning of the 'as' operator, we
-                // need to set unary 'false' as if the operator is a value
-                // token.
-                if (OpCast.class.isInstance (oper))
+                // The 'as' operator expects a TypeValue.
+                if (OpCast.class.isInstance (oper)) {
+                    output.push (new TypeValue (env, stream));
+                    callPossible = true;
                     unaryPossible = false;
+                }
 
                 shuntOper (oper, stack, output);
             }
@@ -424,7 +425,6 @@ public abstract class Expression extends AST implements HasType
 
         BINOPS.put ("=", OpAssign.CREATOR);
         BINOPS.put (",", OpComma.CREATOR);
-        // Yes, it's unary, but it is placed like a binary
         BINOPS.put ("as", OpCast.CREATOR);
         //BINOPS.put (".", OpMember.CREATOR);
         BINOPS.put ("+", OpPlus.CREATOR);

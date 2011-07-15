@@ -539,18 +539,18 @@ Type IDs are:
     \caption{Operator precedence, high to low}
     \begin{tabular}{|c|c|c|l|}
       \hline
-      \texttt{*} & Unary & R$\to$L & Dereference \\ \hline
-      \texttt{\&} & Unary & R$\to$L & Address of \\ \hline
-      \texttt{as} $type$ & Unary$^\dagger$ & L$\to$R & Cast to $type$ \\ \hline
+      \texttt{*} & Unary & R$\to$L & Dereference \\
+      \texttt{\&} & Unary & R$\to$L & Address of \\
+      \texttt{as} $type$ & Binary$^\dagger$ & L$\to$R & Cast to $type$ \\ \hline
       \texttt{=} & Binary & R$\to$L & Assignment \\ \hline
       \texttt{,} & Binary & L$\to$R & Comma (function arguments, assignment tuples) \\ \hline
     \end{tabular}
     \begin{tablenotes}
-      \item{$\dagger$ \small{The cast operator is technically unary, but comes
-          \emph{after}
-          the value in question, and functions as a binary operator. Because the current
-          compiler code treats arity and number of operands separately, it is implemented
-          as a binary operator which accepts one operand.}}
+      \item{$\dagger$ \small{The cast operator is binary, but requires special treatment.
+          Because it is impossible to know if a given word is a name or a type, the
+          cast operator requires a special ``dummy value'' to represent the type. The
+          expression parser will have to implicitly create this dummy value when it sees
+          a cast operator.}}
     \end{tablenotes}
   \end{threeparttable}
 \end{center}

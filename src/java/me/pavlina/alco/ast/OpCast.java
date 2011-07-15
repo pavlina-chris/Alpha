@@ -21,7 +21,6 @@ import java.math.BigInteger;
 public class OpCast extends Expression.Operator {
     private Token token;
     private Expression[] children;
-    private Type type;
     private String valueString;
 
     public static Expression.OperatorCreator CREATOR;
@@ -30,15 +29,14 @@ public class OpCast extends Expression.Operator {
      * Generate a cast from an expression at typecheck time. This is used
      * for coercion. */
     public OpCast (HasType value, Type type, Env env) {
-        children = new Expression[] { (Expression) value };
+        children = new Expression[]
+            { (Expression) value, new TypeValue (type) };
         token = ((Expression) value).getToken ();
-        this.type = type;
     }
 
     public OpCast (Env env, TokenStream stream) throws CError {
-        children = new Expression[1];
+        children = new Expression[2];
         token = stream.next ();
-        type = TypeParser.parse (stream, env);
     }
 
     public int getPrecedence () {
@@ -50,21 +48,25 @@ public class OpCast extends Expression.Operator {
     }
 
     public Expression.Arity getArity () {
-        return Expression.Arity.UNARY;
+        return Expression.Arity.BINARY;
     }
 
     public Type getType () {
-        return type;
+        return children[1].getType ();
     }
 
-    public void setOperands (Expression op, Expression ignore) {
-        children[0] = op;
+    public void setOperands (Expression value, Expression type) {
+        children[0] = value;
+        children[1] = type;
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
         children[0].checkTypes (env, resolver);
+        if (!TypeValue.class.isInstance (children[1])) {
+            throw Unexpected.at ("type", children[1].getToken ());
+        }
         Type srcT = children[0].getType ();
-        Type dstT = type;
+        Type dstT = children[1].getType ();
         Type.Encoding srcE = srcT.getEncoding ();
         Type.Encoding dstE = dstT.getEncoding ();
 
@@ -190,10 +192,10 @@ public class OpCast extends Expression.Operator {
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
         String val = children[0].getValueString ();
-        String sty = LLVMType.getLLVMName (children[0].getType ());
-        String dty = LLVMType.getLLVMName (type);
         Type srcT = children[0].getType ();
-        Type dstT = type;
+        Type dstT = children[1].getType ();
+        String sty = LLVMType.getLLVMName (srcT);
+        String dty = LLVMType.getLLVMName (dstT);
         Type.Encoding srcE = srcT.getEncoding ();
         Type.Encoding dstE = dstT.getEncoding ();
 
@@ -342,7 +344,8 @@ public class OpCast extends Expression.Operator {
     public void checkPointer (boolean write, Token token) throws CError {
         // If we are casting off const, lie to checkPointer about intent to
         // read
-        if (!type.isConst () && children[0].getType ().isConst ()) {
+        if (!children[1].getType ().isConst () &&
+            children[0].getType ().isConst ()) {
             children[0].checkPointer (false, token);
         } else {
             children[0].checkPointer (write, token);
@@ -356,14 +359,14 @@ public class OpCast extends Expression.Operator {
             .operation (Conversion.ConvOp.BITCAST)
             .source (LLVMType.getLLVMName (children[0].getType ()) + "*",
                      chPtr)
-            .dest (LLVMType.getLLVMName (type) + "*")
+            .dest (LLVMType.getLLVMName (children[1].getType ()) + "*")
             .build ();
         return ptr;
     }
 
     public void print (java.io.PrintStream out) {
         out.println ("Cast");
-        out.println ("  " + type.toString ());
+        out.println ("  " + children[1].getType ().toString ());
         children[0].print (out, 2);
     }
 
