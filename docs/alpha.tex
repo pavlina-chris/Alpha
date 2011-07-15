@@ -361,6 +361,7 @@ casts are not commutative. You must perform one of
 $\R{SI}_a \to \R{UI}_a \to \R{UI}_b$ or $\R{SI}_a \to \R{SI}_b \to \R{UI}_b$.
 
 \subsubsection{Implicit casts}
+\label{ssb:types:casting:implicit}
 The following casts may be performed implicitly. That is, if the cast
 $A \to B$ appears below, it is possible to assign a value of type $A$ directly
 to a variable of type $B$, or use it as an argument to a parameter of type
@@ -381,6 +382,7 @@ $B$. The compiler should insert the cast implicitly.
 \end{itemize}
 
 \subsubsection{Coercion}
+\label{ssb:types:casting:coercion}
 Coercion is an implicit cast performed on one operand of a binary operation.
 Whenever a binary operation, such as \texttt{+}, is performed on values of
 different types, the ``lesser'' type will be implicitly cast to the
@@ -621,6 +623,14 @@ let z: (x, y) = (5, 6);
 //   Assign x := y
 // In the end, x, y, and z all have the same value.
 \end{verbatim}
+
+\subsection{Addition (\texttt{+})}
+\label{sub:operators:add}
+The addition operator is ``\texttt{+}''. When both operands are numeric, it
+applies \textref{ssb:types:casting:coercion}{standard coercion rules}, then
+performs addition. When one operand is a pointer and the other is an integer,
+it multiplies the integer by the width of the type pointed to, then adds it to
+the integer value of the pointer.
 
 %%%%%
 % NEW
