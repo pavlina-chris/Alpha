@@ -217,6 +217,8 @@ public class Type implements HasType {
             case 4: return prefix + "I";
             case 8: return prefix + "J";
             }
+        } else if (encoding == Encoding.BOOL) {
+            return prefix + "T";
         } else if (encoding == Encoding.POINTER) {
             return prefix + "P" + subtypes.get (0).getEncodedName ();
         } else if (encoding == Encoding.ARRAY) {
@@ -245,6 +247,12 @@ public class Type implements HasType {
             case 'H': return new Type (env, "u64", null);
             case 'I': return new Type (env, "float", null);
             case 'J': return new Type (env, "double", null);
+            case 'T': return new Type (env, "bool", null);
+            case 'K':
+                {
+                    Type baseType = Type.fromEncodedName (env, reader);
+                    return baseType.getConst ();
+                }
             case 'P':
                 {
                     Type baseType = Type.fromEncodedName (env, reader);
@@ -320,6 +328,16 @@ public class Type implements HasType {
                    && vtype.size <= dtype.size) {
             // UIa to UIb where b >= a (unsigned upcast)
             return creator.cast (value, dtype, env);
+
+        } else if (vtype.encoding == Encoding.SINT
+                   && dtype.encoding == Encoding.BOOL) {
+            // SIa to B
+            return creator.cast (value, dtype, env);
+
+        } else if (vtype.encoding == Encoding.UINT
+                   && dtype.encoding == Encoding.BOOL) {
+            // UIa to B
+            return creator.cast (value, dtype, env);
         
         } else if (IntValue.class.isInstance (value)
                    && dtype.encoding == Encoding.UINT) {
@@ -380,19 +398,32 @@ public class Type implements HasType {
                 iv.setType (dtype);
                 return value;
             }
+
+        } else if (vtype.encoding == Encoding.POINTER
+                   && dtype.encoding == Encoding.BOOL) {
+            // T* to B
+            return creator.cast (value, dtype, env);
+
         } else if (vtype.encoding == Encoding.ARRAY
                    && dtype.encoding == Encoding.POINTER
                    && vtype.getSubtype ().equals (dtype.getSubtype ())) {
             // T[] to T*
             throw new RuntimeException ("T[] to T* cast not implemented yet");
 
+        } else if (vtype.encoding == Encoding.ARRAY
+                   && dtype.encoding == Encoding.POINTER
+                   && !vtype.getSubtype ().equals (dtype.getSubtype ())) {
+            throw CError.at ("cast array to pointer of different type",
+                             value.getToken ());
+
         } else if (vtype.encoding == Encoding.NULL
                    && (dtype.encoding == Encoding.SINT ||
                        dtype.encoding == Encoding.UINT ||
                        dtype.encoding == Encoding.OBJECT ||
                        dtype.encoding == Encoding.ARRAY ||
-                       dtype.encoding == Encoding.POINTER))
-            // Null to SI, UI, class, T[], T*
+                       dtype.encoding == Encoding.POINTER ||
+                       dtype.encoding == Encoding.BOOL))
+            // Null to SI, UI, class, T[], T*, B
             return creator.cast (value, dtype, env);
 
         throw CError.at ("invalid implicit cast: " + vtype.toString ()
@@ -430,6 +461,16 @@ public class Type implements HasType {
             // UIa to UIb where b >= a (unsigned upcast)
             return true;
         
+        } else if (vtype.encoding == Encoding.SINT
+                   && dtype.encoding == Encoding.BOOL) {
+            // SIa to B
+            return true;
+
+        } else if (vtype.encoding == Encoding.UINT
+                   && dtype.encoding == Encoding.BOOL) {
+            // UIa to B
+            return true;
+
         } else if (IntValue.class.isInstance (value)
                    && dtype.encoding == Encoding.UINT) {
             // The standard mentions both:
@@ -487,6 +528,12 @@ public class Type implements HasType {
                 && max.compareTo (val) >= 0) {
                 return true;
             }
+
+        } else if (vtype.encoding == Encoding.POINTER
+                   && dtype.encoding == Encoding.BOOL) {
+            // T* to B
+            return true;
+
         } else if (vtype.encoding == Encoding.ARRAY
                    && dtype.encoding == Encoding.POINTER
                    && vtype.getSubtype ().equals (dtype.getSubtype ())) {
@@ -498,8 +545,9 @@ public class Type implements HasType {
                        dtype.encoding == Encoding.UINT ||
                        dtype.encoding == Encoding.OBJECT ||
                        dtype.encoding == Encoding.ARRAY ||
-                       dtype.encoding == Encoding.POINTER))
-            // Null to SI, UI, class, T[], T*
+                       dtype.encoding == Encoding.POINTER ||
+                       dtype.encoding == Encoding.BOOL))
+            // Null to SI, UI, class, T[], T*, B
             return true;
 
         return false;
@@ -512,6 +560,7 @@ public class Type implements HasType {
      *  - Array: subtype and const are equal
      *  - Pointer: subtype and const are equal
      *  - Object: name, arguments and const are equal
+     *  - Boolean: const is equal
      *
      * Therefore: i32 == int, i32* == int*, list&lt;i32&gt; == list&lt;int&gt;
      *  i32 const != i32
@@ -538,6 +587,9 @@ public class Type implements HasType {
             }
             return true;
         }
+        else if (encoding == Encoding.BOOL) {
+            return isConst == type.isConst;
+        }
         return false;
     }
 
@@ -563,6 +615,8 @@ public class Type implements HasType {
             }
             return true;
         }
+        else if (encoding == Encoding.BOOL)
+            return true;
         return false;
     }
 
@@ -587,7 +641,9 @@ public class Type implements HasType {
             return subtypes.get (0).toString () + "*"
                 + (isConst ? " const" : "");
         else if (encoding == Encoding.NULL)
-            return "null" + (isConst ? " const" : "");
+            return "(null)" + (isConst ? " const" : "");
+        else if (encoding == Encoding.BOOL)
+            return "bool" + (isConst ? " const" : "");
         else if (encoding == Encoding.OBJECT) {
             if (subtypes == null) return name;
             StringBuilder sb = new StringBuilder (name);
@@ -613,7 +669,8 @@ public class Type implements HasType {
 
     /**
      * All possible type encodings. */
-    public enum Encoding { UINT, SINT, FLOAT, ARRAY, POINTER, OBJECT, NULL }
+    public enum Encoding { UINT, SINT, FLOAT, ARRAY, POINTER, OBJECT, NULL,
+            BOOL }
 
     /**
      * Type modifiers */
@@ -621,12 +678,10 @@ public class Type implements HasType {
 
     private static Map<String, Encoding> PRIMITIVE_ENCODINGS;
     private static Map<String, Integer> PRIMITIVE_SIZES;
-    private static Map<Encoding, String[]> ENCODED_NAMES;
     public static final int OBJECT_SIZE = 16;
     static {
         PRIMITIVE_ENCODINGS = new HashMap<String, Encoding> ();
         PRIMITIVE_SIZES = new HashMap<String, Integer> ();
-        ENCODED_NAMES = new HashMap<Encoding, String[]> ();
 
         PRIMITIVE_ENCODINGS.put ("i8",       Encoding.SINT);
         PRIMITIVE_ENCODINGS.put ("i16",      Encoding.SINT);
@@ -640,6 +695,7 @@ public class Type implements HasType {
         PRIMITIVE_ENCODINGS.put ("unsigned", Encoding.UINT);
         PRIMITIVE_ENCODINGS.put ("size",     Encoding.UINT);
         PRIMITIVE_ENCODINGS.put ("ssize",    Encoding.SINT);
+        PRIMITIVE_ENCODINGS.put ("bool",     Encoding.BOOL);
         PRIMITIVE_ENCODINGS.put ("float",    Encoding.FLOAT);
         PRIMITIVE_ENCODINGS.put ("double",   Encoding.FLOAT);
 
@@ -655,14 +711,9 @@ public class Type implements HasType {
         PRIMITIVE_SIZES.put ("unsigned", 4);
         PRIMITIVE_SIZES.put ("size",    -1);
         PRIMITIVE_SIZES.put ("ssize",   -1);
+        PRIMITIVE_SIZES.put ("bool",     1);
         PRIMITIVE_SIZES.put ("float",    4);
         PRIMITIVE_SIZES.put ("double",   8);
-
-        ENCODED_NAMES.put (Encoding.POINTER, new String[] {"",  "",  "p", "p"});
-        ENCODED_NAMES.put (Encoding.ARRAY,   new String[] {"",  "",  "q", "q"});
-        ENCODED_NAMES.put (Encoding.FLOAT,   new String[] {"",  "",  "F", "f"});
-        ENCODED_NAMES.put (Encoding.SINT,    new String[] {"A", "B", "C", "D"});
-        ENCODED_NAMES.put (Encoding.UINT,    new String[] {"a", "b", "c", "d"});
     }
 }
 

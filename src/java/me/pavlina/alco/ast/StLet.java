@@ -130,7 +130,8 @@ public class StLet extends Statement
             if (enc == Type.Encoding.UINT ||
                 enc == Type.Encoding.SINT ||
                 enc == Type.Encoding.FLOAT ||
-                enc == Type.Encoding.POINTER) {
+                enc == Type.Encoding.POINTER ||
+                enc == Type.Encoding.BOOL) {
                 
                 String val = expressions.get (i).getValueString ();
                 new store (emitter, function)

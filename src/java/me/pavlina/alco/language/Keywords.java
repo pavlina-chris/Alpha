@@ -17,7 +17,7 @@ public class Keywords
         "class", "method", "extern",
         "let", "const", "static", "threadlocal", "nomangle", "null",
         "record", "switch", "case", "default", "if", "else", "for",
-        "foreach", "do", "while", "return", "as"};
+        "foreach", "do", "while", "return", "as", "true", "false"};
 
     /**
      * List of all Alpha special type names
@@ -25,7 +25,7 @@ public class Keywords
     public static final String[] TYPES = {
         "i8", "i16", "i32", "i64", "ssize", "int",
         "u8", "u16", "u32", "u64", "size", "unsigned",
-        "float", "double", "var", "void" };
+        "float", "double", "var", "void", "bool"};
 
     /**
      * Check if a word is a keyword (excluding type names)

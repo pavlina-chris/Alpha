@@ -176,6 +176,8 @@ names.
 \texttt{threadlocal} (\ref{sub:globals:threadlocal},
                       \ref{sub:classes:threadlocal}),
 \texttt{null} (\ref{sub:types:null}),
+\texttt{true} (\ref{sub:types:bool}),
+\texttt{false} (\ref{sub:types:bool}),
 \texttt{record} (\ref{sub:types:record}),
 \texttt{switch} (\ref{sub:statements:switch}),
 \texttt{case} (\ref{sub:statements:switch}),
@@ -206,6 +208,7 @@ the language design does not allow ambiguities.
 \texttt{int},
 \texttt{size},
 \texttt{unsigned},
+\texttt{bool},
 \texttt{float},
 \texttt{double},
 \texttt{var},
@@ -227,6 +230,7 @@ The following notation will be used in this document for types:
 \hline
 Signed int, $n$ bits & $\R{SI}_n$ \\
 Unsigned int, $n$ bits & $\R{UI}_n$ \\
+Boolean & $\R{B}$ \\
 Floating point, $n$ bits & $\R{FP}_n$ \\
 Pointer to $T$ & $T^*$ \\
 Array of $T$ & $T^{[]}$ \\
@@ -256,6 +260,7 @@ $\R{UI}_8$ & \texttt{u8} \\
 $\R{UI}_{16}$ & \texttt{u16} \\
 $\R{UI}_{32}$ & \texttt{u32} or \texttt{unsigned} \\
 $\R{UI}_{64}$ & \texttt{u64} \\
+$\R{B}$ & \texttt{bool} \\
 $\R{FP}_{32}$ & \texttt{float} \\
 $\R{FP}_{64}$ & \texttt{double} \\
 $T^{[]}$ & $T$\texttt{[]} \\
@@ -274,6 +279,7 @@ $\mathrm{c}(k,\ldots,k)$ & \texttt{c$<$k,~...,~k$>$} \\
 nullLit   = "null" ;
 charLit   = Character ;
 intLit    = Integer ;
+boolLit   = "true" | "false" ;
 floatLit  = Real ;
 arrayLit  = "c{", [Literal, [{",", Literal}]], "}" ;
 stringLit = String ;
@@ -293,6 +299,8 @@ Literal   = nullLit | intLit | floatLit | arrayLit | stringLit ;
     after the arithmetic folding (\ref{sub:passes:arithfold}). The type of an
     integer literal is the first of $\R{SI}_{32}$, $\R{SI}_{64}$, $\R{UI}_{64}$
     which can contain the value.}
+  \item{The Boolean literals \texttt{true} and \texttt{false} are the only
+    values of type $\R{B}$.}
   \item{Float literals are always of type $\R{FP}_{64}$, never $\R{FP}_{32}$.}
 \end{itemize}
 
@@ -323,6 +331,12 @@ permitted:
     to $\R{UI}_b\,N$. \\
     If casting from wide to narrow, truncate the integer from the most
     significant end to fit.}
+  \item{$\R{UI}_\mathrm{any} \textrm{ or } \R{SI}_\mathrm{any} \to \R{B}$ \\
+    Zero becomes \texttt{false}; anything else becomes \texttt{true}.}
+  \item{$\R{B} \to \R{SI}_\mathrm{any}$ \\
+    \texttt{false} becomes zero; \texttt{true} becomes $-1$.}
+  \item{$\R{B} \to \R{UI}_\mathrm{any}$ \\
+    \texttt{false} becomes zero; \texttt{true} becomes the result of $0 - 1$.}
   \item{$\R{SI}_\mathrm{any} \both \R{FP}_\mathrm{any}$ \\
     Perform the architecture's usual conversion between signed integer and
     floating point. For example, the compiler as of this writing uses the
@@ -337,17 +351,28 @@ permitted:
     of values outside the range of the wider number).}
   \item{$T^* \both U^*$ \\
     Return a pointer to the same memory address, of the new type.}
+  \item{$T^* \to \R{B}$ \\
+    \texttt{null} becomes \texttt{false}; anything else becomes
+    \texttt{true}.}
   \item{$T^* \both \R{UI}_a$, where $a > \textrm{width of pointer}$ \\
     Ensure: $[T^*\;x \to \R{UI}_a\;y \to T^*\;z] \Rightarrow [x = z]$}
   \item{$T^{[]} \to T^*$ \\
     If the $T^{[]}$ is null, the $T^*$ should be the null pointer, otherwise,
     the $T^*$ should point to the first element of the $T^{[]}$.}
+  \item{$T^{[]} \to \R{B}$ \\
+    \texttt{null} becomes \texttt{false}; anything else becomes
+    \texttt{true}.}
   \item{$\overline{T} \both T$ \\
     Add or remove the \texttt{const} specifier.}
+  \item{$T \to \R{B}$ where $T$ is a class \\
+    \texttt{null} becomes \texttt{false}; anything else becomes
+    \texttt{true}.}
   \item{$\emptyset \to \R{SI}_a$ \\
     Return $0$.}
   \item{$\emptyset \to \R{UI}_a$ \\
     Return $0$.}
+  \item{$\emptyset \to \R{B}_a$ \\
+    Return \texttt{false}}
   \item{$\emptyset \to T$ where $T$ is a class \\
     Return the null reference of type $T$.}
   \item{$\emptyset \to T^{[]}$ \\
@@ -370,12 +395,18 @@ $B$. The compiler should insert the cast implicitly.
 \begin{itemize}
 \item{$\R{SI}_a \to \R{SI}_b$, where $b \geq a$}
 \item{$\R{UI}_a \to \R{UI}_b$, where $b \geq a$}
+\item{$\R{SI}_a \to \R{B}$}
+\item{$\R{UI}_a \to \R{B}$}
 \item{Integer literal $\in \R{SI}_a \to \R{SI}_a$}
 \item{Integer literal $\in \R{UI}_a \to \R{UI}_a$}
+\item{$T^* \to \R{B}$}
 \item{$T^{[]} \to T^*$}
+\item{$T^{[]} \to \R{B}$}
 \item{$T \to \overline{T}$}
+\item{$T \to \R{B}$ where $T$ is a class}
 \item{$\emptyset \to \R{SI}_a$}
 \item{$\emptyset \to \R{UI}_a$}
+\item{$\emptyset \to \R{B}$}
 \item{$\emptyset \to T$ where $T$ is a class}
 \item{$\emptyset \to T^{[]}$}
 \item{$\emptyset \to T^*$}
@@ -404,6 +435,9 @@ cannot be used in arithmetic.
 Additionally, any operation which performs coercion should convert its
 result type to non-\texttt{const}. Therefore, the type of \texttt{z} below
 is \texttt{int}, not \texttt{int~const}:
+
+As a separate coercion rule, the binary logical operators should coerce both
+operands to $\R{B}$.
 
 \begin{verbatim}
 const x: 1;
@@ -448,6 +482,19 @@ in conditionals.
 The \texttt{null} value is used to denote the absence of a value. For example,
 when the compiler is in manual memory mode, the \texttt{new} operator returns
 \texttt{null} if no memory is available when requested.
+
+%%%%%%%%%
+% BOOLEAN
+\subsection{The Boolean type}
+\label{sub:types:bool}
+The type denoted in this document as $\R{B}$ is the Boolean type. It has only
+two values: \texttt{true} and \texttt{false}. The decision to create a Boolean
+type, rather than use integers, was made because some things (references, for
+example) make sense casted to Boolean, but not to integer.
+
+A suggested implementation of a Boolean type is an integer of shortest width.
+Note that it is not possible to special-case $\R{B}^{[]}$ as a bitfield, because
+the cast $T^{[]} \to T^*$ must be both reversible and useful.
 
 %%%%%%%%%
 % RECORDS
@@ -996,9 +1043,10 @@ $\R{UI}_{32}$ & G &
 $\R{UI}_{64}$ & H & \\
 $\R{FP}_{32}$ & I &
 $\R{FP}_{64}$ & J &
+$\R{B}$ & T &
 $T^*$ & P $t$ &
 $T^{[]}$ & Q $t$ &
-$\overline{T}$ & K $t$ &&&&&& \\
+$\overline{T}$ & K $t$ &&&& \\
 \cline{1-16}
 \multicolumn{8}{|c|}{Global class} &
 \multicolumn{8}{c|}{\texttt{"M", classPair}} \\

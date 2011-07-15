@@ -6,10 +6,7 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.compiler.errors.*;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.LLVMType;
-import me.pavlina.alco.llvm.Function;
-import me.pavlina.alco.llvm.Conversion;
+import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.lex.TokenStream;
 import java.util.List;
@@ -111,6 +108,16 @@ public class OpCast extends Expression.Operator {
             // UI to UI
             // OK
 
+        } else if ((srcE == Type.Encoding.UINT || srcE == Type.Encoding.SINT) &&
+                   dstE == Type.Encoding.BOOL) {
+            // SI/UI to B
+            // OK
+
+        } else if ((dstE == Type.Encoding.UINT || dstE == Type.Encoding.SINT) &&
+                   srcE == Type.Encoding.BOOL) {
+            // B to SI/UI
+            // OK
+
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.FLOAT) {
             // SI to FP
             // OK
@@ -140,6 +147,10 @@ public class OpCast extends Expression.Operator {
         } else if (srcE == Type.Encoding.POINTER &&
                    dstE == Type.Encoding.POINTER) {
             // T* to U*
+            // OK
+
+        } else if (srcE == Type.Encoding.POINTER && dstE == Type.Encoding.BOOL){
+            // T* to B
             // OK
 
         } else if (srcE == Type.Encoding.POINTER &&
@@ -176,6 +187,11 @@ public class OpCast extends Expression.Operator {
             // T[] to T*
             throw new RuntimeException ("NOT IMPLEMENTED YET");
 
+        } else if (srcE == Type.Encoding.ARRAY &&
+                   dstE == Type.Encoding.BOOL) {
+            // T[] to B
+            throw new RuntimeException ("NOT IMPLEMENTED YET");
+
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.SINT) {
             // null to SI
@@ -199,6 +215,11 @@ public class OpCast extends Expression.Operator {
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.POINTER) {
             // null to T*
+            // OK
+
+        } else if (srcE == Type.Encoding.NULL &&
+                   dstE == Type.Encoding.BOOL) {
+            // null to B
             // OK
 
         } else {
@@ -257,6 +278,29 @@ public class OpCast extends Expression.Operator {
                 .operation (Conversion.ConvOp.TRUNC)
                 .source (sty, val).dest (dty).build ();
 
+        } else if ((srcE == Type.Encoding.UINT || srcE == Type.Encoding.SINT) &&
+                   dstE == Type.Encoding.BOOL) {
+            // SI/UI to B
+            String isZero = new icmp (emitter, function)
+                .comparison (icmp.Icmp.EQ)
+                .type (sty).operands (val, "0").build ();
+            valueString = new select (emitter, function)
+                .cond (isZero)
+                .type (dty)
+                .values ("0", "-1")
+                .build ();
+
+        } else if ((dstE == Type.Encoding.UINT || dstE == Type.Encoding.SINT) &&
+                   srcE == Type.Encoding.BOOL) {
+            // B to SI/UI
+            if (srcT.getSize () < dstT.getSize ()) {
+                valueString = new Conversion (emitter, function)
+                    .operation (Conversion.ConvOp.SEXT)
+                    .source (sty, val).dest (dty).build ();
+            } else {
+                valueString = val;
+            }
+
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.FLOAT) {
             // SI to FP
             valueString = new Conversion (emitter, function)
@@ -301,6 +345,20 @@ public class OpCast extends Expression.Operator {
             valueString = new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.BITCAST)
                 .source (sty, val).dest (dty).build ();
+
+        } else if (srcE == Type.Encoding.POINTER &&
+                   dstE == Type.Encoding.BOOL) {
+            // T* to B
+            String intermedT = "i" + Integer.toString (env.getBits ());
+            String ptrAsInt = new Conversion (emitter, function)
+                .operation (Conversion.ConvOp.PTRTOINT)
+                .source (sty, val).dest (intermedT).build ();
+            String isZero = new icmp (emitter, function)
+                .comparison (icmp.Icmp.EQ)
+                .type (intermedT).operands (ptrAsInt, "0").build ();
+            valueString = new select (emitter, function)
+                .cond (isZero)
+                .type (dty).values ("0", "-1").build ();
 
         } else if (srcE == Type.Encoding.POINTER &&
                    dstE == Type.Encoding.UINT &&
@@ -348,6 +406,10 @@ public class OpCast extends Expression.Operator {
                    dstE == Type.Encoding.POINTER) {
             // null to T*
             valueString = "null";
+
+        } else if (srcE == Type.Encoding.NULL &&
+                   dstE == Type.Encoding.BOOL) {
+            valueString = "0";
 
         } else {
             throw new RuntimeException ("Invalid cast in genLLVM");

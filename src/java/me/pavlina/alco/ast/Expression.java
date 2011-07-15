@@ -68,6 +68,11 @@ public abstract class Expression extends AST implements HasType
                 output.push (new RealValue (env, stream));
                 callPossible = unaryPossible = false;
 
+            } else if (token.is (Token.WORD, "true") ||
+                       token.is (Token.WORD, "false")) {
+                output.push (new BoolValue (env, stream));
+                callPossible = unaryPossible = false;
+
             } else if (token.is (Token.WORD, "null")) {
                 output.push (new NullValue (env, stream));
                 callPossible = unaryPossible = false;

@@ -28,6 +28,8 @@ public class LLVMType {
                 return "double";
         } else if (enc == Type.Encoding.POINTER) {
             return getLLVMName (type.getSubtype ()) + "*";
+        } else if (enc == Type.Encoding.BOOL) {
+            return "i8";
         } else
             throw new RuntimeException ("Missed an encoding!");
 

@@ -27,7 +27,7 @@ public class icmp
     }
 
     /**
-     * Required: Set result and operand type */
+     * Required: Set operand type */
     public icmp type (String type) {
         this.type = type;
         return this;
@@ -54,7 +54,7 @@ public class icmp
         }
 
         function.add (String.format ("%s = icmp %s %s %s, %s\n",
-                                     result, comparison, type, op1, op1));
+                                     result, comparison, type, op1, op2));
 
         return result;
     }
