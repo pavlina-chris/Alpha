@@ -388,32 +388,95 @@ public class Type implements HasType {
     }
 
     /**
-     * Coerce pure type (no value) for assignment. See
-     * Standard:Types:Casting:ImplicitCasts
-     * @returns Type, or null on error */
-    public static Type coerce (Type vtype, Type dtype)
+     * Check whether a value can be coerced to a type.
+     * @returns Whether the coercion is possible
+     */
+    public static boolean canCoerce (HasType value, HasType destination)
+        throws CError
     {
+        Type vtype = value.getType ();
+        Type dtype = destination.getType ();
+
         if (vtype.equals (dtype)) {
             // Same type - no cast
-            return dtype;
+            return true;
 
-        } else if (vtype.equalsNoConst (dtype) && !vtype.isConst ()
-                   && dtype.isConst ()) {
+        } else if (vtype.equalsNoConst (dtype) && !vtype.isConst () &&
+                   dtype.isConst ()) {
             // T to T const
-            return dtype;
+            return true;
 
         } else if (vtype.encoding == Encoding.SINT
             && dtype.encoding == vtype.encoding
             && vtype.size <= dtype.size) {
             // SIa to SIb where b >= a (signed upcast)
-            return dtype;
+            return true;
 
         } else if (vtype.encoding == Encoding.UINT
                    && dtype.encoding == vtype.encoding
                    && vtype.size <= dtype.size) {
             // UIa to UIb where b >= a (unsigned upcast)
-            return dtype;
+            return true;
         
+        } else if (IntValue.class.isInstance (value)
+                   && dtype.encoding == Encoding.UINT) {
+            // The standard mentions both:
+            //    IntValue within SIa to SIa
+            //    IntValue within UIa to UIa
+            // Because IntValues are implicitly i32/i64, the first one will
+            // be done by "SIa to SIb". However, "SIa to UIb" is normally
+            // illegal, so we have to specifically check for it.
+            
+            IntValue iv = (IntValue) value;
+            BigInteger val = iv.getValue (), min, max;
+
+            min = BigInteger.ZERO;
+            if (dtype.size == 1)
+                max = U8_MAX;
+            else if (dtype.size == 2)
+                max = U16_MAX;
+            else if (dtype.size == 4)
+                max = U32_MAX;
+            else if (dtype.size == 8)
+                max = U64_MAX;
+            else
+                throw new RuntimeException ("Bad type size");
+            if (min.compareTo (val) <= 0
+                && max.compareTo (val) >= 0) {
+                iv.setType (dtype);
+                return true;
+            }
+        } else if (IntValue.class.isInstance (value)
+                   && dtype.encoding == Encoding.SINT) {
+            // The standard mentions both:
+            //    IntValue within SIa to SIa
+            //    IntValue within UIa to UIa
+            // Because IntValues are implicitly i32/i64, the first one will
+            // be done by "SIa to SIb". However, "SIa to UIb" is normally
+            // illegal, so we have to specifically check for it.
+            
+            IntValue iv = (IntValue) value;
+            BigInteger val = iv.getValue (), min, max;
+
+            if (dtype.size == 1) {
+                min = I8_MIN;
+                max = I8_MAX;
+            } else if (dtype.size == 2) {
+                min = I16_MIN;
+                max = I16_MAX;
+            } else if (dtype.size == 4) {
+                min = I32_MIN;
+                max = I32_MAX;
+            } else if (dtype.size == 8) {
+                min = I64_MIN;
+                max = I64_MAX;
+            } else
+                throw new RuntimeException ("Bad type size");
+            if (min.compareTo (val) <= 0
+                && max.compareTo (val) >= 0) {
+                iv.setType (dtype);
+                return true;
+            }
         } else if (vtype.encoding == Encoding.ARRAY
                    && dtype.encoding == Encoding.POINTER
                    && vtype.getSubtype ().equals (dtype.getSubtype ())) {
@@ -427,9 +490,9 @@ public class Type implements HasType {
                        dtype.encoding == Encoding.ARRAY ||
                        dtype.encoding == Encoding.POINTER))
             // Null to SI, UI, class, T[], T*
-            return dtype;
+            return true;
 
-        return null;
+        return false;
     }
 
     /**
