@@ -131,6 +131,8 @@ public class OpPlus extends Expression.Operator {
 
         }
         // else: no coercion required
+
+        type = children[0].getType ().getNotConst ();
     }
 
     public String getValueString () {
@@ -138,7 +140,7 @@ public class OpPlus extends Expression.Operator {
     }
 
     public Type getType () {
-        return children[0].getType ();
+        return type;
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {

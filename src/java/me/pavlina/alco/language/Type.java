@@ -180,6 +180,18 @@ public class Type implements HasType {
     }
 
     /**
+     * Return a copy of this which is not constant. */
+    public Type getNotConst () {
+        Type t = new Type ();
+        t.name = name;
+        t.subtypes = subtypes;
+        t.size = size;
+        t.encoding = encoding;
+        t.isConst = false;
+        return t;
+    }
+
+    /**
      * Get the encoded type name. This is used in code, both in the dynamic
      * type system and in method name mangling. It is fully reversible
      * (see fromEncodedName()). See Standard:CallingConvention:NameMangling */
@@ -569,13 +581,15 @@ public class Type implements HasType {
         if (encoding == Encoding.UINT ||
             encoding == Encoding.SINT ||
             encoding == Encoding.FLOAT)
-            return name;
+            return name + (isConst ? " const" : "");
         else if (encoding == Encoding.ARRAY)
-            return subtypes.get (0).toString () + "[]";
+            return subtypes.get (0).toString () + "[]"
+                + (isConst ? " const" : "");
         else if (encoding == Encoding.POINTER)
-            return subtypes.get (0).toString () + "*";
+            return subtypes.get (0).toString () + "*"
+                + (isConst ? " const" : "");
         else if (encoding == Encoding.NULL)
-            return "null";
+            return "null" + (isConst ? " const" : "");
         else if (encoding == Encoding.OBJECT) {
             if (subtypes == null) return name;
             StringBuilder sb = new StringBuilder (name);
@@ -587,7 +601,7 @@ public class Type implements HasType {
                 sb.append (i.toString ());
             }
             sb.append ('>');
-            return sb.toString ();
+            return sb.toString () + (isConst ? " const" : "");
         }
         return super.toString ();
     }

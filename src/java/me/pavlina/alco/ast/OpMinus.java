@@ -108,7 +108,7 @@ public class OpMinus extends Expression.Operator {
         }
         // else: no coercion required
 
-        type = children[0].getType ();
+        type = children[0].getType ().getNotConst ();
     }
 
     public String getValueString () {
