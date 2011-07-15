@@ -678,7 +678,7 @@ public class Lexer implements ErrorAnnotator
             switch (ch2) {
             case '-': oper = "--"; break;
             case '=': oper = "-="; break;
-            default:  oper = "=";
+            default:  oper = "-";
             } break;
         case '~':
             oper = "~"; break;
