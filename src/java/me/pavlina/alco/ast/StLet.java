@@ -198,11 +198,15 @@ public class StLet extends Statement
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Let");
+        out.println ("(let");
         for (int i = 0; i < names.size (); ++i) {
-            out.println ("  " + names.get (i));
-            expressions.get (i).print (out, 4);
+            out.print ("  (");
+            out.print (names.get (i));
+            out.print (" ");
+            expressions.get (i).print (out);
+            out.println (")");
         }
+        out.print (" )");
     }
 
     public static Statement.StatementCreator CREATOR;

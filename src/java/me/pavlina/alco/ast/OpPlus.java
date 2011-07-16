@@ -224,9 +224,12 @@ public class OpPlus extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Add");
-        children[0].print (out, 2);
-        children[1].print (out, 2);
+        out.print ("(add");
+        for (Expression i: children) {
+            out.print (" ");
+            i.print (out);
+        }
+        out.print (")");
     }
 
     public void checkPointer (boolean write, Token token) throws CError {

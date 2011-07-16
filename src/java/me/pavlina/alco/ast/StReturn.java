@@ -70,11 +70,11 @@ public class StReturn extends Statement
 
     public void print (java.io.PrintStream out) {
         if (value[0] == null)
-            out.println ("Return void");
+            out.print ("(return)");
         else {
-            out.println ("Return");
-            value[0].print (out, 2);
-
+            out.print ("(return ");
+            value[0].print (out);
+            out.print (")");
         }
     }
 

@@ -101,10 +101,12 @@ public class OpCall extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Call");
+        out.print ("(call");
         for (AST i: children) {
-            i.print (out, 2);
+            out.print (" ");
+            i.print (out);
         }
+        out.print (")");
     }
 
     public List<AST> getChildren () {

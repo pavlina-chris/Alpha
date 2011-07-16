@@ -200,9 +200,12 @@ public class OpMinus extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Subtract");
-        children[0].print (out, 2);
-        children[1].print (out, 2);
+        out.print ("(subt");
+        for (Expression i: children) {
+            out.print (" ");
+            i.print (out);
+        }
+        out.print (")");
     }
 
     public void checkPointer (boolean write, Token token) throws CError {

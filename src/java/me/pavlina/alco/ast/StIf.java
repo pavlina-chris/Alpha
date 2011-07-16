@@ -169,10 +169,16 @@ public class StIf extends Statement
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Conditional");
-        for (AST i: values)
-            if (i != null)
-                i.print (out, 2);
+        out.print ("(if ");
+        values[0].print (out);
+        out.println ();
+        values[1].print (out, 2);
+        out.println ();
+        if (values[2] != null) {
+            values[2].print (out, 2);
+            out.println ();
+        }
+        out.println (")");
     }
 
     public static Statement.StatementCreator CREATOR;

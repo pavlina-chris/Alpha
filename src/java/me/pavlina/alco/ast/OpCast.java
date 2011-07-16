@@ -444,9 +444,11 @@ public class OpCast extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Cast");
-        out.println ("  " + children[1].getType ().toString ());
-        children[0].print (out, 2);
+        out.print ("(cast ");
+        out.print (children[1].getType ().toString ());
+        out.print (" ");
+        children[0].print (out);
+        out.print (")");
     }
 
     @SuppressWarnings("unchecked")

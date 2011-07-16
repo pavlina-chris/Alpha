@@ -65,8 +65,9 @@ public class OpDeref extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Dereference");
-        children[0].print (out, 2);
+        out.print ("(deref ");
+        children[0].print (out);
+        out.print (")");
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {

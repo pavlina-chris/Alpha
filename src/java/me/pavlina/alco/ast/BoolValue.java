@@ -66,6 +66,6 @@ public class BoolValue extends Expression
     }
 
     public void print (PrintStream out) {
-        out.println (value ? "true" : "false");
+        out.print (value ? "true" : "false");
     }
 }

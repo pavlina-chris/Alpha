@@ -82,7 +82,7 @@ public class RealValue extends Expression
     }
     
     public void print (PrintStream out) {
-        out.println (value);
+        out.print (value);
     }
 
 }

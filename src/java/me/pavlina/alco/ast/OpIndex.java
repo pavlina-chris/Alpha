@@ -73,8 +73,11 @@ public class OpIndex extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Index");
-        children[0].print (out, 2);
-        children[1].print (out, 2);
+        out.print ("(index");
+        for (Expression i: children) {
+            out.print (" ");
+            i.print (out);
+        }
+        out.print (")");
     }
 }

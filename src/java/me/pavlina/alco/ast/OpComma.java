@@ -82,12 +82,22 @@ public class OpComma extends Expression.Operator {
 
     public void print (java.io.PrintStream out) {
         if (children == null) {
-            out.println ("Empty tuple");
+            out.print ("'()");
         } else {
-            out.println ("Tuple");
-            children[0].print (out, 2);
-            children[1].print (out, 2);
+            out.print ("'(");
+            this.printNoParens (out);
+            out.print (")");
         }
+    }
+    
+    private void printNoParens (java.io.PrintStream out) {
+        if (OpComma.class.isInstance (children[0])) {
+            ((OpComma) children[0]).printNoParens (out);
+        } else {
+            children[0].print (out);
+        }
+        out.print (" ");
+        children[1].print (out);
     }
 
     public void unpack (List<Expression> into) {

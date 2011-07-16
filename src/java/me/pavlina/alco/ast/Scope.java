@@ -88,9 +88,14 @@ public class Scope extends AST
 
     public void print (PrintStream out)
     {
-        out.print ("{\n");
-        for (AST i: children)
+        out.print ("(");
+        boolean first = true;
+        for (AST i: children) {
+            if (first) first = false;
+            else out.print (" ");
             i.print (out, 2);
-        out.print ("}\n");
+            out.println ();
+        }
+        out.print ("   )");
     }
 }

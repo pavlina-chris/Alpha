@@ -71,7 +71,7 @@ public class NullValue extends Expression
     }
     
     public void print (PrintStream out) {
-        out.println ("null");
+        out.print ("null");
     }
 
 }

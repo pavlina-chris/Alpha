@@ -140,9 +140,11 @@ public class OpDiv extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Divide");
-        children[0].print (out, 2);
-        children[1].print (out, 2);
+        out.print ("(div ");
+        children[0].print (out);
+        out.print (" ");
+        children[1].print (out);
+        out.print (")");
     }
 
     public void checkPointer (boolean write, Token token) throws CError {

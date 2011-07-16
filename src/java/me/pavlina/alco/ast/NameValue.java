@@ -82,7 +82,7 @@ public class NameValue extends Expression
     }
     
     public void print (PrintStream out) {
-        out.println (name);
+        out.print (name);
     }
 
     public String getName () {

@@ -107,9 +107,11 @@ public class OpAssign extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.println ("Assign");
-        children[0].print (out, 2);
-        children[1].print (out, 2);
+        out.print ("(assign ");
+        children[0].print (out);
+        out.print (" ");
+        children[1].print (out);
+        out.print (")");
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {

@@ -138,9 +138,10 @@ public class Method extends FunctionLike
 
     public void print (PrintStream out) {
         out.print (this.toString ());
-        out.print ("\n");
         for (AST i: children) {
+            out.print ("\n");
             i.print (out, 2);
         }
+        out.println ();
     }
 }
