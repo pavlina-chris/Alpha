@@ -29,6 +29,11 @@ public class OpMul extends Expression.Operator {
         children = new Expression[2];
     }
 
+    public OpMul (Token token) {
+        this.token = token;
+        children = new Expression[2];
+    }
+
     public int getPrecedence () {
         return me.pavlina.alco.language.Precedence.MUL;
     }

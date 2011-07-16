@@ -605,7 +605,11 @@ Type IDs are:
       \texttt{/} & Binary & L$\to$R & Division \\ \hline
       \texttt{+} & Binary & L$\to$R & Addition \\
       \texttt{-} & Binary & L$\to$R & Subtraction \\ \hline
-      \texttt{=} & Binary & R$\to$L & Assignment \\ \hline
+      \texttt{=} & Binary & R$\to$L & Assignment \\
+      \texttt{*=} & Binary & R$\to$L & Arithmetic assignment \\
+      \texttt{/=} & Binary & R$\to$L & Arithmetic assignment \\
+      \texttt{+=} & Binary & R$\to$L & Arithmetic assignment \\
+      \texttt{-=} & Binary & R$\to$L & Arithmetic assignment \\ \hline
       \texttt{,} & Binary & L$\to$R & Comma (function arguments, assignment tuples) \\ \hline
     \end{tabular}
     \begin{tablenotes}
@@ -714,6 +718,15 @@ numeric operands, and simply performs multiplication.
 The division operator is ``\texttt{/}''. This operator is only defined for
 numeric operands, and simply performs division.
 
+\subsection{Arithmetic assign (\texttt{*=}, \texttt{/=}, \texttt{+=},
+  \texttt{-=})}
+\label{sub:operators:arithas}
+Arithmetic assignment operators perform arithmetic and assignment at the same
+time. For primitive values, \texttt{x~op=~y} should behave identically to
+\texttt{x~=~x~op~y}. For non-primitives, the operation is allowed to actually
+modify the object. For example, when performing array concatenation, the
+intermediate value may be optimised away, and the right-hand values added
+directly to a resized left-hand array.
 
 %%%%%
 % NEW

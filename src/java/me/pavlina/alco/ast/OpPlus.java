@@ -32,6 +32,11 @@ public class OpPlus extends Expression.Operator {
         children = new Expression[2];
     }
 
+    public OpPlus (Token token) {
+        this.token = token;
+        children = new Expression[2];
+    }
+
     public int getPrecedence () {
         return me.pavlina.alco.language.Precedence.ADD;
     }

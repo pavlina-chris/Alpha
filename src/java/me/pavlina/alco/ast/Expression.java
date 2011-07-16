@@ -436,6 +436,10 @@ public abstract class Expression extends AST implements HasType
         BINOPS.put ("-", OpMinus.CREATOR);
         BINOPS.put ("*", OpMul.CREATOR);
         BINOPS.put ("/", OpDiv.CREATOR);
+        BINOPS.put ("+=", OpAssignArith.CREATOR);
+        BINOPS.put ("-=", OpAssignArith.CREATOR);
+        BINOPS.put ("*=", OpAssignArith.CREATOR);
+        BINOPS.put ("/=", OpAssignArith.CREATOR);
         
         UNOPS.put ("*", OpDeref.CREATOR);
     }

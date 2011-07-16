@@ -31,6 +31,11 @@ public class OpAssign extends Expression.Operator {
         children = new Expression[2];
     }
 
+    public OpAssign (Token token) {
+        this.token = token;
+        children = new Expression[2];
+    }
+
     public int getPrecedence () {
         return me.pavlina.alco.language.Precedence.ASSIGNMENT;
     }
