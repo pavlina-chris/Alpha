@@ -1,4 +1,4 @@
-Mul/div
+Better AST representation (sexprs?)
 Assign arith operators (+=, etc)
 Proper method attributes
 Multiple returns

@@ -601,6 +601,8 @@ Type IDs are:
       \texttt{as} $type$ & Binary$^\dagger$ & L$\to$R & Cast to $type$ \\ \hline
       \texttt{*} & Unary & R$\to$L & Dereference \\
       \texttt{\&} & Unary & R$\to$L & Address of \\ \hline
+      \texttt{*} & Binary & L$\to$R & Multiplication \\
+      \texttt{/} & Binary & L$\to$R & Division \\ \hline
       \texttt{+} & Binary & L$\to$R & Addition \\
       \texttt{-} & Binary & L$\to$R & Subtraction \\ \hline
       \texttt{=} & Binary & R$\to$L & Assignment \\ \hline
@@ -701,6 +703,17 @@ subtracts the pointers and divides by the width of the subtype, yielding a
 value of type $\R{SI}_{\textrm{pointer width}}$ (\texttt{ssize}). This means
 that if \texttt{p} and \texttt{q} point to two elements in a sequence,
 \texttt{q~-~p} is the number of elements from \texttt{p} to \texttt{q}.
+
+\subsection{Multiplication (\texttt{*})}
+\label{sub:operators:mul}
+The multiplication operator is ``\texttt{*}''. This operator is only defined for
+numeric operands, and simply performs multiplication.
+
+\subsection{Division (\texttt{/})}
+\label{sub:operators:mul}
+The division operator is ``\texttt{/}''. This operator is only defined for
+numeric operands, and simply performs division.
+
 
 %%%%%
 % NEW
