@@ -78,10 +78,40 @@ public class Resolver
     /**
      * Add the function/method to the resolver. */
     public void addFunction (FunctionLike function, Token token) throws CError {
-        for (FunctionLike i: functions) {
-            if (i.equals (function))
-                throw CError.at ("duplicate function declaration", token);
-        }
+        if (function.isMangled ())
+            for (FunctionLike i: functions) {
+                if (i.equals (function)) {
+                    CError err = CError.at
+                        ("duplicate function declaration", token);
+                    err.setNote ("Conflict:\n" + i.toString () + "\n");
+                    throw err;
+                }
+                if (!i.isMangled () &&
+                    i.getName ().equals (function.getName ())) {
+                    if (!i.isAllowConflict ()) {
+                        CError err = CError.at
+                            ("duplicate function name", token);
+                        err.setNote ("Conflict:\n" + i.toString () + "\n");
+                        throw err;
+                    }
+                }
+            }
+        else
+            for (FunctionLike i: functions) {
+                if (i.equals (function)) {
+                    CError err = CError.at
+                        ("duplicate function declaration", token);
+                    err.setNote ("Conflict:\n" + i.toString () + "\n");
+                    throw err;
+                }
+                if (i.getName ().equals (function.getName ()) &&
+                    !function.isAllowConflict ()) {
+                    CError err = CError.at
+                        ("duplicate function name", token);
+                    err.setNote ("Conflict:\n" + i.toString () + "\n");
+                    throw err;
+                }
+            }
         functions.add (function);
     }
 
@@ -91,6 +121,7 @@ public class Resolver
                                      Token token) throws CError
     {
         // Match levels:
+        // 0: Nomangle: Function always matches 'nomangle'
         // 1: Perfect match. All types match exactly
         // 2: Types may require promotion
         // 3: Variadic with exact type match
@@ -110,7 +141,30 @@ public class Resolver
             if (! i.getName ().equals (name)) continue;
             candidates.add (i);
 
+            // Level 0: Nomangle
+            if (i.getName ().equals (name) && !i.isMangled ()) {
+                candidates.clear ();
+                candidates.add (i);
+                if (args.size () != iArgs.size ()) {
+                    matches.clear ();
+                    break;
+                }
+                for (int arg = 0; arg < args.size (); ++arg) {
+                    if (!Type.canCoerce (args.get (arg), iArgs.get (arg))) {
+                        matches.clear ();
+                        break;
+                    }
+                }
+                if (matchlvl > 0) {
+                    matchlvl = 0;
+                    matches.clear ();
+                }
+                matches.add (i);
+                continue;
+            }
+
             // Level 1: Perfect
+            if (matchlvl < 1) continue;
             if (iArgs.equals (argTypes)) {
                 if (matchlvl > 1) {
                     matchlvl = 1;

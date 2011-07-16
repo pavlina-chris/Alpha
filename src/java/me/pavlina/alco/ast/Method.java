@@ -22,13 +22,16 @@ public class Method extends FunctionLike
 
     /**
      * Parse and initialise the method. */
-    public Method (TokenStream stream, Env env, boolean allowStatic)
+    public Method (TokenStream stream, Env env, boolean allowStatic,
+                   Package pkg)
         throws CError
     {
         super ();
         token = stream.peek ();
         this.parse (stream, env, allowStatic, /* allowNomangle */ true,
+                    /* alloowAllowconflict */ true, /* allowGlobal */ true,
                     /* nomangleRedundant */ false, /* allowUnnamed */ false);
+        this.pkg = pkg;
 
         children = new ArrayList<AST> ();
 

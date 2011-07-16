@@ -33,6 +33,14 @@ public abstract class FunctionLike extends AST
     protected boolean nomangle;
 
     /**
+     * Whether the function was declared allowconflict */
+    protected boolean allowconflict;
+
+    /**
+     * Whether the function was declared global */
+    protected boolean global;
+
+    /**
      * Types of the function's arguments */
     protected List<Type> argtypes;
 
@@ -42,15 +50,22 @@ public abstract class FunctionLike extends AST
     protected List<String> argnames;
 
     /**
+     * Function's package. A function must set this unless it is 'nomangle' */
+    protected Package pkg;
+
+    /**
      * Parse a function declaration.
      * @param allowStatic Whether to allow the "static" modifier
      * @param allowNomangle Whether to allow the "nomangle" modifier
+     * @param allowAllowconflict Whether to allow the "allowconflict" modifier
+     * @param allowGlobal Whether to allow the "global" modifier
      * @param nomangleRedundant Whether "nomangle" should trigger a
      *  "nomangle is redundant here" warning
      * @param allowUnnamed Whether to allow unnamed args
      */
     protected void parse (TokenStream stream, Env env, boolean allowStatic,
-                          boolean allowNomangle, boolean nomangleRedundant,
+                          boolean allowNomangle, boolean allowAllowconflict,
+                          boolean allowGlobal, boolean nomangleRedundant,
                           boolean allowUnnamed) throws CError {
 
         _static = nomangle = false;
@@ -147,16 +162,44 @@ public abstract class FunctionLike extends AST
                 throw Unexpected.at (", or )", token);
         }
 
-        // Nomangle?
-        token = stream.peek ();
-        if (token.is (Token.WORD, "nomangle")) {
-            if (! allowNomangle)
-                throw CError.at ("unexpected: nomangle", token);
-            if (nomangleRedundant)
-                env.warning_at ("nomangle is redundant here", token);
-            stream.next ();
-            nomangle = true;
+        // Attributes
+        while (true) {
+            token = stream.peek ();
+            if (token.is (Token.WORD, "nomangle")) {
+                if (! allowNomangle)
+                    throw CError.at ("unexpected: nomangle", token);
+                if (nomangleRedundant)
+                    env.warning_at ("nomangle is redundant here", token);
+                stream.next ();
+                nomangle = true;
+
+            } else if (token.is (Token.WORD, "allowconflict")) {
+                if (! allowAllowconflict)
+                    throw CError.at ("unexpected: allowconflict", token);
+                stream.next ();
+                allowconflict = true;
+
+            } else if (token.is (Token.WORD, "global")) {
+                if (! allowGlobal)
+                    throw CError.at ("unexpected: global", token);
+                stream.next ();
+                global = true;
+
+            }
+            else break;
         }
+    }
+
+    /**
+     * Get whether the function is mangled */
+    public boolean isMangled () {
+        return !nomangle;
+    }
+
+    /**
+     * Get whether the function is conflict-allowed */
+    public boolean isAllowConflict () {
+        return allowconflict;
     }
 
     /**
@@ -171,9 +214,17 @@ public abstract class FunctionLike extends AST
         if (nomangle)
             return name;
         StringBuilder sb = new StringBuilder ();
-        sb.append ("$G");
-        sb.append (name.length ());
-        sb.append (name);
+        if (global) {
+            sb.append ("$G");
+            sb.append (name.length ());
+            sb.append (name);
+        } else {
+            sb.append ("$F");
+            sb.append (pkg.getName ().length ());
+            sb.append (pkg.getName ());
+            sb.append (name.length ());
+            sb.append (name);
+        }
         if (type != null)
             sb.append (type.getEncodedName ());
         sb.append ('$');

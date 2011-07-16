@@ -173,6 +173,8 @@ names.
 \texttt{const} (\ref{sub:statements:vardecl}, \ref{sub:types:const}),
 \texttt{static} (\ref{sub:methods:static}, \ref{sub:classes:static}),
 \texttt{nomangle} (\ref{sub:cconv:nomangle}),
+\texttt{allowconflict} (\ref{sub:methods:attributes}),
+\texttt{global} (\ref{sub:methods:attributes}),
 \texttt{threadlocal} (\ref{sub:globals:threadlocal},
                       \ref{sub:classes:threadlocal}),
 \texttt{null} (\ref{sub:types:null}),
@@ -982,7 +984,8 @@ Standard-defined attributes are:
 \texttt{nomangle} & Do not mangle function name. See
   \textref{sub:cconv:nomangle}{Non-mangled functions and \texttt{nomangle}}. \\
 \texttt{allowconflict} & Allow defining a \texttt{nomangle} function with the
-  same name as a mangled function, or {\it vice versa}. Functions declared
+  same name as a mangled function.
+  Functions declared
   \texttt{nomangle} always take resolver precedence (see
   \textref{sub:scope:resolution}{Name resolution}), so if you use this,
   functions with mangled names will not be callable within the translation

@@ -30,7 +30,8 @@ public class Extern extends FunctionLike
             throw new RuntimeException ("Extern instantiated with no kwd");
 
         this.parse (stream, env, /* allowStatic*/ false,
-                    /* allowNomangle */ true,
+                    /* allowNomangle */ true, /* allowAllowconflict */ false,
+                    /* allowGlobal */ false,
                     /* nomangleRedundant */ true, /* allowUnnamed */ true);
 
         nomangle = true;

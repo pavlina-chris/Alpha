@@ -35,7 +35,7 @@ public class Package extends AST
 
         // After this come the children
         while (true) {
-            AST child = Package.readChild (stream, env);
+            AST child = readChild (stream, env);
             if (child == null) break;
             children.add (child);
         }
@@ -85,7 +85,7 @@ public class Package extends AST
     /**
      * Read one of the items in the file.
      * @return Item, or null on EOF. */
-    private static AST readChild (TokenStream stream, Env env) throws CError {
+    private AST readChild (TokenStream stream, Env env) throws CError {
 
         Token token = stream.peek ();
         if (token.is (Token.NO_MORE)) return null;
@@ -95,7 +95,7 @@ public class Package extends AST
 
         // No keyword: must be a method
         else
-            return new Method (stream, env, /* allowStatic */ false);
+            return new Method (stream, env, /* allowStatic */ false, this);
     }
 
     public Token getToken () {
