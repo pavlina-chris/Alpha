@@ -126,6 +126,8 @@ public class call
             String type = argTypes.get (i);
             String value = argValues.get (i);
 
+            if (i != 0) sb.append (", ");
+
             for (ParamAttribute j: attrs) {
                 sb.append (j).append (' ');
             }
