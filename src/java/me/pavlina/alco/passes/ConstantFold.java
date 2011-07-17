@@ -42,6 +42,9 @@ public class ConstantFold {
         else if (OpPlus.class.isInstance (item))
             return run ((OpPlus) item);
 
+        else if (OpNeg.class.isInstance (item))
+            return run ((OpNeg) item);
+
         else {
             List<AST> children = item.getChildren ();
             if (children == null) return item;
@@ -169,5 +172,27 @@ public class ConstantFold {
         } else {
             return item;
         }
+    }
+
+    /**
+     * Negation */
+    private static Expression run (OpNeg item) throws CError {
+        List<AST> children = item.getChildren ();
+        children.set (0, run (children.get (0)));
+        Expression op = (Expression) children.get (0);
+
+        if (IntValue.class.isInstance (op)) {
+            IntValue opI = (IntValue) op;
+            opI.setValue (opI.getValue ().negate ());
+            return opI;
+
+        } else if (RealValue.class.isInstance (op)) {
+            RealValue opR = (RealValue) op;
+            opR.setValue (-opR.getValue ());
+            return opR;
+
+        } else {
+            return item;
+        } 
     }
 }

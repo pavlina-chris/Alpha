@@ -602,7 +602,8 @@ Type IDs are:
       \hline
       \texttt{as} $type$ & Binary$^\dagger$ & L$\to$R & Cast to $type$ \\ \hline
       \texttt{*} & Unary & R$\to$L & Dereference \\
-      \texttt{\&} & Unary & R$\to$L & Address of \\ \hline
+      \texttt{\&} & Unary & R$\to$L & Address of \\
+      \texttt{-} & Unary & R$\to$L & Negation \\ \hline
       \texttt{*} & Binary & L$\to$R & Multiplication \\
       \texttt{/} & Binary & L$\to$R & Division \\ \hline
       \texttt{+} & Binary & L$\to$R & Addition \\
@@ -729,6 +730,12 @@ time. For primitive values, \texttt{x~op=~y} should behave identically to
 modify the object. For example, when performing array concatenation, the
 intermediate value may be optimised away, and the right-hand values added
 directly to a resized left-hand array.
+
+\subsection{Negation (\texttt{-})}
+\label{sub:operators:neg}
+The negation operator is ``\texttt{-}''. This operator is only defined for
+$\R{SI}$ and $\R{FP}$ --- note that it is undefined for $\R{UI}$. It simply
+negates the operand.
 
 %%%%%
 % NEW
