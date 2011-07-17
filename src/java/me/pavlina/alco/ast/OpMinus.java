@@ -80,7 +80,7 @@ public class OpMinus extends Expression.Operator {
             Type.Encoding enc = t.getEncoding ();
             int size = t.getSize ();
             if (enc == Type.Encoding.FLOAT) {
-                if (size == 4)      ranks[i] = 1;
+                if (size == 8)      ranks[i] = 1;
                 else                ranks[i] = 2;
             } else if (enc == Type.Encoding.UINT) {
                 if (size == 8)      ranks[i] = 3;

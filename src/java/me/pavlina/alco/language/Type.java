@@ -399,6 +399,12 @@ public class Type implements HasType {
                 return value;
             }
 
+        } else if (vtype.encoding == Encoding.FLOAT
+                   && dtype.encoding == Encoding.FLOAT
+                   && vtype.size <= dtype.size) {
+            // FPa to FPb where b >= a (floating point upcast)
+            return creator.cast (value, dtype, env);
+
         } else if (vtype.encoding == Encoding.POINTER
                    && dtype.encoding == Encoding.BOOL) {
             // T* to B
@@ -528,6 +534,12 @@ public class Type implements HasType {
                 && max.compareTo (val) >= 0) {
                 return true;
             }
+
+        } else if (vtype.encoding == Encoding.FLOAT
+                   && dtype.encoding == Encoding.FLOAT
+                   && vtype.size <= dtype.size) {
+            // FPa to FPb where b >= a (floating point upcast)
+            return true;
 
         } else if (vtype.encoding == Encoding.POINTER
                    && dtype.encoding == Encoding.BOOL) {
