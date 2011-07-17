@@ -88,7 +88,7 @@ public class Resolver
                 }
                 if (!i.isMangled () &&
                     i.getName ().equals (function.getName ())) {
-                    if (!i.isAllowConflict ()) {
+                    if (!i.isAllowConflict () && !function.isAllowConflict ()) {
                         CError err = CError.at
                             ("duplicate function name", token);
                         err.setNote ("Conflict:\n" + i.toString () + "\n");
