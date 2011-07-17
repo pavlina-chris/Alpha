@@ -1182,6 +1182,34 @@ another function attribute (see
 
 \subsection{Arithmetic folding}
 \label{sub:passes:arithfold}
+Prior to type checking, the compiler must run a literal arithmetic folding pass
+on the code. This must find literal expressions such as \texttt{2~*~3} and
+replace them by their results. Because it is done before type checking, it
+can result in a different type than expected. For example, normally
+\texttt{0x7fffffff} is just at the top of the range for $\R{SI}_{32}$, so that
+will be its type, and multiplying it by 2 will overflow. However, literal
+arithmetic folding would properly raise it to \texttt{0xfffffffe}, which will
+have the type $\R{SI}_{64}$.
+
+The following expressions must be replaced:
+
+\begin{itemize}
+\item{\texttt{Integer / Integer}}
+\item{\texttt{Integer * Integer}}
+\item{\texttt{Integer + Integer}}
+\item{\texttt{Integer - Integer}}
+\item{\texttt{-Integer}}
+\item{\texttt{FP / FP}}
+\item{\texttt{FP * FP}}
+\item{\texttt{FP + FP}}
+\item{\texttt{FP - FP}}
+\item{\texttt{-FP}}
+\end{itemize}
+
+Note the special case of divide-by-zero. For \texttt{n / 0}, a compiler error
+shall be emitted. For \texttt{n / 0.0}, the division shall be performed
+anyway. IEEE-754 states that $0 / 0$ should yield NaN, $(n > 0) / 0$ should
+yield $+\infty$, and $(n < 0) / 0$ should yield $-\infty$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % IMPLEMENTATION

@@ -24,6 +24,7 @@ import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.lex.Lexer;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.llvm.LLVMEmitter;
+import me.pavlina.alco.passes.ConstantFold;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
@@ -94,6 +95,9 @@ public class Compiler
             // Debug option: dump AST and quit
             return this.dump_ast ();
         }
+
+        // Constant arithmetic folding
+        if ((rc = this.constantFold ()) != 0) return rc;
 
         // Resolution/checking
         if ((rc = this.checkTypes ()) != 0) return rc;
@@ -365,6 +369,22 @@ public class Compiler
         try {
             Resolver resolver = new Resolver ();
             ast.checkTypes (env, resolver);
+        } catch (CError e) {
+            e.print (System.err);
+            if (args.error_trace) e.printStackTrace ();
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * Run the constant arithmetic folding pass
+     * @return nonzero on error
+     */
+    private int constantFold ()
+    {
+        try {
+            ast = ConstantFold.run (ast);
         } catch (CError e) {
             e.print (System.err);
             if (args.error_trace) e.printStackTrace ();
