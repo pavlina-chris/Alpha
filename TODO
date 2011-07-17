@@ -1,4 +1,7 @@
-Static and threadlocal variables
 %/%%
 ++ --
+Assign-arith casts:
+  let x u8: 3;
+  x *= 4;    // Error: x *= 4 equiv. x = x * 4; x * 4 is int, cannot assign
+             // int to u8.
 Volatile

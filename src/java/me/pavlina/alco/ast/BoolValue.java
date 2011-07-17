@@ -6,7 +6,6 @@ import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
-import me.pavlina.alco.language.IntLimits;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.llvm.LLVMEmitter;
 import me.pavlina.alco.llvm.Function;
@@ -33,6 +32,10 @@ public class BoolValue extends Expression
             throw new RuntimeException ("BoolValue created for non-bool");
     }
 
+    public boolean getValue () {
+        return value;
+    }
+    
     public String getValueString () {
         return value ? "-1" : "0";
     }

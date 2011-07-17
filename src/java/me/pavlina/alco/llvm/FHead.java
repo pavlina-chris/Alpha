@@ -9,12 +9,14 @@ public class FHead
 {
     /**
      * Linkage types. EXTERNALLY_VISIBLE is the default. See the LLVM
-     * documentation for the definitions. */
+     * documentation for the definitions. Do not use THREAD_LOCAL for
+     * anything but globals. */
     public enum Linkage {
         PRIVATE, LINKER_PRIVATE, LINKER_PRIVATE_WEAK,
             LINKER_PRIVATE_WEAK_DEF_AUTO, INTERNAL,
             AVAILABLE_EXTERNALLY, LINKONCE, WEAK, COMMON, APPENDING,
-            EXTERN_WEAK, LINKONCE_ODR, WEAK_ODR, EXTERNALLY_VISIBLE;
+            EXTERN_WEAK, LINKONCE_ODR, WEAK_ODR, EXTERNALLY_VISIBLE,
+            THREAD_LOCAL;
 
         public String toString () {
             if (this == EXTERNALLY_VISIBLE) return "";

@@ -171,12 +171,14 @@ names.
 \texttt{return} (\ref{sub:statements:return}),
 \texttt{let} (\ref{sub:statements:vardecl}),
 \texttt{const} (\ref{sub:statements:vardecl}, \ref{sub:types:const}),
-\texttt{static} (\ref{sub:methods:static}, \ref{sub:classes:static}),
+\texttt{static} (\ref{sub:methods:static}, \ref{sub:classes:static},
+  \ref{sub:statements:static}),
 \texttt{nomangle} (\ref{sub:cconv:nomangle}),
 \texttt{allowconflict} (\ref{sub:methods:attributes}),
 \texttt{global} (\ref{sub:methods:attributes}),
 \texttt{threadlocal} (\ref{sub:globals:threadlocal},
-                      \ref{sub:classes:threadlocal}),
+                      \ref{sub:classes:threadlocal},
+                      \ref{sub:statements:static}),
 \texttt{null} (\ref{sub:types:null}),
 \texttt{true} (\ref{sub:types:bool}),
 \texttt{false} (\ref{sub:types:bool}),
@@ -778,11 +780,10 @@ names and types, more local should be considered before more distant.
 \subsection{Variable and constant declaration (\texttt{let} and \texttt{const})}
 \label{sub:statements:vardecl}
 \begin{verbatim}
-localname =;
 VarDecl   = "let", ["volatile"], WordExclAt, [typename], ":", Expression,
-            [{",", ["volatile"], WordExclAt, [typename], ":", Expression}]
-ConstDecl = "const", ["volatile"], WordExclAt, [typename], ":", Expression,
-            [{",", ["volatile"], WordExclAt, [typename], ":", Expression}]
+            [{",", WordExclAt, [typename], ":", Expression}]
+ConstDecl = "const", WordExclAt, [typename], ":", Expression,
+            [{",", WordExclAt, [typename], ":", Expression}]
 \end{verbatim}
 Note the general format:
 \begin{verbatim}
@@ -808,6 +809,30 @@ Note that because constants are globally available, yet assigned at runtime, a
 constant is only valid after its declaration. Despite being a constant, the
 assignment shall be executed every time the program passes over the \texttt{const}
 line.
+
+\subsection{Static variable declaration (\texttt{static})}
+\label{sub:statements:static}
+\begin{verbatim}
+Static = "static", ["volatile"], ["threadlocal"],
+         WordExclAt, [typename], ":", Expression,
+         [{",", WordExclAt, [typename], ":", Expression}] ;
+\end{verbatim}
+
+Note the general format:
+\begin{verbatim}
+static a: 0;
+static threadlocal b: 3;
+\end{verbatim}
+
+A static variable is one whose value is retained across calls to the function.
+A threadlocal static is one whose value is retained, but only per thread.
+There is a restriction that the expression must only be an integer, float,
+Boolean, or null literal, due to the way the initialiser is stored. Casts of
+these need not be permitted, because the type can be specified explicitly.
+
+Note that because constant arithmetic folding comes before typechecking,
+\texttt{static~x:~-3} is valid even though \texttt{-3} is not a literal: it
+will be folded into one.
 
 %%%%%%%%
 % RETURN

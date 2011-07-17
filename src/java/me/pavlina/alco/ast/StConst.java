@@ -127,7 +127,8 @@ public class StConst extends Statement
             // an LLVM constant.
 
             if (IntValue.class.isInstance (expressions.get (i))
-                || RealValue.class.isInstance (expressions.get (i))) {
+                || RealValue.class.isInstance (expressions.get (i))
+                || BoolValue.class.isInstance (expressions.get (i))) {
                 
                 emitter.add
                     (new Constant (realNames.get (i),
