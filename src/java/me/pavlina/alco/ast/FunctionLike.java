@@ -252,8 +252,8 @@ public abstract class FunctionLike extends AST
             sb.append (name.length ());
             sb.append (name);
         }
-        if (type != null)
-            sb.append (type.getEncodedName ());
+        for (Type i: types)
+            sb.append (i.getEncodedName ());
         sb.append ('$');
         for (Type i: argtypes)
             sb.append (i.getEncodedName ());
