@@ -23,7 +23,7 @@ public class OpComma extends Expression.Operator {
     public static Expression.OperatorCreator CREATOR;
 
 
-    public OpComma (Env env, TokenStream stream) throws CError {
+    public OpComma (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
         children = new Expression[2];
     }
@@ -119,9 +119,9 @@ public class OpComma extends Expression.Operator {
 
     static {
         CREATOR = new Expression.OperatorCreator () {
-                public Operator create (Env env, TokenStream stream)
-                    throws CError {
-                    return new OpComma (env, stream);
+                public Operator create (Env env, TokenStream stream,
+                                        Method method) throws CError {
+                    return new OpComma (env, stream, method);
                 }
             };
     }

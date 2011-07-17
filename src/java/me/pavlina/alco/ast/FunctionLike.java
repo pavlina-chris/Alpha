@@ -25,6 +25,10 @@ public abstract class FunctionLike extends AST
     protected Type type;
 
     /**
+     * Return types of the function, for multiples */
+    protected List<Type> types;
+
+    /**
      * Whether the function was declared static */
     protected boolean _static;
 
@@ -59,13 +63,15 @@ public abstract class FunctionLike extends AST
      * @param allowNomangle Whether to allow the "nomangle" modifier
      * @param allowAllowconflict Whether to allow the "allowconflict" modifier
      * @param allowGlobal Whether to allow the "global" modifier
+     * @param allowMultRet Whether to allow multiple return types
      * @param nomangleRedundant Whether "nomangle" should trigger a
      *  "nomangle is redundant here" warning
      * @param allowUnnamed Whether to allow unnamed args
      */
     protected void parse (TokenStream stream, Env env, boolean allowStatic,
                           boolean allowNomangle, boolean allowAllowconflict,
-                          boolean allowGlobal, boolean nomangleRedundant,
+                          boolean allowGlobal, boolean allowMultRet,
+                          boolean nomangleRedundant,
                           boolean allowUnnamed) throws CError {
 
         _static = nomangle = false;
@@ -85,9 +91,30 @@ public abstract class FunctionLike extends AST
         // Return type
         if (token.is (Token.WORD, "void")) {
             stream.next ();
+            types = new ArrayList<Type> (0);
             type = null;
+        } else if (token.is (Token.OPER, "(")) {
+            if (!allowMultRet)
+                throw CError.at ("multiple return types not allowed here",
+                                 token);
+            stream.next ();
+            types = new ArrayList<Type> ();
+            while (true) {
+                Type t = TypeParser.parse (stream, env);
+                types.add (t);
+                token = stream.next ();
+                if (token.is (Token.OPER, ")"))
+                    break;
+                else if (token.is (Token.NO_MORE))
+                    throw UnexpectedEOF.after (") or ,", stream.last ());
+                else if (!token.is (Token.OPER, ","))
+                    throw Unexpected.after (") or ,", stream.last ());
+            }
+            type = types.get (0);
         } else {
             type = TypeParser.parse (stream, env);
+            types = new ArrayList<Type> (1);
+            types.add (type);
         }
 
         // Name
@@ -240,6 +267,12 @@ public abstract class FunctionLike extends AST
     }
 
     /**
+     * Get the return types */
+    public List<Type> getTypes () {
+        return Collections.unmodifiableList (types);
+    }
+
+    /**
      * Whether the method is declared static */
     public boolean isStatic () {
         return _static;
@@ -278,8 +311,16 @@ public abstract class FunctionLike extends AST
         if (_static) sb.append ("static ");
         if (type == null)
             sb.append ("void");
-        else
+        else if (types.size () == 1)
             sb.append (type);
+        else {
+            sb.append ("(");
+            for (int i = 0; i < types.size (); ++i) {
+                if (i != 0) sb.append (", ");
+                sb.append (types.get (i));
+            }
+            sb.append (")");
+        }
         sb.append (' ');
         sb.append (name);
         sb.append (" (");

@@ -47,7 +47,7 @@ public class Scope extends AST
             }
 
             // Try an expression
-            Expression expression = Expression.parse (env, stream, ";");
+            Expression expression = Expression.parse (env, stream, method, ";");
             if (expression != null) {
                 token = stream.next ();
                 if (token.is (Token.NO_MORE))

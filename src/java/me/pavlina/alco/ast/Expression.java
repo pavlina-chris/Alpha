@@ -33,7 +33,8 @@ public abstract class Expression extends AST implements HasType
      * @return Expression, or null if empty
      * @throws CError on syntax error
      */
-    public static Expression parse (Env env, TokenStream stream, String end)
+    public static Expression parse (Env env, TokenStream stream,
+                                    Method method, String end)
             throws CError
     {
         Stack<Operator> stack = new Stack<Operator> ();
@@ -102,7 +103,7 @@ public abstract class Expression extends AST implements HasType
 
                 if (callPossible) {
                     Expression expr = output.pop ();
-                    stack.push (new OpCall (expr.getToken (), expr));
+                    stack.push (new OpCall (expr.getToken (), expr, method));
                     stack.push (new Expression.OpeningParen (token));
                     // If the next token is ), we have an empty function call.
                     // This confuses shuntOper(), which sees a call as a
@@ -152,7 +153,7 @@ public abstract class Expression extends AST implements HasType
                     throw Unexpected.at ("indexable before [", token);
 
                 Expression expr = output.pop ();
-                stack.push (new OpIndex (expr.getToken (), expr));
+                stack.push (new OpIndex (expr.getToken (), expr, method));
                 stack.push (new Expression.OpeningSquare (token));
                 callPossible = false;
                 unaryPossible = true;
@@ -205,7 +206,7 @@ public abstract class Expression extends AST implements HasType
                 if (creator == null)
                     throw Unexpected.at (message, token);
 
-                Operator oper = creator.create (env, stream);
+                Operator oper = creator.create (env, stream, method);
                 shuntOper (oper, stack, output);
 
                 // The 'as' operator expects a TypeValue.
@@ -408,7 +409,8 @@ public abstract class Expression extends AST implements HasType
     protected static interface OperatorCreator {
         /**
          * Create and return an operator, given Env and TokenStream. */
-        public Operator create (Env env, TokenStream stream) throws CError;
+        public Operator create (Env env, TokenStream stream,
+                                Method method) throws CError;
     }
 
     /**

@@ -70,7 +70,7 @@ public class StLet extends Statement
             }
 
             // Value
-            value = Expression.parse (env, stream, ";,");
+            value = Expression.parse (env, stream, method, ";,");
             if (value == null)
                 throw Unexpected.after ("expression", token);
 

@@ -32,7 +32,7 @@ public class OpCast extends Expression.Operator {
         token = ((Expression) value).getToken ();
     }
 
-    public OpCast (Env env, TokenStream stream) throws CError {
+    public OpCast (Env env, TokenStream stream, Method method) throws CError {
         children = new Expression[2];
         token = stream.next ();
     }
@@ -232,6 +232,18 @@ public class OpCast extends Expression.Operator {
         String val = children[0].getValueString ();
         Type srcT = children[0].getType ();
         Type dstT = children[1].getType ();
+        valueString = OpCast.doCast (val, srcT, dstT, env, emitter, function);
+    }
+
+    /**
+     * Perform a cast and return the value-string result.
+     * @param val Value to cast (as an LLVM value string)
+     * @param srcT Type of the value
+     * @param dstT Type to which to cast
+     *
+     * Note that the cast must be valid. This function does not check. */
+    public static String doCast (String val, Type srcT, Type dstT, Env env,
+                                 LLVMEmitter emitter, Function function) {
         String sty = LLVMType.getLLVMName (srcT);
         String dty = LLVMType.getLLVMName (dstT);
         Type.Encoding srcE = srcT.getEncoding ();
@@ -240,41 +252,41 @@ public class OpCast extends Expression.Operator {
         // See Standard:Types:Casting:AllowedCasts
         if (srcT.equalsNoConst (dstT)) {
             // T to T
-            valueString = val;
+            return val;
    
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.UINT) {
             // SI to UI
-            valueString = val;
+            return val;
 
         } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.SINT) {
             // UI to SI
-            valueString = val;
+            return val;
 
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.SINT
                    && srcT.getSize () < dstT.getSize ()) {
             // SI to SI
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.SEXT)
                 .source (sty, val).dest (dty).build ();
 
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.SINT
                    && srcT.getSize () > dstT.getSize ()) {
             // SI to SI
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.TRUNC)
                 .source (sty, val).dest (dty).build ();
 
         } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.UINT
                    && srcT.getSize () < dstT.getSize ()) {
             // UI to UI
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.ZEXT)
                 .source (sty, val).dest (dty).build ();
 
         } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.UINT
                    && srcT.getSize () > dstT.getSize ()) {
             // UI to UI
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.TRUNC)
                 .source (sty, val).dest (dty).build ();
 
@@ -284,7 +296,7 @@ public class OpCast extends Expression.Operator {
             String isZero = new icmp (emitter, function)
                 .comparison (icmp.Icmp.EQ)
                 .type (sty).operands (val, "0").build ();
-            valueString = new select (emitter, function)
+            return new select (emitter, function)
                 .cond (isZero)
                 .type (dty)
                 .values ("0", "-1")
@@ -294,55 +306,55 @@ public class OpCast extends Expression.Operator {
                    srcE == Type.Encoding.BOOL) {
             // B to SI/UI
             if (srcT.getSize () < dstT.getSize ()) {
-                valueString = new Conversion (emitter, function)
+                return new Conversion (emitter, function)
                     .operation (Conversion.ConvOp.SEXT)
                     .source (sty, val).dest (dty).build ();
             } else {
-                valueString = val;
+                return val;
             }
 
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.FLOAT) {
             // SI to FP
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.SITOFP)
                 .source (sty, val).dest (dty).build ();
 
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.SINT) {
             // FP to SI
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.FPTOSI)
                 .source (sty, val).dest (dty).build ();
         
         } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.FLOAT) {
             // UI to FP
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.UITOFP)
                 .source (sty, val).dest (dty).build ();
 
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.UINT) {
             // FP to UI
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.FPTOUI)
                 .source (sty, val).dest (dty).build ();
 
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
                    && srcT.getSize () < dstT.getSize ()) {
             // FP to FP
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.FPEXT)
                 .source (sty, val).dest (dty).build ();
 
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
                    && srcT.getSize () > dstT.getSize ()) {
             // FP to FP
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.FPTRUNC)
                 .source (sty, val).dest (dty).build ();
 
         } else if (srcE == Type.Encoding.POINTER &&
                    dstE == Type.Encoding.POINTER) {
             // T* to U*
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.BITCAST)
                 .source (sty, val).dest (dty).build ();
 
@@ -356,7 +368,7 @@ public class OpCast extends Expression.Operator {
             String isZero = new icmp (emitter, function)
                 .comparison (icmp.Icmp.EQ)
                 .type (intermedT).operands (ptrAsInt, "0").build ();
-            valueString = new select (emitter, function)
+            return new select (emitter, function)
                 .cond (isZero)
                 .type (dty).values ("0", "-1").build ();
 
@@ -364,7 +376,7 @@ public class OpCast extends Expression.Operator {
                    dstE == Type.Encoding.UINT &&
                    dstT.getSize () >= (env.getBits () / 8)) {
             // T* to UI
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.PTRTOINT)
                 .source (sty, val).dest (dty).build ();
 
@@ -372,7 +384,7 @@ public class OpCast extends Expression.Operator {
                    dstE == Type.Encoding.POINTER &&
                    srcT.getSize () >= (env.getBits () / 8)) {
             // UI to T*
-            valueString = new Conversion (emitter, function)
+            return new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.INTTOPTR)
                 .source (sty, val).dest (dty).build ();
 
@@ -385,31 +397,31 @@ public class OpCast extends Expression.Operator {
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.SINT) {
             // null to SI
-            valueString = "0";
+            return "0";
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.UINT) {
             // null to UI
-            valueString = "0";
+            return "0";
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.OBJECT) {
             // null to class
-            valueString = val;
+            return val;
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.ARRAY) {
             // null to T[]
-            valueString = val;
+            return val;
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.POINTER) {
             // null to T*
-            valueString = "null";
+            return "null";
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.BOOL) {
-            valueString = "0";
+            return "0";
 
         } else {
             throw new RuntimeException ("Invalid cast in genLLVM");
@@ -462,9 +474,9 @@ public class OpCast extends Expression.Operator {
 
     static {
         CREATOR = new Expression.OperatorCreator () {
-                public Operator create (Env env, TokenStream stream)
-                    throws CError {
-                    return new OpCast (env, stream);
+                public Operator create (Env env, TokenStream stream,
+                                        Method method) throws CError {
+                    return new OpCast (env, stream, method);
                 }
             };
         CASTCREATOR = new Type.CastCreator () {

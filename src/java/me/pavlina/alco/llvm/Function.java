@@ -131,11 +131,14 @@ public class Function extends RootCodeObj
             out.print (i);
         }
 
-        if (this.type == "void") {
+        if (this.type.equals ("void")) {
             out.println ("  ret void");
-        } else {
+        } else if (this.type.equals ("float") || this.type.equals ("double")) {
+            out.println ("  ret " + this.type + " 0.0");
+        } else if (this.type.endsWith ("*")) {
+            out.println ("  ret null");
+        } else
             out.println ("  ret " + this.type + " 0");
-        }
 
         out.print ("}\n\n");
     }

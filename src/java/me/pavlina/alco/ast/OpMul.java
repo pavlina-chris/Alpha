@@ -24,7 +24,7 @@ public class OpMul extends Expression.Operator {
     public static Expression.OperatorCreator CREATOR;
 
 
-    public OpMul (Env env, TokenStream stream) throws CError {
+    public OpMul (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
         children = new Expression[2];
     }
@@ -161,9 +161,9 @@ public class OpMul extends Expression.Operator {
 
     static {
         CREATOR = new Expression.OperatorCreator () {
-                public Operator create (Env env, TokenStream stream)
-                    throws CError {
-                    return new OpMul (env, stream);
+                public Operator create (Env env, TokenStream stream,
+                                        Method method) throws CError {
+                    return new OpMul (env, stream, method);
                 }
             };
     }

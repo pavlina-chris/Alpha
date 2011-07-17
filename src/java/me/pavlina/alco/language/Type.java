@@ -590,6 +590,9 @@ public class Type implements HasType {
         else if (encoding == Encoding.BOOL) {
             return isConst == type.isConst;
         }
+        else if (encoding == Encoding.NULL) {
+            return true;
+        }
         return false;
     }
 

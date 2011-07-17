@@ -42,7 +42,7 @@ public class StIf extends Statement
             throw UnexpectedEOF.after ("(", stream.last ());
         else if (!temp.is (Token.OPER, "("))
             throw Unexpected.after ("(", stream.last ());
-        values[0] = (AST) Expression.parse (env, stream, ")");
+        values[0] = (AST) Expression.parse (env, stream, method, ")");
         if (values[0] == null)
             throw Unexpected.after ("expression", temp);
         temp = stream.next ();
@@ -66,7 +66,7 @@ public class StIf extends Statement
             
             if (values[1] == null) {
                 // Try an expression
-                values[1] = Expression.parse (env, stream, ";");
+                values[1] = Expression.parse (env, stream, method, ";");
                 if (values[1] == null)
                     throw Unexpected.after ("body", stream.last ());
                 temp = stream.next ();
@@ -96,7 +96,7 @@ public class StIf extends Statement
             
             if (values[2] == null) {
                 // Try an expression
-                values[2] = Expression.parse (env, stream, ";");
+                values[2] = Expression.parse (env, stream, method, ";");
                 if (values[2] == null)
                     throw Unexpected.after ("body", stream.last ());
                 temp = stream.next ();

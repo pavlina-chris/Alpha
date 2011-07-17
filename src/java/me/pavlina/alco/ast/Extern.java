@@ -31,7 +31,7 @@ public class Extern extends FunctionLike
 
         this.parse (stream, env, /* allowStatic*/ false,
                     /* allowNomangle */ true, /* allowAllowconflict */ false,
-                    /* allowGlobal */ false,
+                    /* allowGlobal */ false, /* allowMultRet */ false,
                     /* nomangleRedundant */ true, /* allowUnnamed */ true);
 
         nomangle = true;

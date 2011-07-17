@@ -20,7 +20,7 @@ public class OpDeref extends Expression.Operator {
 
     public static Expression.OperatorCreator CREATOR;
 
-    public OpDeref (Env env, TokenStream stream) throws CError {
+    public OpDeref (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
         children = new Expression[1];
     }
@@ -89,9 +89,9 @@ public class OpDeref extends Expression.Operator {
 
     static {
         CREATOR = new Expression.OperatorCreator () {
-                public Operator create (Env env, TokenStream stream)
-                    throws CError {
-                    return new OpDeref (env, stream);
+                public Operator create (Env env, TokenStream stream,
+                                        Method method) throws CError {
+                    return new OpDeref (env, stream, method);
                 }
             };
     }

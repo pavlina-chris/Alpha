@@ -22,7 +22,9 @@ public class OpAssignArith extends Expression.Operator {
 
     public static Expression.OperatorCreator CREATOR;
 
-    public OpAssignArith (Env env, TokenStream stream) throws CError {
+    public OpAssignArith (Env env, TokenStream stream, Method method)
+        throws CError
+    {
         token = stream.next ();
         children = new Expression[1];
     }
@@ -100,9 +102,9 @@ public class OpAssignArith extends Expression.Operator {
 
     static {
         CREATOR = new Expression.OperatorCreator () {
-                public Operator create (Env env, TokenStream stream)
-                    throws CError {
-                    return new OpAssignArith (env, stream);
+                public Operator create (Env env, TokenStream stream,
+                                        Method method) throws CError {
+                    return new OpAssignArith (env, stream, method);
                 }
             };
     }

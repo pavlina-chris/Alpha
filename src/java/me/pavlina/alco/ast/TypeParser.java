@@ -27,7 +27,7 @@ public class TypeParser {
         if (token.is (Token.NO_MORE)) {
             throw UnexpectedEOF.after ("type name", stream.last ());
         } else if (!token.is (Token.WORD)) {
-            throw Unexpected.after ("type name", stream.last ());
+            throw Unexpected.at ("type name", token);
         }
         name = token.value;
 

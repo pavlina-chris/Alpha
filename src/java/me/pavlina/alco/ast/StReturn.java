@@ -23,6 +23,7 @@ public class StReturn extends Statement
 {
     private Token token;
     private Expression[] value;
+    List<Expression> values;
     private Method method;
 
     public StReturn (Env env, TokenStream stream, Method method) throws CError {
@@ -32,7 +33,7 @@ public class StReturn extends Statement
             throw new RuntimeException ("StReturn instantiated without kwd");
 
         value = new Expression[]
-            {Expression.parse (env, stream, ";")}; // Allow null
+            {Expression.parse (env, stream, method, ";")}; // Allow null
 
         Token temp = stream.next ();
         if (temp.is (Token.NO_MORE))
@@ -51,19 +52,57 @@ public class StReturn extends Statement
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
-        value[0].checkTypes (env, resolver);
-        value[0] = (Expression) Type.coerce (value[0], method.getType (),
-                                             OpCast.CASTCREATOR, env);
+        if (value[0] == null) {
+            if (method.getType () != null) {
+                throw CError.at ("length of return list does not match " +
+                                 "function declaration", token);
+            }
+            return;
+        }
+
+        // Unpack tuples
+        values = new ArrayList<Expression> ();
+        if (OpComma.class.isInstance (value[0])) {
+            ((OpComma) value[0]).unpack (values);
+        } else {
+            values.add (value[0]);
+        }
+
+        for (Expression i: values)
+            i.checkTypes (env, resolver);
+
+        List<Type> methodTypes = method.getTypes ();
+
+        if (values.size () != methodTypes.size ())
+            throw CError.at ("length of return list does not match function" +
+                             " declaration", token);
+
+        for (int i = 0; i < values.size (); ++i) {
+            values.set
+                (i, (Expression) Type.coerce
+                 (values.get (i), methodTypes.get (i), OpCast.CASTCREATOR,
+                  env));
+        }
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         if (value[0] == null)
             new ret (emitter, function).build ();
         else {
-            value[0].genLLVM (env, emitter, function);
-            String valueString = value[0].getValueString ();
+            for (int i = 1; i < values.size (); ++i) {
+                values.get (i).genLLVM (env, emitter, function);
+                String valueString = values.get (i).getValueString ();
+                new store (emitter, function)
+                    .pointer ("%.R" + Integer.toString (i))
+                    .value (LLVMType.getLLVMName (values.get (i).getType ()),
+                            valueString)
+                    .build ();
+            }
+            values.get (0).genLLVM (env, emitter, function);
+            String valueString = values.get (0).getValueString ();
             new ret (emitter, function)
-                .value (LLVMType.getLLVMName (value[0].getType ()), valueString)
+                .value (LLVMType.getLLVMName (values.get (0).getType ()),
+                        valueString)
                 .build ();
         }
     }

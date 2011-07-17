@@ -21,12 +21,13 @@ public class OpAssign extends Expression.Operator {
     private Token token;
     private Expression[] children;
     List<Expression> srcs, dests;
+    List<Type> types;
     String valueString;
 
     public static Expression.OperatorCreator CREATOR;
 
 
-    public OpAssign (Env env, TokenStream stream) throws CError {
+    public OpAssign (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
         children = new Expression[2];
     }
@@ -62,6 +63,13 @@ public class OpAssign extends Expression.Operator {
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
+
+        // Special case: values = call
+        if (OpCall.class.isInstance (children[1])) {
+            checkTypesCall (env, resolver);
+            return;
+        }
+
         dests = new ArrayList<Expression> ();
         srcs = new ArrayList<Expression> ();
         
@@ -103,6 +111,27 @@ public class OpAssign extends Expression.Operator {
         }
     }
 
+    // Special checkTypes for values=call special case
+    private void checkTypesCall (Env env, Resolver resolver) throws CError {
+        dests = new ArrayList<Expression> ();
+        if (OpComma.class.isInstance (children[0])) {
+            ((OpComma) children[0]).unpack (dests);
+        } else {
+            dests.add (children[0]);
+        }
+
+        // Check types
+        types = new ArrayList<Type> (dests.size ());
+        for (Expression i: dests) {
+            i.checkTypes (env, resolver);
+            if (!NullValue.class.isInstance (i))
+                i.checkPointer (true, token);
+            types.add (i.getType ());
+        }
+
+        ((OpCall) children[1]).checkTypesMult (env, resolver, types);
+    }
+
     public void checkPointer (boolean write, Token token) throws CError {
         throw CError.at ("assignment has no address", token);
     }
@@ -120,6 +149,13 @@ public class OpAssign extends Expression.Operator {
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+
+        // Special case: values = call
+        if (OpCall.class.isInstance (children[1])) {
+            genLLVMCall (env, emitter, function);
+            return;
+        }
+
         int limit = (srcs.size () < dests.size ())
             ? srcs.size ()
             : dests.size ();
@@ -142,6 +178,20 @@ public class OpAssign extends Expression.Operator {
         }
     }
 
+    private void genLLVMCall (Env env, LLVMEmitter emitter, Function function) {
+
+        List<String> pointers = new ArrayList<String> (dests.size ());
+        for (Expression i: dests) {
+            if (NullValue.class.isInstance (i))
+                pointers.add ("");
+            else
+                pointers.add (i.getPointer (env, emitter, function));
+        }
+        ((OpCall) children[1]).genLLVMMult (env, emitter, function, types,
+                                            pointers);
+
+    }
+
     @SuppressWarnings("unchecked") // :-( I'm sorry.
     public List<AST> getChildren () {
         // Oh FFS Java, why can't List<Expression> sub in for List<AST>? :-(
@@ -156,9 +206,9 @@ public class OpAssign extends Expression.Operator {
 
     static {
         CREATOR = new Expression.OperatorCreator () {
-                public Operator create (Env env, TokenStream stream)
-                    throws CError {
-                    return new OpAssign (env, stream);
+                public Operator create (Env env, TokenStream stream,
+                                        Method method) throws CError {
+                    return new OpAssign (env, stream, method);
                 }
             };
     }

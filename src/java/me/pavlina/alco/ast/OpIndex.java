@@ -18,7 +18,7 @@ public class OpIndex extends Expression.Operator {
     private Token token;
     private Expression[] children;
 
-    public OpIndex (Token token, Expression expr) {
+    public OpIndex (Token token, Expression expr, Method method) {
         token = token;
         children = new Expression[] { expr, null };
     }

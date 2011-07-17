@@ -19,6 +19,7 @@ public class Method extends FunctionLike
 {
     private Token token;
     private List<AST> children;
+    int numberTemps;
 
     /**
      * Parse and initialise the method. */
@@ -27,9 +28,11 @@ public class Method extends FunctionLike
         throws CError
     {
         super ();
+        numberTemps = 0;
         token = stream.peek ();
         this.parse (stream, env, allowStatic, /* allowNomangle */ true,
                     /* alloowAllowconflict */ true, /* allowGlobal */ true,
+                    /* allowMultRet */ true,
                     /* nomangleRedundant */ false, /* allowUnnamed */ false);
         this.pkg = pkg;
 
@@ -38,6 +41,24 @@ public class Method extends FunctionLike
         // Create a Scope for this method. It will parse the code.
         Scope scope = new Scope (env, stream, this);
         children.add (scope);
+    }
+
+    /**
+     * Require a certain number of temporary variables. These are variables
+     * which have no visible name, and are used when a temporary register with
+     * an address is required. They are usually used by OpCall when a
+     * multi-return function has returns ignored, or when casts on the values
+     * need to be performed.
+     *
+     * Note that a given code item should use its temps and be done with them.
+     * They are, after all, temporary. All code items share them.
+     *
+     * Temporary variables range from %.T0 to %.Tm, where m = n - 1.
+     *
+     * @param n Number of temporary variables to require
+     */
+    public void requireTemps (int n) {
+        numberTemps = (n > numberTemps) ? n : numberTemps;
     }
 
     public Token getToken () {
@@ -61,6 +82,11 @@ public class Method extends FunctionLike
         // Declaration at top of file
         FDeclare decl = new FDeclare
             (this.getMangledName (), LLVMType.getLLVMName (this.getType ()));
+        if (types.size () > 1) {
+            for (int i = 1; i < types.size (); ++i) {
+                decl.addParameter (LLVMType.getLLVMName (types.get (i)) + "*");
+            }
+        }
         for (Type i: argtypes) {
             if (i.getEncoding () == Type.Encoding.OBJECT ||
                 i.getEncoding () == Type.Encoding.ARRAY) {
@@ -75,6 +101,12 @@ public class Method extends FunctionLike
         // Method
         Function func = new Function
             (this.getMangledName (), LLVMType.getLLVMName (this.getType ()));
+        if (types.size () > 1) {
+            for (int i = 1; i < types.size (); ++i) {
+                func.addParameter (LLVMType.getLLVMName (types.get (i)) + "*",
+                                   "%.R" + Integer.toString (i));
+            }
+        }
         for (int i = 0; i < argtypes.size (); ++i) {
             Type.Encoding enc = argtypes.get (i).getEncoding ();
             if (enc == Type.Encoding.OBJECT ||
@@ -92,6 +124,7 @@ public class Method extends FunctionLike
         // Save the counter
         Object countSave1 = emitter.resetCount ("%");
         Object countSave2 = emitter.resetCount ("%.L");
+        Object countSave3 = emitter.resetCount ("%.T");
         
         // Copy arguments into local variables
         for (int i = 0; i < argtypes.size (); ++i) {
@@ -129,6 +162,13 @@ public class Method extends FunctionLike
             }
         }
 
+        // Create the temps
+        for (int i = 0; i < numberTemps; ++i) {
+            new alloca (emitter, func)
+                .type ("i128").result ("%.T" + Integer.toString (i))
+                .build ();
+        }
+
         // Write the function code
         for (AST i: children) {
             i.genLLVM (env, emitter, func);
@@ -137,6 +177,7 @@ public class Method extends FunctionLike
         // Restore the counter
         emitter.setCount ("%", countSave1);
         emitter.setCount ("%.L", countSave2);
+        emitter.setCount ("%.T", countSave3);
     }
 
     public void print (PrintStream out) {
