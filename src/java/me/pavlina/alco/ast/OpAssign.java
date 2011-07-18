@@ -10,6 +10,7 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.codegen.Assign;
+import me.pavlina.alco.codegen.AssignCall;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,7 @@ public class OpAssign extends Expression.Operator {
     List<Type> types;
     String valueString;
     Assign assign;
+    AssignCall assigncall;
 
     public static Expression.OperatorCreator CREATOR;
 
@@ -71,34 +73,20 @@ public class OpAssign extends Expression.Operator {
 
         // Special case: values = call
         if (OpCall.class.isInstance (children[1])) {
-            checkTypesCall (env, resolver);
-            return;
-        }
+            assigncall = new AssignCall (token)
+                .dests (children[0])
+                .source ((OpCall) children[1]);
+            assigncall.checkTypes (env, resolver);
 
-        assign = new Assign (token)
-            .dests (children[0]).sources (children[1]);
-        assign.checkTypes (env, resolver);
+        } else {
+            assign = new Assign (token)
+                .dests (children[0]).sources (children[1]);
+            assign.checkTypes (env, resolver);
+        }
     }
 
     // Special checkTypes for values=call special case
     private void checkTypesCall (Env env, Resolver resolver) throws CError {
-        dests = new ArrayList<Expression> ();
-        if (OpComma.class.isInstance (children[0])) {
-            ((OpComma) children[0]).unpack (dests);
-        } else {
-            dests.add (children[0]);
-        }
-
-        // Check types
-        types = new ArrayList<Type> (dests.size ());
-        for (Expression i: dests) {
-            i.checkTypes (env, resolver);
-            if (!NullValue.class.isInstance (i))
-                i.checkPointer (true, token);
-            types.add (i.getType ());
-        }
-
-        ((OpCall) children[1]).checkTypesMult (env, resolver, types);
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
@@ -118,29 +106,11 @@ public class OpAssign extends Expression.Operator {
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-
-        // Special case: values = call
         if (OpCall.class.isInstance (children[1])) {
-            genLLVMCall (env, emitter, function);
-            return;
+            assigncall.genLLVM (env, emitter, function);
+        } else {
+            assign.genLLVM (env, emitter, function);
         }
-
-        assign.genLLVM (env, emitter, function);
-    }
-
-    private void genLLVMCall (Env env, LLVMEmitter emitter, Function function) {
-
-        List<String> pointers = new ArrayList<String> (dests.size ());
-        for (Expression i: dests) {
-            if (NullValue.class.isInstance (i))
-                pointers.add ("");
-            else
-                pointers.add (i.getPointer (env, emitter, function));
-        }
-        ((OpCall) children[1]).genLLVMMult (env, emitter, function, types,
-                                            pointers);
-        valueString = ((OpCall) children[1]).getValueString ();
-
     }
 
     @SuppressWarnings("unchecked") // :-( I'm sorry.
