@@ -6,16 +6,29 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.lex.Token;
+import me.pavlina.alco.ast.Expression;
+import me.pavlina.alco.ast.IntValue;
 import me.pavlina.alco.llvm.*;
+import java.math.BigInteger;
+import static me.pavlina.alco.language.IntLimits.*;
 
 public class Cast {
 
     Type srcT, dstT;
     String valueString, val;
     Token token;
+    Expression expr;
 
     public Cast (Token token) {
         this.token = token;
+    }
+
+    /**
+     * Optional: Give the expression. A couple extra checks can be done in
+     * this case. */
+    public Cast expr (Expression expr) {
+        this.expr = expr;
+        return this;
     }
 
     /**
@@ -46,6 +59,51 @@ public class Cast {
         Type.Encoding dstE = dstT.getEncoding ();
 
         // See Standard:Types:Casting:AllowedCasts
+
+        // Integer literal cast
+        if ((srcE == Type.Encoding.SINT || srcE == Type.Encoding.UINT) &&
+            (dstE == Type.Encoding.SINT || dstE == Type.Encoding.SINT) &&
+            expr != null &&
+            IntValue.class.isInstance (expr)) {
+
+            BigInteger intVal = ((IntValue) expr).getValue ();
+            BigInteger min, max;
+
+            int size = dstT.getSize ();
+            if (dstE == Type.Encoding.SINT) {
+                if (size == 8) {
+                    min = I64_MIN;
+                    max = I64_MAX;
+                } else if (size == 4) {
+                    min = I32_MIN;
+                    max = I32_MAX;
+                } else if (size == 2) {
+                    min = I16_MIN;
+                    max = I16_MAX;
+                } else {
+                    min = I8_MIN;
+                    max = I8_MAX;
+                }
+            } else {
+                min = BigInteger.ZERO;
+                if (size == 8)
+                    max = U64_MAX;
+                else if (size == 4)
+                    max = U32_MAX;
+                else if (size == 2)
+                    max = U16_MAX;
+                else
+                    max = U8_MAX;
+            }
+            if (min.compareTo (intVal) > 0 ||
+                max.compareTo (intVal) < 0) {
+                throw CError.at ("integer literal outside range for type",
+                                 expr.getToken ());
+            }
+
+            return;
+        }
+
         if (srcT.equalsNoConst (dstT)) {
             // T to T
             // OK
@@ -211,6 +269,16 @@ public class Cast {
         Type.Encoding dstE = dstT.getEncoding ();
 
         // See Standard:Types:Casting:AllowedCasts
+
+        // Integer literal cast
+        if ((srcE == Type.Encoding.SINT || srcE == Type.Encoding.UINT) &&
+            (dstE == Type.Encoding.SINT || dstE == Type.Encoding.SINT) &&
+            (val.startsWith ("-") ||
+             (val.charAt (0) >= '0' && val.charAt (0) <= '9'))) {
+            valueString = val;
+            return;
+        }
+
         if (srcT.equalsNoConst (dstT)) {
             // T to T
             valueString = val;
@@ -308,6 +376,26 @@ public class Cast {
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
                    && srcT.getSize () > dstT.getSize ()) {
             // FP to FP
+            if (val.startsWith ("0x")) {
+                // Raw double value, casting to float. We can convert this here,
+                // rather than emitting an fptrunc. I checked, and no, LLVM does
+                // not optimise it out into the assembly. (I haven't checked
+                // the different options for OPT)
+
+
+                // FUCK YOU JAVA
+                try {
+                    String half1 = val.substring (2, 10);
+                    String half2 = val.substring (10, 18);
+                    long bits = (Long.parseLong (half1, 16) << 32) |
+                        Long.parseLong (half2, 16);
+                    double valD = Double.longBitsToDouble (bits);
+                    bits = Double.doubleToRawLongBits ((float) valD);
+                    valueString = String.format ("0x%016x", bits);
+                    return;
+                } catch (NumberFormatException e) {}
+                catch (IndexOutOfBoundsException e) {}
+            }
             valueString = new Conversion (emitter, function)
                 .operation (Conversion.ConvOp.FPTRUNC)
                 .source (sty, val).dest (dty).build ();

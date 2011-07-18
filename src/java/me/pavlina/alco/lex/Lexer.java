@@ -351,7 +351,7 @@ public class Lexer implements ErrorAnnotator
         }
         String val = collector.toString ();
         collector.clear ();
-        tokens.add (new Token (type, val, line, col, this));
+        tokens.add (new Token (type, val, line, firstCol, this));
     }
 
     private void consumeWord () throws CError {

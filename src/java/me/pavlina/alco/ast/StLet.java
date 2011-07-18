@@ -26,6 +26,7 @@ public class StLet extends Statement
     private List<String> realNames;
     private List<Type> types;
     private List<Expression> expressions;
+    List<Cast> casts;
 
     public StLet (Env env, TokenStream stream, Method method) throws CError {
         Token token;
@@ -39,6 +40,7 @@ public class StLet extends Statement
         realNames = new ArrayList<String> ();
         types = new ArrayList<Type> ();
         expressions = new ArrayList<Expression> ();
+        casts = new ArrayList<Cast> ();
 
         while (true) {
             String name;
@@ -110,6 +112,12 @@ public class StLet extends Statement
             realNames.set
                 (i, resolver.addVariable
                  (names.get (i), types.get (i)).getName ());
+            casts.add (new Cast (token)
+                       .expr (expressions.get (i))
+                       .type (expressions.get (i).getType ())
+                       .dest (types.get (i)));
+            casts.get (i).checkTypes (env, resolver);
+                       
         }
             
     }
@@ -132,9 +140,7 @@ public class StLet extends Statement
                 enc == Type.Encoding.BOOL) {
                 
                 String val = expressions.get (i).getValueString ();
-                Cast c = new Cast (token)
-                    .value (val).type (expressions.get (i).getType ())
-                    .dest (types.get (i));
+                Cast c = casts.get (i).value (val);
                 c.genLLVM (env, emitter, function);
                 new store (emitter, function)
                     .pointer (realNames.get (i))
