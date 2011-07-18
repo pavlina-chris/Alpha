@@ -9,6 +9,7 @@ import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
+import me.pavlina.alco.codegen.Assign;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +24,7 @@ public class OpAssign extends Expression.Operator {
     List<Expression> srcs, dests;
     List<Type> types;
     String valueString;
+    Assign assign;
 
     public static Expression.OperatorCreator CREATOR;
 
@@ -55,7 +57,10 @@ public class OpAssign extends Expression.Operator {
     }
 
     public String getValueString () {
-        return valueString;
+        if (assign == null)
+            return valueString;
+        else
+            return assign.getValueString ();
     }
 
     public Type getType () {
@@ -70,45 +75,9 @@ public class OpAssign extends Expression.Operator {
             return;
         }
 
-        dests = new ArrayList<Expression> ();
-        srcs = new ArrayList<Expression> ();
-        
-        // Unpack tuples
-        if (OpComma.class.isInstance (children[0])) {
-            ((OpComma) children[0]).unpack (dests);
-        } else {
-            dests.add (children[0]);
-        }
-
-        if (OpComma.class.isInstance (children[1])) {
-            ((OpComma) children[1]).unpack (srcs);
-        } else {
-            srcs.add (children[1]);
-        }
-
-        // Check types
-        for (Expression i: srcs)
-            i.checkTypes (env, resolver);
-        for (Expression i: dests) {
-            i.checkTypes (env, resolver);
-            i.checkPointer (true, token);
-        }
-
-        // Implicit cast
-        int limit = (srcs.size () < dests.size ())
-            ? srcs.size ()
-            : dests.size ();
-        for (int i = 0; i < limit; ++i) {
-            srcs.set (i, (Expression) Type.coerce
-                      (srcs.get (i), dests.get (i).getType (),
-                       OpCast.CASTCREATOR, env));
-        }
-
-        // Symmetry
-        if (srcs.size () != dests.size ()) {
-            env.warning_at ("multiple assign is not symmetric; only matching "
-                            + "pairs will be assigned", token);
-        }
+        assign = new Assign (token)
+            .dests (children[0]).sources (children[1]);
+        assign.checkTypes (env, resolver);
     }
 
     // Special checkTypes for values=call special case
@@ -156,26 +125,7 @@ public class OpAssign extends Expression.Operator {
             return;
         }
 
-        int limit = (srcs.size () < dests.size ())
-            ? srcs.size ()
-            : dests.size ();
-        String[] pointers = new String[limit];
-        String[] values = new String[limit];
-        for (int i = 0; i < limit; ++i) {
-            srcs.get (i).genLLVM (env, emitter, function);
-            values[i] = srcs.get (i).getValueString ();
-        }
-        valueString = values[0];
-        for (int i = 0; i < limit; ++i) {
-            pointers[i] = dests.get (i).getPointer (env, emitter, function);
-        }
-        for (int i = 0; i < limit; ++i) {
-            new store (emitter, function)
-                .pointer (pointers[i])
-                .value (LLVMType.getLLVMName (srcs.get (i).getType ()),
-                        values[i])
-                .build ();
-        }
+        assign.genLLVM (env, emitter, function);
     }
 
     private void genLLVMCall (Env env, LLVMEmitter emitter, Function function) {
@@ -189,6 +139,7 @@ public class OpAssign extends Expression.Operator {
         }
         ((OpCall) children[1]).genLLVMMult (env, emitter, function, types,
                                             pointers);
+        valueString = ((OpCall) children[1]).getValueString ();
 
     }
 

@@ -9,6 +9,7 @@ import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.lex.TokenStream;
+import me.pavlina.alco.codegen.Cast;
 import java.util.List;
 import java.util.Arrays;
 import java.math.BigInteger;
@@ -19,9 +20,9 @@ public class OpCast extends Expression.Operator {
     private Token token;
     private Expression[] children;
     private String valueString;
+    Cast cast;
 
     public static Expression.OperatorCreator CREATOR;
-    public static Type.CastCreator CASTCREATOR;
 
     /**
      * Generate a cast from an expression at typecheck time. This is used
@@ -63,373 +64,20 @@ public class OpCast extends Expression.Operator {
         if (!TypeValue.class.isInstance (children[1])) {
             throw Unexpected.at ("type", children[1].getToken ());
         }
-        Type srcT = children[0].getType ();
-        Type dstT = children[1].getType ();
-        Type.Encoding srcE = srcT.getEncoding ();
-        Type.Encoding dstE = dstT.getEncoding ();
-
-        // See Standard:Types:Casting:AllowedCasts
-        if (srcT.equalsNoConst (dstT)) {
-            // T to T
-            // OK
-   
-        } else if (((srcE == Type.Encoding.SINT && dstE == Type.Encoding.UINT)||
-                    (srcE == Type.Encoding.UINT && dstE == Type.Encoding.SINT))
-                   && (srcT.getSize () != dstT.getSize ())) {
-            throw CError.at ("cannot cast integer in both sign and width;\n" +
-                             "sign and width casts are not commutative",
-                             token);
-
-        } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.UINT) {
-            // SI to UI
-            // OK
-
-        } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.SINT) {
-            // UI to SI
-            // OK
-
-        } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.SINT
-                   && srcT.getSize () < dstT.getSize ()) {
-            // SI to SI
-            // OK
-
-        } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.SINT
-                   && srcT.getSize () > dstT.getSize ()) {
-            // SI to SI
-            // OK
-
-        } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.UINT
-                   && srcT.getSize () < dstT.getSize ()) {
-            // UI to UI
-            // OK
-
-        } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.UINT
-                   && srcT.getSize () > dstT.getSize ()) {
-            // UI to UI
-            // OK
-
-        } else if ((srcE == Type.Encoding.UINT || srcE == Type.Encoding.SINT) &&
-                   dstE == Type.Encoding.BOOL) {
-            // SI/UI to B
-            // OK
-
-        } else if ((dstE == Type.Encoding.UINT || dstE == Type.Encoding.SINT) &&
-                   srcE == Type.Encoding.BOOL) {
-            // B to SI/UI
-            // OK
-
-        } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.FLOAT) {
-            // SI to FP
-            // OK
-
-        } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.SINT) {
-            // FP to SI
-            // OK
-        
-        } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.FLOAT) {
-            // UI to FP
-            // OK
-
-        } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.UINT) {
-            // FP to UI
-            // OK
-
-        } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
-                   && srcT.getSize () < dstT.getSize ()) {
-            // FP to FP
-            // OK
-
-        } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
-                   && srcT.getSize () > dstT.getSize ()) {
-            // FP to FP
-            // OK
-
-        } else if (srcE == Type.Encoding.POINTER &&
-                   dstE == Type.Encoding.POINTER) {
-            // T* to U*
-            // OK
-
-        } else if (srcE == Type.Encoding.POINTER && dstE == Type.Encoding.BOOL){
-            // T* to B
-            // OK
-
-        } else if (srcE == Type.Encoding.POINTER &&
-                   dstE == Type.Encoding.UINT &&
-                   dstT.getSize () >= (env.getBits () / 8)) {
-            // T* to UI
-            // OK
-
-        } else if (srcE == Type.Encoding.UINT &&
-                   dstE == Type.Encoding.POINTER &&
-                   srcT.getSize () >= (env.getBits () / 8)) {
-            // UI to T*
-            // OK
-
-        } else if (srcE == Type.Encoding.UINT &&
-                   dstE == Type.Encoding.POINTER) {
-            throw CError.at ("invalid cast: narrow integer to pointer", token);
-
-        } else if (srcE == Type.Encoding.SINT &&
-                   dstE == Type.Encoding.POINTER) {
-            throw CError.at ("invalid cast: signed integer to pointer", token);
-
-        } else if (srcE == Type.Encoding.POINTER &&
-                   dstE == Type.Encoding.UINT) {
-            throw CError.at ("invalid cast: pointer to narrow integer", token);
-
-        } else if (srcE == Type.Encoding.POINTER &&
-                   dstE == Type.Encoding.SINT) {
-            throw CError.at ("invalid cast: pointer to signed integer", token);
-
-        } else if (srcE == Type.Encoding.ARRAY &&
-                   dstE == Type.Encoding.POINTER &&
-                   srcT.getSubtype ().equals (dstT.getSubtype ())) {
-            // T[] to T*
-            throw new RuntimeException ("NOT IMPLEMENTED YET");
-
-        } else if (srcE == Type.Encoding.ARRAY &&
-                   dstE == Type.Encoding.BOOL) {
-            // T[] to B
-            throw new RuntimeException ("NOT IMPLEMENTED YET");
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.SINT) {
-            // null to SI
-            // OK
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.UINT) {
-            // null to UI
-            // OK
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.OBJECT) {
-            // null to class
-            // OK
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.ARRAY) {
-            // null to T[]
-            // OK
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.POINTER) {
-            // null to T*
-            // OK
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.BOOL) {
-            // null to B
-            // OK
-
-        } else {
-            throw CError.at ("invalid cast", token);
-        }
+        cast = new Cast (token)
+            .type (children[0].getType ())
+            .dest (children[1].getType ());
+        cast.checkTypes (env, resolver);
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
-        String val = children[0].getValueString ();
-        Type srcT = children[0].getType ();
-        Type dstT = children[1].getType ();
-        valueString = OpCast.doCast (val, srcT, dstT, env, emitter, function);
-    }
-
-    /**
-     * Perform a cast and return the value-string result.
-     * @param val Value to cast (as an LLVM value string)
-     * @param srcT Type of the value
-     * @param dstT Type to which to cast
-     *
-     * Note that the cast must be valid. This function does not check. */
-    public static String doCast (String val, Type srcT, Type dstT, Env env,
-                                 LLVMEmitter emitter, Function function) {
-        String sty = LLVMType.getLLVMName (srcT);
-        String dty = LLVMType.getLLVMName (dstT);
-        Type.Encoding srcE = srcT.getEncoding ();
-        Type.Encoding dstE = dstT.getEncoding ();
-
-        // See Standard:Types:Casting:AllowedCasts
-        if (srcT.equalsNoConst (dstT)) {
-            // T to T
-            return val;
-   
-        } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.UINT) {
-            // SI to UI
-            return val;
-
-        } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.SINT) {
-            // UI to SI
-            return val;
-
-        } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.SINT
-                   && srcT.getSize () < dstT.getSize ()) {
-            // SI to SI
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.SEXT)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.SINT
-                   && srcT.getSize () > dstT.getSize ()) {
-            // SI to SI
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.TRUNC)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.UINT
-                   && srcT.getSize () < dstT.getSize ()) {
-            // UI to UI
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.ZEXT)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.UINT
-                   && srcT.getSize () > dstT.getSize ()) {
-            // UI to UI
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.TRUNC)
-                .source (sty, val).dest (dty).build ();
-
-        } else if ((srcE == Type.Encoding.UINT || srcE == Type.Encoding.SINT) &&
-                   dstE == Type.Encoding.BOOL) {
-            // SI/UI to B
-            String isZero = new icmp (emitter, function)
-                .comparison (icmp.Icmp.EQ)
-                .type (sty).operands (val, "0").build ();
-            return new select (emitter, function)
-                .cond (isZero)
-                .type (dty)
-                .values ("0", "-1")
-                .build ();
-
-        } else if ((dstE == Type.Encoding.UINT || dstE == Type.Encoding.SINT) &&
-                   srcE == Type.Encoding.BOOL) {
-            // B to SI/UI
-            if (srcT.getSize () < dstT.getSize ()) {
-                return new Conversion (emitter, function)
-                    .operation (Conversion.ConvOp.SEXT)
-                    .source (sty, val).dest (dty).build ();
-            } else {
-                return val;
-            }
-
-        } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.FLOAT) {
-            // SI to FP
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.SITOFP)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.SINT) {
-            // FP to SI
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.FPTOSI)
-                .source (sty, val).dest (dty).build ();
-        
-        } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.FLOAT) {
-            // UI to FP
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.UITOFP)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.UINT) {
-            // FP to UI
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.FPTOUI)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
-                   && srcT.getSize () < dstT.getSize ()) {
-            // FP to FP
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.FPEXT)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
-                   && srcT.getSize () > dstT.getSize ()) {
-            // FP to FP
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.FPTRUNC)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.POINTER &&
-                   dstE == Type.Encoding.POINTER) {
-            // T* to U*
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.BITCAST)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.POINTER &&
-                   dstE == Type.Encoding.BOOL) {
-            // T* to B
-            String intermedT = "i" + Integer.toString (env.getBits ());
-            String ptrAsInt = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.PTRTOINT)
-                .source (sty, val).dest (intermedT).build ();
-            String isZero = new icmp (emitter, function)
-                .comparison (icmp.Icmp.EQ)
-                .type (intermedT).operands (ptrAsInt, "0").build ();
-            return new select (emitter, function)
-                .cond (isZero)
-                .type (dty).values ("0", "-1").build ();
-
-        } else if (srcE == Type.Encoding.POINTER &&
-                   dstE == Type.Encoding.UINT &&
-                   dstT.getSize () >= (env.getBits () / 8)) {
-            // T* to UI
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.PTRTOINT)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.UINT &&
-                   dstE == Type.Encoding.POINTER &&
-                   srcT.getSize () >= (env.getBits () / 8)) {
-            // UI to T*
-            return new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.INTTOPTR)
-                .source (sty, val).dest (dty).build ();
-
-        } else if (srcE == Type.Encoding.ARRAY &&
-                   dstE == Type.Encoding.POINTER &&
-                   srcT.getSubtype ().equals (dstT.getSubtype ())) {
-            // T[] to T*
-            throw new RuntimeException ("NOT IMPLEMENTED YET");
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.SINT) {
-            // null to SI
-            return "0";
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.UINT) {
-            // null to UI
-            return "0";
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.OBJECT) {
-            // null to class
-            return val;
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.ARRAY) {
-            // null to T[]
-            return val;
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.POINTER) {
-            // null to T*
-            return "null";
-
-        } else if (srcE == Type.Encoding.NULL &&
-                   dstE == Type.Encoding.BOOL) {
-            return "0";
-
-        } else {
-            throw new RuntimeException ("Invalid cast in genLLVM");
-        }
+        cast.value (children[0].getValueString ());
+        cast.genLLVM (env, emitter, function);
     }
 
     public String getValueString () {
-        return valueString;
+        return cast.getValueString ();
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
@@ -477,11 +125,6 @@ public class OpCast extends Expression.Operator {
                 public Operator create (Env env, TokenStream stream,
                                         Method method) throws CError {
                     return new OpCast (env, stream, method);
-                }
-            };
-        CASTCREATOR = new Type.CastCreator () {
-                public HasType cast (HasType value, Type type, Env env) {
-                    return new OpCast (value, type, env);
                 }
             };
     }

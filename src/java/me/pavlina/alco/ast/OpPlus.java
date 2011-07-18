@@ -9,6 +9,7 @@ import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.llvm.*;
+import me.pavlina.alco.codegen.Cast;
 import java.util.List;
 import java.util.Arrays;
 
@@ -23,6 +24,7 @@ public class OpPlus extends Expression.Operator {
     boolean pointerAdd;
     Type type;
     String valueString;
+    int castSide; // -1, 0, 1
 
     public static Expression.OperatorCreator CREATOR;
 
@@ -86,64 +88,17 @@ public class OpPlus extends Expression.Operator {
         }
         pointerAdd = (foundPointer && (foundInt != 0));
         if (pointerAdd) {
-            String ty;
-            if (integer.getType ().getEncoding () == Type.Encoding.UINT)
-                ty = "size";
-            else
-                ty = "ssize";
-            children[foundInt] = (Expression) Type.coerce
-                (children[foundInt], new Type (env, ty, null),
-                 OpCast.CASTCREATOR, env);
+            String ty =
+                (integer.getType ().getEncoding () == Type.Encoding.UINT)
+                ? "size" : "ssize";
+            Type.checkCoerce (children[foundInt], new Type (env, ty, null),
+                              token);
             type = pointer.getType ().getNotConst ();
             return;
         }
 
-        // Coercion: rank types by this list (see
-        // Standard:Types:Casting:Coercion):
-        //    FP64, FP32, UI64, UI32, UI16, UI8, SI64, SI32, SI16, SI8
-        // Then apply implicit cast rules (note that this means that although
-        // the list says SI64+UI8 yields UI8, this type of extreme precision
-        // loss is not allowed by implicit cast rules.
-        int[] ranks = new int[2];
-        for (int i = 0; i < 2; ++i) {
-            Type t = children[i].getType ();
-            Type.Encoding enc = t.getEncoding ();
-            int size = t.getSize ();
-            if (enc == Type.Encoding.FLOAT) {
-                if (size == 8)      ranks[i] = 1;
-                else                ranks[i] = 2;
-            } else if (enc == Type.Encoding.UINT) {
-                if (size == 8)      ranks[i] = 3;
-                else if (size == 4) ranks[i] = 4;
-                else if (size == 2) ranks[i] = 5;
-                else                ranks[i] = 6;
-            } else if (enc == Type.Encoding.SINT) {
-                if (size == 8)      ranks[i] = 7;
-                else if (size == 4) ranks[i] = 8;
-                else if (size == 2) ranks[i] = 9;
-                else                ranks[i] = 10;
-            } else {
-                throw CError.at ("invalid type for addition",
-                                 children[i].getToken ());
-            }
-        }
-
-        if (ranks[0] < ranks[1]) {
-            // Coerce rhs to lhs
-            children[1] = (Expression) Type.coerce
-                (children[1], children[0].getType (),
-                 OpCast.CASTCREATOR, env);
-
-        } else if (ranks[1] < ranks[0]) {
-            // Coerce lhs to rhs
-            children[0] = (Expression) Type.coerce
-                (children[0], children[1].getType (),
-                 OpCast.CASTCREATOR, env);
-
-        }
-        // else: no coercion required
-
-        type = children[0].getType ().getNotConst ();
+        castSide = Type.arithCoerce (children[0], children[1], token);
+        type = children[castSide == 1 ? 0 : 1].getType ().getNotConst ();
     }
 
     public String getValueString () {
@@ -166,28 +121,36 @@ public class OpPlus extends Expression.Operator {
         pointer.genLLVM (env, emitter, function);
         integer.genLLVM (env, emitter, function);
         String ptrV = pointer.getValueString ();
-        String intV = integer.getValueString ();
+        String t_ =
+            (integer.getType ().getEncoding () == Type.Encoding.UINT)
+            ? "size" : "ssize";
+        Type t = new Type (env, t_, null);
+        Cast c = new Cast (token)
+            .value (integer.getValueString ()).type (integer.getType ())
+            .dest (t);
+        c.genLLVM (env, emitter, function);
+        String intV = c.getValueString ();
 
         String ptrAsInt = new Conversion (emitter, function)
             .operation (Conversion.ConvOp.PTRTOINT)
             .source (LLVMType.getLLVMName (pointer.getType ()), ptrV)
-            .dest (LLVMType.getLLVMName (integer.getType ()))
+            .dest (LLVMType.getLLVMName (t))
             .build ();
         String intByWidth = new Binary (emitter, function)
             .operation (Binary.BinOp.MUL)
-            .type (LLVMType.getLLVMName (integer.getType ()))
+            .type (LLVMType.getLLVMName (t))
             .operands (intV,
                        Integer.toString
                        (pointer.getType ().getSubtype ().getSize ()))
             .build ();
         String newPtrInt = new Binary (emitter, function)
             .operation (Binary.BinOp.ADD)
-            .type (LLVMType.getLLVMName (integer.getType ()))
+            .type (LLVMType.getLLVMName (t))
             .operands (intByWidth, ptrAsInt)
             .build ();
         valueString = new Conversion (emitter, function)
             .operation (Conversion.ConvOp.INTTOPTR)
-            .source (LLVMType.getLLVMName (integer.getType ()), newPtrInt)
+            .source (LLVMType.getLLVMName (t), newPtrInt)
             .dest (LLVMType.getLLVMName (pointer.getType ()))
             .build ();
     }
@@ -208,6 +171,16 @@ public class OpPlus extends Expression.Operator {
         children[1].genLLVM (env, emitter, function);
         String lhs = children[0].getValueString ();
         String rhs = children[1].getValueString ();
+
+        if (castSide == 1) {
+            Cast c = new Cast (token)
+                .value (rhs).type (children[1].getType ()).dest (type);
+            c.genLLVM (env, emitter, function);
+            rhs = c.getValueString ();
+        } else if (castSide == -1) {
+            Cast c = new Cast (token)
+                .value (lhs).type (children[0].getType ()).dest (type);
+        }
 
         valueString = new Binary (emitter, function)
             .operation (operation)

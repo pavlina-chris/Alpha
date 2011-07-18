@@ -8,6 +8,7 @@ import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.llvm.*;
+import me.pavlina.alco.codegen.Cast;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,13 +69,10 @@ public class OpCall extends Expression.Operator {
             (((NameValue) children[0]).getName (), args,
              children[0].getToken ());
 
-        // Coerce all arguments to the proper types
+        // Check all argument types
         List<Type> destTypes = function.getArgTypes ();
         for (int i = 0; i < args.size (); ++i) {
-            Expression coerced = (Expression)
-                Type.coerce (args.get (i), destTypes.get (i),
-                             OpCast.CASTCREATOR, env);
-            args.set (i, coerced);
+            Type.checkCoerce (args.get (i), destTypes.get (i), token);
         }
     }
 
@@ -91,9 +89,15 @@ public class OpCall extends Expression.Operator {
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         List<String> valueStrings = new ArrayList<String> ();
-        for (Expression i: args) {
-            i.genLLVM (env, emitter, function);
-            valueStrings.add (i.getValueString ());
+        List<Type> destTypes = this.function.getArgTypes ();
+        for (int i = 0; i < args.size (); ++i) {
+            args.get (i).genLLVM (env, emitter, function);
+            String val = args.get (i).getValueString ();
+            Cast c = new Cast (token)
+                .value (val)
+                .type (args.get (i).getType ()).dest (destTypes.get (i));
+            c.genLLVM (env, emitter, function);
+            valueStrings.add (c.getValueString ());
         }
 
         // Bitcast the temporary %.T0 (i128*) into the proper pointer types
@@ -119,7 +123,8 @@ public class OpCall extends Expression.Operator {
                              temps.get (i));
         }
         for (int i = 0; i < args.size (); ++i) {
-            callbuilder.arg (LLVMType.getLLVMName (args.get (i).getType ()),
+            callbuilder.arg (LLVMType.getLLVMName
+                             (destTypes.get (i).getType ()),
                              valueStrings.get (i));
         }
         valueString = callbuilder.build ();
@@ -150,13 +155,7 @@ public class OpCall extends Expression.Operator {
             if (types.get (i).equals (nullType)) {
                 // Ignore
             } else {
-                if (!Type.canCoerce (returns.get (i), types.get (i))) {
-                    throw CError.at ("invalid implicit cast: "
-                                     + returns.get (i).toString ()
-                                     + " to "
-                                     + types.get (i).toString (),
-                                     token);
-                }
+                Type.checkCoerce (returns.get (i), types.get (i), token);
                 if (i > 0)
                     ++temps;
             }
@@ -179,9 +178,15 @@ public class OpCall extends Expression.Operator {
                              List<Type> types, List<String> pointers)
     {
         List<String> valueStrings = new ArrayList<String> ();
-        for (Expression i: args) {
-            i.genLLVM (env, emitter, function);
-            valueStrings.add (i.getValueString ());
+        List<Type> destTypes = this.function.getArgTypes ();
+        for (int i = 0; i < args.size (); ++i) {
+            args.get (i).genLLVM (env, emitter, function);
+            String val = args.get (i).getValueString ();
+            Cast c = new Cast (token)
+                .value (val)
+                .type (args.get (i).getType ()).dest (destTypes.get (i));
+            c.genLLVM (env, emitter, function);
+            valueStrings.add (c.getValueString ());
         }
 
         // We have allocated a number of temporary variables, %.T0 and so on.
@@ -243,7 +248,8 @@ public class OpCall extends Expression.Operator {
             }
         }
         for (int i = 0; i < args.size (); ++i) {
-            callbuilder.arg (LLVMType.getLLVMName (args.get (i).getType ()),
+            callbuilder.arg (LLVMType.getLLVMName
+                             (destTypes.get (i).getType ()),
                              valueStrings.get (i));
         }
         String firstReturn = callbuilder.build ();
@@ -254,9 +260,11 @@ public class OpCall extends Expression.Operator {
             if (types.get (0).equals (returns.get (0))) {
                 val = firstReturn;
             } else {
-                val = OpCast.doCast
-                    (firstReturn, returns.get (0), types.get (0), env,
-                     emitter, function);
+                Cast c = new Cast (token)
+                    .value (firstReturn).type (returns.get (0))
+                    .dest (types.get (0));
+                c.genLLVM (env, emitter, function);
+                val = c.getValueString ();
             }
             new store (emitter, function)
                 .pointer (pointers.get (0))
@@ -272,12 +280,14 @@ public class OpCall extends Expression.Operator {
                     .pointer (LLVMType.getLLVMName (returns.get (i)),
                               temps.get (i))
                     .build ();
-                String casted = OpCast.doCast
-                    (tempVal, returns.get (i), types.get (i), env, emitter,
-                     function);
+                Cast c = new Cast (token)
+                    .value (tempVal).type (returns.get (i))
+                    .dest (types.get (i));
+                c.genLLVM (env, emitter, function);
                 new store (emitter, function)
                     .pointer (pointers.get (i))
-                    .value (LLVMType.getLLVMName (types.get (i)), casted)
+                    .value (LLVMType.getLLVMName (types.get (i)),
+                            c.getValueString ())
                     .build ();
             }
         }

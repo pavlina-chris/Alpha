@@ -10,6 +10,7 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.llvm.*;
+import me.pavlina.alco.codegen.Cast;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,9 +123,8 @@ public class StIf extends Statement
         for (AST i: values)
             if (i != null)
                 i.checkTypes (env, resolver);
-        values[0] = (AST) Type.coerce
-            ((Expression) values[0], new Type (env, "bool", null),
-             OpCast.CASTCREATOR, env);
+        Type.checkCoerce ((Expression) values[0],
+                          new Type (env, "bool", null), token);
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
@@ -142,10 +142,16 @@ public class StIf extends Statement
         // Condition
         values[0].genLLVM (env, emitter, function);
         String boolCond = ((Expression) values[0]).getValueString ();
+        Cast c = new Cast (token)
+            .value (boolCond).type (((Expression) values[0]).getType ())
+            .dest (new Type (env, "bool", null));
+        c.genLLVM (env, emitter, function);
+
         String cond = new Conversion (emitter, function)
             .operation (Conversion.ConvOp.TRUNC)
             .source (LLVMType.getLLVMName
-                     (((Expression) values[0]).getType ()), boolCond)
+                     (((Expression) values[0]).getType ()),
+                     c.getValueString ())
             .dest ("i1").build ();
         
         // Branch

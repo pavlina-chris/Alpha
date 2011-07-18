@@ -10,6 +10,7 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.llvm.*;
+import me.pavlina.alco.codegen.Cast;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,10 +79,7 @@ public class StReturn extends Statement
                              " declaration", token);
 
         for (int i = 0; i < values.size (); ++i) {
-            values.set
-                (i, (Expression) Type.coerce
-                 (values.get (i), methodTypes.get (i), OpCast.CASTCREATOR,
-                  env));
+            Type.checkCoerce (values.get (i), methodTypes.get (i), token);
         }
     }
 
@@ -89,20 +87,31 @@ public class StReturn extends Statement
         if (value[0] == null)
             new ret (emitter, function).build ();
         else {
+            List<Type> methodTypes = method.getTypes ();
             for (int i = 1; i < values.size (); ++i) {
                 values.get (i).genLLVM (env, emitter, function);
                 String valueString = values.get (i).getValueString ();
+                Cast c = new Cast (token)
+                    .value (valueString).type (values.get (i).getType ())
+                    .dest (methodTypes.get (i));
+                c.genLLVM (env, emitter, function);
+
                 new store (emitter, function)
                     .pointer ("%.R" + Integer.toString (i))
                     .value (LLVMType.getLLVMName (values.get (i).getType ()),
-                            valueString)
+                            c.getValueString ())
                     .build ();
             }
             values.get (0).genLLVM (env, emitter, function);
             String valueString = values.get (0).getValueString ();
+            Cast c = new Cast (token)
+                .value (valueString).type (values.get (0).getType ())
+                .dest (methodTypes.get (0));
+            c.genLLVM (env, emitter, function);
+
             new ret (emitter, function)
                 .value (LLVMType.getLLVMName (values.get (0).getType ()),
-                        valueString)
+                        c.getValueString ())
                 .build ();
         }
     }

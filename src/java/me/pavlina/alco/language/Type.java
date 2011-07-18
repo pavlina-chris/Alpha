@@ -299,141 +299,67 @@ public class Type implements HasType {
     }
 
     /**
-     * Coerce type for assignment. See Standard:Types:Casting:ImplicitCasts
-     * @throws CError on coercion error
-     * @returns Coerced value */
-    public static HasType coerce (HasType value, HasType destination,
-                                  CastCreator creator, Env env) throws CError
+     * Try an arithmetic coercion. This applies standard rules
+     * (Standard:Types:Casting:Coercion) to the two types, and returns which
+     * of the two must be converted.
+     * @return -1: left, 0: neither, 1: right
+     */
+    public static int arithCoerce (HasType left, HasType right, Token token)
+        throws CError
     {
-        Type vtype = value.getType ();
-        Type dtype = destination.getType ();
+        int leftRank = arithCoerceRank (left.getType ());
+        int rightRank = arithCoerceRank (right.getType ());
 
-        if (vtype.equals (dtype)) {
-            // Same type - no cast
-            return value;
+        if (leftRank == -1 || rightRank == -1)
+            throw CError.at ("invalid type for operation", token);
 
-        } else if (vtype.equalsNoConst (dtype) && !vtype.isConst () &&
-                   dtype.isConst ()) {
-            // T to T const
-            return creator.cast (value, dtype, env);
+        if (leftRank < rightRank) {
+            checkCoerce (right, left, token);
+            return 1;
+        } else if (rightRank < leftRank) {
+            checkCoerce (left, right, token);
+            return -1;
+        } else
+            return 0;
+    }
 
-        } else if (vtype.encoding == Encoding.SINT
-            && dtype.encoding == vtype.encoding
-            && vtype.size <= dtype.size) {
-            // SIa to SIb where b >= a (signed upcast)
-            return creator.cast (value, dtype, env);
+    /**
+     * Return the arithmetic coercion type rank
+     * (Standard:Types:Casting:Coercion), or -1 for non-coercible types */
+    private static int arithCoerceRank (Type t)
+    {
+        Encoding enc = t.getEncoding ();
+        int size = t.getSize ();
+        if (enc == Encoding.FLOAT) {
+            if (size == 8)      return 1;
+            else                return 2;
+        } else if (enc == Encoding.UINT) {
+            if (size == 8)      return 3;
+            else if (size == 4) return 4;
+            else if (size == 2) return 5;
+            else                return 6;
+        } else if (enc == Encoding.SINT) {
+            if (size == 8)      return 7;
+            else if (size == 4) return 8;
+            else if (size == 2) return 9;
+            else                return 10;
+        } else
+            return -1;
+    }
 
-        } else if (vtype.encoding == Encoding.UINT
-                   && dtype.encoding == vtype.encoding
-                   && vtype.size <= dtype.size) {
-            // UIa to UIb where b >= a (unsigned upcast)
-            return creator.cast (value, dtype, env);
-
-        } else if (vtype.encoding == Encoding.SINT
-                   && dtype.encoding == Encoding.BOOL) {
-            // SIa to B
-            return creator.cast (value, dtype, env);
-
-        } else if (vtype.encoding == Encoding.UINT
-                   && dtype.encoding == Encoding.BOOL) {
-            // UIa to B
-            return creator.cast (value, dtype, env);
-        
-        } else if (IntValue.class.isInstance (value)
-                   && dtype.encoding == Encoding.UINT) {
-            // The standard mentions both:
-            //    IntValue within SIa to SIa
-            //    IntValue within UIa to UIa
-            // Because IntValues are implicitly i32/i64, the first one will
-            // be done by "SIa to SIb". However, "SIa to UIb" is normally
-            // illegal, so we have to specifically check for it.
-            
-            IntValue iv = (IntValue) value;
-            BigInteger val = iv.getValue (), min, max;
-
-            min = BigInteger.ZERO;
-            if (dtype.size == 1)
-                max = U8_MAX;
-            else if (dtype.size == 2)
-                max = U16_MAX;
-            else if (dtype.size == 4)
-                max = U32_MAX;
-            else if (dtype.size == 8)
-                max = U64_MAX;
-            else
-                throw new RuntimeException ("Bad type size");
-            if (min.compareTo (val) <= 0
-                && max.compareTo (val) >= 0) {
-                iv.setType (dtype);
-                return value;
-            }
-        } else if (IntValue.class.isInstance (value)
-                   && dtype.encoding == Encoding.SINT) {
-            // The standard mentions both:
-            //    IntValue within SIa to SIa
-            //    IntValue within UIa to UIa
-            // Because IntValues are implicitly i32/i64, the first one will
-            // be done by "SIa to SIb". However, "SIa to UIb" is normally
-            // illegal, so we have to specifically check for it.
-            
-            IntValue iv = (IntValue) value;
-            BigInteger val = iv.getValue (), min, max;
-
-            if (dtype.size == 1) {
-                min = I8_MIN;
-                max = I8_MAX;
-            } else if (dtype.size == 2) {
-                min = I16_MIN;
-                max = I16_MAX;
-            } else if (dtype.size == 4) {
-                min = I32_MIN;
-                max = I32_MAX;
-            } else if (dtype.size == 8) {
-                min = I64_MIN;
-                max = I64_MAX;
-            } else
-                throw new RuntimeException ("Bad type size");
-            if (min.compareTo (val) <= 0
-                && max.compareTo (val) >= 0) {
-                iv.setType (dtype);
-                return value;
-            }
-
-        } else if (vtype.encoding == Encoding.FLOAT
-                   && dtype.encoding == Encoding.FLOAT
-                   && vtype.size <= dtype.size) {
-            // FPa to FPb where b >= a (floating point upcast)
-            return creator.cast (value, dtype, env);
-
-        } else if (vtype.encoding == Encoding.POINTER
-                   && dtype.encoding == Encoding.BOOL) {
-            // T* to B
-            return creator.cast (value, dtype, env);
-
-        } else if (vtype.encoding == Encoding.ARRAY
-                   && dtype.encoding == Encoding.POINTER
-                   && vtype.getSubtype ().equals (dtype.getSubtype ())) {
-            // T[] to T*
-            throw new RuntimeException ("T[] to T* cast not implemented yet");
-
-        } else if (vtype.encoding == Encoding.ARRAY
-                   && dtype.encoding == Encoding.POINTER
-                   && !vtype.getSubtype ().equals (dtype.getSubtype ())) {
-            throw CError.at ("cast array to pointer of different type",
-                             value.getToken ());
-
-        } else if (vtype.encoding == Encoding.NULL
-                   && (dtype.encoding == Encoding.SINT ||
-                       dtype.encoding == Encoding.UINT ||
-                       dtype.encoding == Encoding.OBJECT ||
-                       dtype.encoding == Encoding.ARRAY ||
-                       dtype.encoding == Encoding.POINTER ||
-                       dtype.encoding == Encoding.BOOL))
-            // Null to SI, UI, class, T[], T*, B
-            return creator.cast (value, dtype, env);
-
-        throw CError.at ("invalid implicit cast: " + vtype.toString ()
-                         + " to " + dtype.toString (), value.getToken ());
+    /**
+     * Check whether a value can be coerced to a type, and give a standard
+     * error if not. */
+    public static void checkCoerce (HasType value, HasType destination,
+                                    Token token) throws CError
+    {
+        if (!canCoerce (value, destination)) {
+            Type vtype = value.getType ();
+            Type dtype = destination.getType ();
+            throw CError.at ("invalid implicit cast: " +
+                             vtype.toString () + " to " +
+                             dtype.toString (), token);
+        }
     }
 
     /**
@@ -441,7 +367,6 @@ public class Type implements HasType {
      * @returns Whether the coercion is possible
      */
     public static boolean canCoerce (HasType value, HasType destination)
-        throws CError
     {
         Type vtype = value.getType ();
         Type dtype = destination.getType ();
@@ -673,13 +598,6 @@ public class Type implements HasType {
             return sb.toString () + (isConst ? " const" : "");
         }
         return super.toString ();
-    }
-
-    /**
-     * Interface for a cast creator. This takes a value and a desired type, and
-     * wraps the value in a cast to it. */
-    public static interface CastCreator {
-        public HasType cast (HasType value, Type type, Env env);
     }
 
     /**
