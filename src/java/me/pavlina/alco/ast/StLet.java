@@ -105,9 +105,6 @@ public class StLet extends Statement
         for (int i = 0; i < names.size (); ++i) {
             if (types.get (i) == null) {
                 types.set (i, expressions.get (i).getType ());
-            } else {
-                expressions.set (i, new OpCast
-                                 (expressions.get (i), types.get (i), env));
             }
             realNames.set
                 (i, resolver.addVariable
