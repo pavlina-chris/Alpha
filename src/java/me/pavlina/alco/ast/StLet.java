@@ -10,6 +10,7 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.llvm.*;
+import me.pavlina.alco.codegen.Cast;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -105,9 +106,6 @@ public class StLet extends Statement
         for (int i = 0; i < names.size (); ++i) {
             if (types.get (i) == null) {
                 types.set (i, expressions.get (i).getType ());
-            } else {
-                expressions.set (i, new OpCast
-                                 (expressions.get (i), types.get (i), env));
             }
             realNames.set
                 (i, resolver.addVariable
@@ -134,9 +132,14 @@ public class StLet extends Statement
                 enc == Type.Encoding.BOOL) {
                 
                 String val = expressions.get (i).getValueString ();
+                Cast c = new Cast (token)
+                    .value (val).type (expressions.get (i).getType ())
+                    .dest (types.get (i));
+                c.genLLVM (env, emitter, function);
                 new store (emitter, function)
                     .pointer (realNames.get (i))
-                    .value (LLVMType.getLLVMName (types.get (i)), val)
+                    .value (LLVMType.getLLVMName (types.get (i)),
+                            c.getValueString ())
                     .build ();
             }
 

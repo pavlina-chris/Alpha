@@ -92,7 +92,12 @@ public class Assign {
         String[] values = new String[limit];
         for (int i = 0; i < limit; ++i) {
             sources.get (i).genLLVM (env, emitter, function);
-            values[i] = sources.get (i).getValueString ();
+            Cast c = new Cast (token)
+                .value (sources.get (i).getValueString ())
+                .type (sources.get (i).getType ())
+                .dest (dests.get (i).getType ());
+            c.genLLVM (env, emitter, function);
+            values[i] = c.getValueString ();
         }
         valueString = values[0];
 
