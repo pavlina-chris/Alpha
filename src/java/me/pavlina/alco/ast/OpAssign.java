@@ -66,7 +66,7 @@ public class OpAssign extends Expression.Operator {
     }
 
     public Type getType () {
-        return children[0].getType ().getNotConst ();
+        return children[0].getType ().getNormalised ();
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {

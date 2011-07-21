@@ -46,7 +46,7 @@ public class OpNeg extends Expression.Operator {
     }
 
     public Type getType () {
-        return children[0].getType ();
+        return children[0].getType ().getNormalised ();
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {

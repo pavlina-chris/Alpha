@@ -110,14 +110,7 @@ public class IntValue extends Expression
             type = new Type (env, "u64", null);
         else
             throw CError.at ("integer magnitude too high", token);
-    }
-
-    /**
-     * Integer literals may be cast, even implicitly, to any type into which
-     * their value fits. The easiest way to accomplish this is to allow the
-     * cast and coerce functions to set the type. */
-    public void setType (Type type) {
-        this.type = type;
+        type.setValue (value);
     }
 
     public Type getType () {

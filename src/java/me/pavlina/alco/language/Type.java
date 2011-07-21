@@ -18,18 +18,18 @@ import static me.pavlina.alco.language.IntLimits.*;
  * Alpha type. */
 public class Type implements HasType {
 
-    private String name;
+    String name;
     /* This ivar has a few uses, depending on the encoding:
      *  - ARRAY: Array type (for int[], it will contain int)
      *  - POINTER: Pointer type (for int*, it will contain int)
      *  - OBJECT: Arguments (for map<string, int>, it will contain string
      *      and int.
      */
-    private List<Type> subtypes;
-    private int size;
-    private Encoding encoding;
-    private boolean isConst;
-
+    List<Type> subtypes;
+    int size;
+    Encoding encoding;
+    boolean isConst;
+    BigInteger intVal;
 
     /**
      * Initialise a type. This is a quick constructor that will build a nested
@@ -71,6 +71,20 @@ public class Type implements HasType {
             this.subtypes.add (new Type (env, name, args, Arrays.copyOf
                                          (mods, modsLength - 1)));
         }
+    }
+
+    /**
+     * Set the integer value of a type. Integers for which the value is known
+     * at compile-time (literals) have special semantics. */
+    public void setValue (BigInteger intVal) {
+        this.intVal = intVal;
+    }
+
+    /**
+     * Get the integer value of a type.
+     * @return Integer value, or null if there is none */
+    public BigInteger getValue () {
+        return intVal;
     }
 
     /**
@@ -175,6 +189,7 @@ public class Type implements HasType {
         t.subtypes = subtypes;
         t.size = size;
         t.encoding = encoding;
+        t.intVal = intVal;
         t.isConst = true;
         return t;
     }
@@ -187,7 +202,18 @@ public class Type implements HasType {
         t.subtypes = subtypes;
         t.size = size;
         t.encoding = encoding;
+        t.intVal = intVal;
         t.isConst = false;
+        return t;
+    }
+
+    /**
+     * Return a normalised copy of this type. This is the type with the const
+     * and value qualifiers removed. The type of (a op b) is usually the
+     * normalised type of the operands, once they have been coerced. */
+    public Type getNormalised () {
+        Type t = this.getNotConst ();
+        t.intVal = null;
         return t;
     }
 
@@ -402,7 +428,7 @@ public class Type implements HasType {
             // UIa to B
             return true;
 
-        } else if (IntValue.class.isInstance (value)
+        } else if (vtype.getValue () != null
                    && dtype.encoding == Encoding.UINT) {
             // The standard mentions both:
             //    IntValue within SIa to SIa
@@ -411,8 +437,7 @@ public class Type implements HasType {
             // be done by "SIa to SIb". However, "SIa to UIb" is normally
             // illegal, so we have to specifically check for it.
             
-            IntValue iv = (IntValue) value;
-            BigInteger val = iv.getValue (), min, max;
+            BigInteger val = vtype.getValue (), min, max;
 
             min = BigInteger.ZERO;
             if (dtype.size == 1)
@@ -429,7 +454,8 @@ public class Type implements HasType {
                 && max.compareTo (val) >= 0) {
                 return true;
             }
-        } else if (IntValue.class.isInstance (value)
+
+        } else if (vtype.getValue () != null
                    && dtype.encoding == Encoding.SINT) {
             // The standard mentions both:
             //    IntValue within SIa to SIa
@@ -438,8 +464,7 @@ public class Type implements HasType {
             // be done by "SIa to SIb". However, "SIa to UIb" is normally
             // illegal, so we have to specifically check for it.
             
-            IntValue iv = (IntValue) value;
-            BigInteger val = iv.getValue (), min, max;
+            BigInteger val = vtype.getValue (), min, max;
 
             if (dtype.size == 1) {
                 min = I8_MIN;

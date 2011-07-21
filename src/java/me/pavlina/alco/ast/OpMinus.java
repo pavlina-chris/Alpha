@@ -71,7 +71,7 @@ public class OpMinus extends Expression.Operator {
         }
 
         castSide = Type.arithCoerce (children[0], children[1], token);
-        type = children[castSide == 1 ? 0 : 1].getType ().getNotConst ();
+        type = children[castSide == 1 ? 0 : 1].getType ().getNormalised ();
     }
 
     public String getValueString () {

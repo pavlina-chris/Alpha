@@ -59,9 +59,9 @@ public class OpMul extends Expression.Operator {
 
         castSide = Type.arithCoerce (children[0], children[1], token);
         if (castSide == 1)
-            type = children[0].getType ().getNotConst ();
+            type = children[0].getType ().getNormalised ();
         else
-            type = children[1].getType ().getNotConst ();
+            type = children[1].getType ().getNormalised ();
     }
 
     public String getValueString () {

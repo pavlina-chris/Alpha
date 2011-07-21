@@ -45,7 +45,7 @@ public class OpCall extends Expression.Operator {
     public Type getType () {
         Type t = function.getType ();
         if (t == null) return null;
-        return t.getNotConst ();
+        return t.getNormalised ();
     }
 
     public void setOperands (Expression op, Expression ignore) {
