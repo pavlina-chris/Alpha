@@ -61,6 +61,7 @@ public class SubNum {
             break;
         case FLOAT:
             operation = Binary.BinOp.FSUB;
+            break;
         default:
             throw new RuntimeException ("Subtracting unsupported items");
         }

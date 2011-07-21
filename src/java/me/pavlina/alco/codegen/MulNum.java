@@ -11,33 +11,33 @@ import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.lex.Token;
 
 /**
- * Numeric addition. Adds two values of the SAME TYPE */
-public class AddNum {
+ * Numeric multiplication. Multiplies two values of the SAME TYPE */
+public class MulNum {
     Token token;
     String lhsV, rhsV, valueString;
     Type type;
     
-    public AddNum (Token token) {
+    public MulNum (Token token) {
         this.token = token;
     }
 
     /**
      * Set the left-hand operand. */
-    public AddNum lhs (String lhsV) {
+    public MulNum lhs (String lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public AddNum rhs (String rhsV) {
+    public MulNum rhs (String rhsV) {
         this.rhsV = rhsV;
         return this;
     }
 
     /**
      * Set the (non-normalised) type */
-    public AddNum type (Type type) {
+    public MulNum type (Type type) {
         this.type = type.getNormalised ();
         return this;
     }
@@ -47,7 +47,7 @@ public class AddNum {
         if (enc != Type.Encoding.SINT &&
             enc != Type.Encoding.UINT &&
             enc != Type.Encoding.FLOAT) {
-            throw CError.at ("invalid types for addition", token);
+            throw CError.at ("invalid types for multiplication", token);
         }
     }
 
@@ -57,13 +57,13 @@ public class AddNum {
         switch (enc) {
         case SINT:
         case UINT:
-            operation = Binary.BinOp.ADD;
+            operation = Binary.BinOp.MUL;
             break;
         case FLOAT:
-            operation = Binary.BinOp.FADD;
+            operation = Binary.BinOp.FMUL;
             break;
         default:
-            throw new RuntimeException ("Adding unsupported items");
+            throw new RuntimeException ("Multiplying unsupported items");
         }
 
         valueString = new Binary (emitter, function)

@@ -11,33 +11,33 @@ import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.lex.Token;
 
 /**
- * Numeric addition. Adds two values of the SAME TYPE */
-public class AddNum {
+ * Numeric division. Divides two values of the SAME TYPE */
+public class DivNum {
     Token token;
     String lhsV, rhsV, valueString;
     Type type;
     
-    public AddNum (Token token) {
+    public DivNum (Token token) {
         this.token = token;
     }
 
     /**
      * Set the left-hand operand. */
-    public AddNum lhs (String lhsV) {
+    public DivNum lhs (String lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public AddNum rhs (String rhsV) {
+    public DivNum rhs (String rhsV) {
         this.rhsV = rhsV;
         return this;
     }
 
     /**
      * Set the (non-normalised) type */
-    public AddNum type (Type type) {
+    public DivNum type (Type type) {
         this.type = type.getNormalised ();
         return this;
     }
@@ -47,7 +47,7 @@ public class AddNum {
         if (enc != Type.Encoding.SINT &&
             enc != Type.Encoding.UINT &&
             enc != Type.Encoding.FLOAT) {
-            throw CError.at ("invalid types for addition", token);
+            throw CError.at ("invalid types for division", token);
         }
     }
 
@@ -56,14 +56,16 @@ public class AddNum {
         Type.Encoding enc = type.getEncoding ();
         switch (enc) {
         case SINT:
+            operation = Binary.BinOp.SDIV;
+            break;
         case UINT:
-            operation = Binary.BinOp.ADD;
+            operation = Binary.BinOp.UDIV;
             break;
         case FLOAT:
-            operation = Binary.BinOp.FADD;
+            operation = Binary.BinOp.FDIV;
             break;
         default:
-            throw new RuntimeException ("Adding unsupported items");
+            throw new RuntimeException ("Dividing unsupported items");
         }
 
         valueString = new Binary (emitter, function)

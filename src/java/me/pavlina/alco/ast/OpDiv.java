@@ -9,7 +9,7 @@ import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.llvm.*;
-import me.pavlina.alco.codegen.Cast;
+import me.pavlina.alco.codegen.*;
 import java.util.List;
 import java.util.Arrays;
 
@@ -21,7 +21,8 @@ public class OpDiv extends Expression.Operator {
     Expression[] children;
     Type type;
     String valueString;
-    int castSide; // -1, 0, 1
+    Coerce coerce;
+    DivNum divnum;
 
     public static Expression.OperatorCreator CREATOR;
 
@@ -57,11 +58,13 @@ public class OpDiv extends Expression.Operator {
         children[0].checkTypes (env, resolver);
         children[1].checkTypes (env, resolver);
 
-        castSide = Type.arithCoerce (children[0], children[1], token);
-        if (castSide == 1)
-            type = children[0].getType ().getNormalised ();
-        else
-            type = children[1].getType ().getNormalised ();
+        coerce = new Coerce (token)
+            .lhsT (children[0].getType ())
+            .rhsT (children[1].getType ());
+        coerce.checkTypes (env, resolver);
+        type = coerce.getType ();
+        divnum = new DivNum (token).type (type);
+        divnum.checkTypes (env, resolver);
     }
 
     public String getValueString () {
@@ -74,39 +77,15 @@ public class OpDiv extends Expression.Operator {
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function)
     {
-        Binary.BinOp operation;
-        Type.Encoding enc = children[0].getType ().getEncoding ();
-        if (enc == Type.Encoding.FLOAT)
-            operation = Binary.BinOp.FDIV;
-        else if (enc == Type.Encoding.SINT)
-            operation = Binary.BinOp.SDIV;
-        else if (enc == Type.Encoding.UINT)
-            operation = Binary.BinOp.UDIV;
-        else
-            throw new RuntimeException ("Dividing unsupported items");
-
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
-        String lhs = children[0].getValueString ();
-        String rhs = children[1].getValueString ();
-
-        if (castSide == 1) {
-            Cast c = new Cast (token)
-                .value (rhs).type (children[1].getType ()).dest (type);
-            c.genLLVM (env, emitter, function);
-            rhs = c.getValueString ();
-        } else if (castSide == -1) {
-            Cast c = new Cast (token)
-                .value (lhs).type (children[0].getType ()).dest (type);
-            c.genLLVM (env, emitter, function);
-            lhs = c.getValueString ();
-        }
-
-        valueString = new Binary (emitter, function)
-            .operation (operation)
-            .type (LLVMType.getLLVMName (children[0].getType ()))
-            .operands (lhs, rhs)
-            .build ();
+        coerce.lhsV (children[0].getValueString ());
+        coerce.rhsV (children[1].getValueString ());
+        coerce.genLLVM (env, emitter, function);
+        divnum.lhs (coerce.getValueStringL ());
+        divnum.rhs (coerce.getValueStringR ());
+        divnum.genLLVM (env, emitter, function);
+        valueString = divnum.getValueString ();
     }
 
     @SuppressWarnings("unchecked")
