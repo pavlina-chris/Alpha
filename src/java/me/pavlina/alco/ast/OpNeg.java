@@ -8,15 +8,17 @@ import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.Resolver;
+import me.pavlina.alco.codegen.*;
 import java.util.List;
 import java.util.Arrays;
 
 /**
  * Negation operator. */
 public class OpNeg extends Expression.Operator {
-    private Token token;
-    private Expression[] children;
-    private String valueString;
+    Token token;
+    Expression[] children;
+    String valueString;
+    NegNum negnum;
 
     public static Expression.OperatorCreator CREATOR;
 
@@ -51,13 +53,8 @@ public class OpNeg extends Expression.Operator {
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
         children[0].checkTypes (env, resolver);
-        Type.Encoding e = children[0].getType ().getEncoding ();
-        if (e == Type.Encoding.UINT)
-            throw CError.at ("negation of unsigned integer", token);
-        if (e != Type.Encoding.SINT && e != Type.Encoding.UINT &&
-            e != Type.Encoding.FLOAT) {
-            throw CError.at ("invalid type for negation", token);
-        }
+        negnum = new NegNum (token).type (children[0].getType ());
+        negnum.checkTypes (env, resolver);
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
@@ -76,21 +73,9 @@ public class OpNeg extends Expression.Operator {
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
-        String val = children[0].getValueString ();
-        Type.Encoding e = children[0].getType ().getEncoding ();
-        if (e == Type.Encoding.FLOAT) {
-            valueString = new Binary (emitter, function)
-                .operation (Binary.BinOp.FSUB)
-                .type (LLVMType.getLLVMName (getType ()))
-                .operands ("0.0", val)
-                .build ();
-        } else {
-            valueString = new Binary (emitter, function)
-                .operation (Binary.BinOp.SUB)
-                .type (LLVMType.getLLVMName (getType ()))
-                .operands ("0", val)
-                .build ();
-        }
+        negnum.operand (children[0].getValueString ());
+        negnum.genLLVM (env, emitter, function);
+        valueString = negnum.getValueString ();
     }
 
     @SuppressWarnings("unchecked")
