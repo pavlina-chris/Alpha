@@ -82,8 +82,8 @@ public class OpPlus extends Expression.Operator {
             addptr = new AddPtr (token)
                 .pointerT (pointer.getType ())
                 .integerT (integer.getType ());
-            type = addptr.getType ();
             addptr.checkTypes (env, resolver);
+            type = addptr.getType ();
         } else {
             coerce = new Coerce (token)
                 .lhsT (children[0].getType ())
