@@ -1,4 +1,5 @@
 Move codegen out of AST
+Move allocs to function head (get them out of loops, etc)
 %/%%
 ++ --
 Assign-arith casts:
