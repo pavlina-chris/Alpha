@@ -695,6 +695,8 @@ let z: (x, y) = (5, 6);
 // In the end, x, y, and z all have the same value.
 \end{verbatim}
 
+%%%%%%%%%%
+% ADDITION
 \subsection{Addition (\texttt{+})}
 \label{sub:operators:add}
 The addition operator is ``\texttt{+}''. When both operands are numeric, it
@@ -704,21 +706,33 @@ it multiplies the integer by the width of the type pointed to, then adds it to
 the integer value of the pointer. This means that if \texttt{p} points to some
 item, \texttt{p~+~1} points to the next.
 
+%%%%%%%%%%%%%
+% SUBTRACTION
 \subsection{Subtraction (\texttt{-})}
 \label{sub:operators:sub}
-The subtraction operator is ``\texttt{-}''. When both operands are numeric, it
-applies \textref{ssb:types:casting:coercion}{standard coercion rules}, then
-performs subtraction. When both operands are pointers of the same type, it
-subtracts the pointers and divides by the width of the subtype, yielding a
-value of type $\R{SI}_{\textrm{pointer width}}$ (\texttt{ssize}). This means
-that if \texttt{p} and \texttt{q} point to two elements in a sequence,
+The subtraction operator is ``\texttt{-}''. It has three different modes:
+\begin{itemize}
+  \item{numeric - numeric: Standard subtraction}
+  \item{pointer - numeric: Subtract (numeric $\times$ width of type pointed to)
+    from the pointer}
+  \item{pointer - pointer: Subtract addresses and divide by the width of the
+    type pointed to}
+\end{itemize}
+The effect of this is that for numerics, \texttt{x~-~y} yields the difference.
+If \texttt{p} and \texttt{q} point to two elements in a sequence,
 \texttt{q~-~p} is the number of elements from \texttt{p} to \texttt{q}.
+If \texttt{q} is a non-initial element in a sequence, \texttt{q~-~1} is the
+element before it.
 
+%%%%%%%%%%%%%%%%
+% MULTIPLICATION
 \subsection{Multiplication (\texttt{*})}
 \label{sub:operators:mul}
 The multiplication operator is ``\texttt{*}''. This operator is only defined for
 numeric operands, and simply performs multiplication.
 
+%%%%%%%%%%
+% DIVISION
 \subsection{Division (\texttt{/})}
 \label{sub:operators:mul}
 The division operator is ``\texttt{/}''. This operator is only defined for
@@ -728,11 +742,16 @@ numeric operands, and simply performs division.
   \texttt{-=})}
 \label{sub:operators:arithas}
 Arithmetic assignment operators perform arithmetic and assignment at the same
-time. For primitive values, \texttt{x~op=~y} should behave identically to
-\texttt{x~=~x~op~y}. For non-primitives, the operation is allowed to actually
-modify the object. For example, when performing array concatenation, the
-intermediate value may be optimised away, and the right-hand values added
-directly to a resized left-hand array.
+time. The type semantics are typically identical to those for assignment
+(for example, if \texttt{x} is $\R{SI}_{32}$, then in
+\texttt{x~+=~y}, \texttt{y} is implicitly cast to $\R{SI}_{32}$. For special
+cases of the defined operators, where the returned type is the same as the
+type of the operands, the special-case semantics apply. For example, if
+\texttt{p} is a pointer, \texttt{p~+=~1} moves the pointer forward.
+
+For non-primitives, this is a mutating operation. For example, when performing
+array concatenation, the intermediate value is optimised away and the
+array is directly expanded.
 
 \subsection{Negation (\texttt{-})}
 \label{sub:operators:neg}

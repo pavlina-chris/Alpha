@@ -11,32 +11,32 @@ import me.pavlina.alco.lex.Token;
 
 /**
  * Subtraction of pointers. Subtracts two pointers of the same type. */
-public class SubPtr {
+public class Sub2Ptr {
     Token token;
     String lhsV, rhsV, valueString;
     Type type, ptrT;
 
-    public SubPtr (Token token) {
+    public Sub2Ptr (Token token) {
         this.token = token;
     }
 
     /**
      * Set the left-hand operand. */
-    public SubPtr lhs (String lhsV) {
+    public Sub2Ptr lhs (String lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public SubPtr rhs (String rhsV) {
+    public Sub2Ptr rhs (String rhsV) {
         this.rhsV = rhsV;
         return this;
     }
 
     /**
      * Set the (non-normalised) type */
-    public SubPtr type (Type type) {
+    public Sub2Ptr type (Type type) {
         ptrT = type.getNormalised ();
         return this;
     }

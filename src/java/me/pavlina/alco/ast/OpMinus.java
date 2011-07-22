@@ -19,8 +19,10 @@ import java.util.Arrays;
 public class OpMinus extends Expression.Operator {
     Token token;
     Expression[] children;
+    Expression pointer, integer;
     SubNum subnum;
-    SubPtr subptr;
+    Sub2Ptr sub2ptr;
+    Sub1Ptr sub1ptr;
     Coerce coerce;
     Type type;
     String valueString;
@@ -61,20 +63,34 @@ public class OpMinus extends Expression.Operator {
         Type.Encoding lhsE = children[0].getType ().getEncoding ();
         Type.Encoding rhsE = children[1].getType ().getEncoding ();
 
-        // Check for pointer subtraction
         if (lhsE == Type.Encoding.POINTER && rhsE == Type.Encoding.POINTER) {
+            // pointer-pointer
             Type lhsT = children[0].getType ();
             Type rhsT = children[1].getType ();
             if (!lhsT.getSubtype ().equalsNoConst (rhsT.getSubtype ())) {
                 throw CError.at ("subtracting pointers of different types",
                                  token);
             }
-            subptr = new SubPtr (token)
+            sub2ptr = new Sub2Ptr (token)
                 .type (lhsT);
-            subptr.checkTypes (env, resolver);
-            type = subptr.getType ();
+            sub2ptr.checkTypes (env, resolver);
+            type = sub2ptr.getType ();
+
+
+        } else if (lhsE == Type.Encoding.POINTER &&
+                   (rhsE == Type.Encoding.UINT ||
+                    rhsE == Type.Encoding.SINT)) {
+            // pointer-int
+            pointer = children[0];
+            integer = children[1];
+            sub1ptr = new Sub1Ptr (token)
+                .pointerT (pointer.getType ())
+                .integerT (integer.getType ());
+            sub1ptr.checkTypes (env, resolver);
+            type = sub1ptr.getType ();
 
         } else {
+            // int-int, float-float
             coerce = new Coerce (token)
                 .lhsT (children[0].getType ())
                 .rhsT (children[1].getType ());
@@ -98,11 +114,17 @@ public class OpMinus extends Expression.Operator {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
 
-        if (subptr != null) {
-            subptr.lhs (children[0].getValueString ());
-            subptr.rhs (children[1].getValueString ());
-            subptr.genLLVM (env, emitter, function);
-            valueString = subptr.getValueString ();
+        if (sub2ptr != null) {
+            sub2ptr.lhs (children[0].getValueString ());
+            sub2ptr.rhs (children[1].getValueString ());
+            sub2ptr.genLLVM (env, emitter, function);
+            valueString = sub2ptr.getValueString ();
+
+        } else if (sub1ptr != null) {
+            sub1ptr.pointerV (pointer.getValueString ());
+            sub1ptr.integerV (integer.getValueString ());
+            sub1ptr.genLLVM (env, emitter, function);
+            valueString = sub1ptr.getValueString ();
 
         } else {
             coerce.lhsV (children[0].getValueString ());

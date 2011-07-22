@@ -22,6 +22,7 @@ public class OpAssignMinus extends Expression.Operator {
     Expression pointer, integer;
     String valueString;
     Cast cast;
+    Sub1Ptr sub1ptr;
     SubNum subnum;
 
     public static Expression.OperatorCreator CREATOR;
@@ -66,11 +67,24 @@ public class OpAssignMinus extends Expression.Operator {
         Type.Encoding lhsE = children[0].getType ().getEncoding ();
         Type.Encoding rhsE = children[1].getType ().getEncoding ();
 
-        // Try pointer-pointer
         if (lhsE == Type.Encoding.POINTER && rhsE == Type.Encoding.POINTER) {
+            // pointer-pointer
             throw CError.at ("cannot assign-subtract ptr-ptr (changes type)",
                              token);
+
+        } else if (lhsE == Type.Encoding.POINTER &&
+                   (rhsE == Type.Encoding.UINT ||
+                    rhsE == Type.Encoding.SINT)) {
+            // pointer-int
+            pointer = children[0];
+            integer = children[1];
+            sub1ptr = new Sub1Ptr (token)
+                .pointerT (pointer.getType ())
+                .integerT (integer.getType ());
+            sub1ptr.checkTypes (env, resolver);
+
         } else {
+            // int-int, float-float
             Type.checkCoerce (children[1], children[0], token);
             cast = new Cast (token)
                 .type (children[1].getType ())
@@ -87,12 +101,19 @@ public class OpAssignMinus extends Expression.Operator {
         children[1].genLLVM (env, emitter, function);
         String ptr = children[0].getPointer (env, emitter, function);
         
-        cast.value (children[1].getValueString ());
-        cast.genLLVM (env, emitter, function);
-        subnum.lhs (children[0].getValueString ());
-        subnum.rhs (cast.getValueString ());
-        subnum.genLLVM (env, emitter, function);
-        valueString = subnum.getValueString ();
+        if (sub1ptr != null) {
+            sub1ptr.pointerV (children[0].getValueString ());
+            sub1ptr.integerV (children[1].getValueString ());
+            sub1ptr.genLLVM (env, emitter, function);
+            valueString = sub1ptr.getValueString ();
+        } else {
+            cast.value (children[1].getValueString ());
+            cast.genLLVM (env, emitter, function);
+            subnum.lhs (children[0].getValueString ());
+            subnum.rhs (cast.getValueString ());
+            subnum.genLLVM (env, emitter, function);
+            valueString = subnum.getValueString ();
+        }
         new store (emitter, function)
             .pointer (ptr)
             .value (LLVMType.getLLVMName (children[0].getType ()),
