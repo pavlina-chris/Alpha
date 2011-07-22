@@ -67,7 +67,7 @@ public class NameValue extends Expression
     public void checkTypes (Env env, Resolver resolver) throws CError {
         Resolver.Variable var = resolver.getVariable (name, token);
         realName = var.getName ();
-        type = var.getType ();
+        type = var.getType ().getNonLiteral ();
     }
 
     public Type getType () {

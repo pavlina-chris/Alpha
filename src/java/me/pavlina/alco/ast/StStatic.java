@@ -86,7 +86,7 @@ public class StStatic extends Statement
 
             names.add (name);
             realNames.add (null);
-            types.add (type);
+            types.add (type == null ? null : type.getNonLiteral ());
             expressions.add (value);
 
             token = stream.next ();

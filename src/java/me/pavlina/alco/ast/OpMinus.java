@@ -62,7 +62,6 @@ public class OpMinus extends Expression.Operator {
         Type.Encoding rhsE = children[1].getType ().getEncoding ();
 
         // Check for pointer subtraction
-        boolean ptr = false;
         if (lhsE == Type.Encoding.POINTER && rhsE == Type.Encoding.POINTER) {
             Type lhsT = children[0].getType ();
             Type rhsT = children[1].getType ();
@@ -70,14 +69,11 @@ public class OpMinus extends Expression.Operator {
                 throw CError.at ("subtracting pointers of different types",
                                  token);
             }
-            ptr = true;
-        }
-
-        if (ptr) {
             subptr = new SubPtr (token)
-                .type (children[0].getType ());
+                .type (lhsT);
             subptr.checkTypes (env, resolver);
             type = subptr.getType ();
+
         } else {
             coerce = new Coerce (token)
                 .lhsT (children[0].getType ())

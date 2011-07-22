@@ -60,7 +60,7 @@ public class OpAssign extends Expression.Operator {
 
     public String getValueString () {
         if (assign == null)
-            return valueString;
+            return assigncall.getValueString ();
         else
             return assign.getValueString ();
     }

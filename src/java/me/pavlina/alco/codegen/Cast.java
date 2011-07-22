@@ -7,7 +7,6 @@ import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.ast.Expression;
-import me.pavlina.alco.ast.IntValue;
 import me.pavlina.alco.llvm.*;
 import java.math.BigInteger;
 import static me.pavlina.alco.language.IntLimits.*;
@@ -21,14 +20,6 @@ public class Cast {
 
     public Cast (Token token) {
         this.token = token;
-    }
-
-    /**
-     * Optional: Give the expression. A couple extra checks can be done in
-     * this case. */
-    public Cast expr (Expression expr) {
-        this.expr = expr;
-        return this;
     }
 
     /**
@@ -63,10 +54,9 @@ public class Cast {
         // Integer literal cast
         if ((srcE == Type.Encoding.SINT || srcE == Type.Encoding.UINT) &&
             (dstE == Type.Encoding.SINT || dstE == Type.Encoding.SINT) &&
-            expr != null &&
-            IntValue.class.isInstance (expr)) {
+            srcT.getValue () != null) {
 
-            BigInteger intVal = ((IntValue) expr).getValue ();
+            BigInteger intVal = srcT.getValue ();
             BigInteger min, max;
 
             int size = dstT.getSize ();
@@ -273,9 +263,9 @@ public class Cast {
         // Integer literal cast
         if ((srcE == Type.Encoding.SINT || srcE == Type.Encoding.UINT) &&
             (dstE == Type.Encoding.SINT || dstE == Type.Encoding.SINT) &&
-            (val.startsWith ("-") ||
-             (val.charAt (0) >= '0' && val.charAt (0) <= '9'))) {
-            valueString = val;
+            srcT.getValue () != null) {
+            BigInteger intVal = srcT.getValue ();
+            valueString = intVal.toString ();
             return;
         }
 

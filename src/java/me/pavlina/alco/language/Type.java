@@ -218,6 +218,20 @@ public class Type implements HasType {
     }
 
     /**
+     * Return a non-literal copy of this type. This removes the value
+     * qualifier. */
+    public Type getNonLiteral () {
+        Type t = new Type ();
+        t.name = name;
+        t.subtypes = subtypes;
+        t.size = size;
+        t.encoding = encoding;
+        t.isConst = false;
+        t.intVal = null;
+        return t;
+    }
+
+    /**
      * Get the encoded type name. This is used in code, both in the dynamic
      * type system and in method name mangling. It is fully reversible
      * (see fromEncodedName()). See Standard:CallingConvention:NameMangling */

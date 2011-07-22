@@ -79,7 +79,7 @@ public class StLet extends Statement
 
             names.add (name);
             realNames.add (null);
-            types.add (type);
+            types.add (type == null ? null : type.getNonLiteral ());
             expressions.add (value);
 
             token = stream.next ();
@@ -113,7 +113,6 @@ public class StLet extends Statement
                 (i, resolver.addVariable
                  (names.get (i), types.get (i)).getName ());
             casts.add (new Cast (token)
-                       .expr (expressions.get (i))
                        .type (expressions.get (i).getType ())
                        .dest (types.get (i)));
             casts.get (i).checkTypes (env, resolver);
