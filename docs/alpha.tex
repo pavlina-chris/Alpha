@@ -122,11 +122,11 @@ barithop    = "*" | "/" | "%" | "%%" | "+" | "-" | "<<" | ">>" | "&" |
               "^" | "|" ;
 logop       = "!" | "&&" | "||" ;
 eqop        = "<" | "<=" | ">" | ">=" | "==" | "!=" | "is" | "isnot" ;
-assignop    = [barithop], "=" ;
+assignop    = (barithop, "=") | ":=" ;
 typeop      = "sizeof" | "new" | "delete" | "hastype" | "typename" |
               "as" ;
 umemop      = "*" | "&" ;
-sepop       = "(" | ")" | "[" | "]" | "{" | "}" | "," | "." ;
+sepop       = "(" | ")" | "[" | "]" | "{" | "}" | "," | "." | "=" ;
 Operator    = uarithop | barithop | logop | eqop | assignop | typeop |
               umemop | sepop ;
 escape      = "\", ("a" | "b" | "f" | "n" | "r" | "t" | "v" | "'" |
@@ -445,9 +445,9 @@ As a separate coercion rule, the binary logical operators should coerce both
 operands to $\R{B}$.
 
 \begin{verbatim}
-const x: 1;
-const y: 2;
-let z: x + y;
+const x = 1;
+const y = 2;
+let z = x + y;
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%
@@ -462,12 +462,12 @@ This constant specifier may be casted off. Compilers are forbidden from
 emitting warnings or errors if this is done. The result of the following
 is undefined:
 \begin{verbatim}
-const x: 2;
-let xp: &x as int*;
-*xp = 3;
+const x = 2;
+let xp = &x as int*;
+*xp := 3;
 \end{verbatim}
 
-Note that \texttt{const~x:~2;} and \texttt{let~x~int~const:~2;} are not the
+Note that \texttt{const~x~=~2;} and \texttt{let~x~int~const~=~2;} are not the
 same. The former actually declares a constant, which is globally accessible and
 possibly stored in read-only memory. The latter is a variable, but one that will
 cause a compiler error if you assign to it. The latter will always be assignable
@@ -611,7 +611,7 @@ Type IDs are:
       \texttt{/} & Binary & L$\to$R & Division \\ \hline
       \texttt{+} & Binary & L$\to$R & Addition \\
       \texttt{-} & Binary & L$\to$R & Subtraction \\ \hline
-      \texttt{=} & Binary & R$\to$L & Assignment \\
+      \texttt{:=} & Binary & R$\to$L & Assignment \\
       \texttt{*=} & Binary & R$\to$L & Arithmetic assignment \\
       \texttt{/=} & Binary & R$\to$L & Arithmetic assignment \\
       \texttt{+=} & Binary & R$\to$L & Arithmetic assignment \\
@@ -633,9 +633,9 @@ Type IDs are:
 
 %%%%%%%%
 % ASSIGN
-\subsection{Assign (\texttt{=})}
+\subsection{Assign (\texttt{:=})}
 \label{sub:operators:assign}
-The assignment operator (\texttt{=}) is used to assign a value to any item with
+The assignment operator (\texttt{:=}) is used to assign a value to any item with
 a writable pointer (usually variables). Additionally, it can be used to assign
 a tuple of values, or a function returning multiple values.
 Examples:
@@ -645,15 +645,15 @@ Examples:
 }
 
 int main (u8[][] argv) {
-    let x: 5, y: 6, z: 7;
+    let x = 5, y = 6, z = 7;
 
-    z = 8;
+    z := 8;
     // z now contains 8
 
-    (x, y) = (y, x);
+    (x, y) := (y, x);
     // x now contains 6, and y contains 5
 
-    (x, y) = returnsTwo ();
+    (x, y) := returnsTwo ();
     // x now contains 2, and y contains 3
 }
 \end{verbatim}
@@ -664,10 +664,10 @@ asymmetric (the number of values does not equal the number of destinations),
 the minimum of the two shall be assigned, and any unused values shall not be
 evaluated:
 \begin{verbatim}
-(x, y, z) = (1, 2);
+(x, y, z) := (1, 2);
 // z is untouched
 
-(x, y) = (1, 2, withSideEffects ());
+(x, y) := (1, 2, withSideEffects ());
 // The side effects never happen because withSideEffects () is never
 // evaluated.
 \end{verbatim}
@@ -679,16 +679,16 @@ of the values assigned. Examples:
 \begin{verbatim}
 let x: 0, y: 0;
 
-x = y = 3;  // Equivalent to x = (y = 3)
+x := y := 3;  // Equivalent to x := (y := 3)
 // x and y now both contain 3
 
-let z: (x, y) = (5, 6);
+let z: (x, y) := (5, 6);
 // z now contains 5
 
 // WARNING: The following does not do what it looks like (see above:
 // the value of a multiple assignment is the first assigned value,
 // and extraneous items on either side are ignored):
-(x, y) = (y, x) = (z, y);
+(x, y) := (y, x) := (z, y);
 // Result:
 //   Assign x := y, y := z
 //   Assign x := y
@@ -799,15 +799,15 @@ names and types, more local should be considered before more distant.
 \subsection{Variable and constant declaration (\texttt{let} and \texttt{const})}
 \label{sub:statements:vardecl}
 \begin{verbatim}
-VarDecl   = "let", ["volatile"], WordExclAt, [typename], ":", Expression,
-            [{",", WordExclAt, [typename], ":", Expression}]
-ConstDecl = "const", WordExclAt, [typename], ":", Expression,
-            [{",", WordExclAt, [typename], ":", Expression}]
+VarDecl   = "let", ["volatile"], WordExclAt, [typename], "=", Expression,
+            [{",", WordExclAt, [typename], "=", Expression}]
+ConstDecl = "const", WordExclAt, [typename], "=", Expression,
+            [{",", WordExclAt, [typename], "=", Expression}]
 \end{verbatim}
 Note the general format:
 \begin{verbatim}
-let varA: 2, varB i8: 3 + someOtherVar;
-const cstA: 3, cstB: 5 + varB;
+let varA = 2, varB i8 = 3 + someOtherVar;
+const cstA = 3, cstB = 5 + varB;
 \end{verbatim}
 A VarDecl declares all of its variables for use in the current scope. The
 expression, which is required, is evaluated at runtime and assigned to the
@@ -815,7 +815,7 @@ variable.
 
 A ConstDecl declares all of its constants for use in the current scope, with the
 additional requirement that they be globally usable (but not by name). That is,
-if you declare \texttt{const~x:~3;}, you can only access the constant by name in
+if you declare \texttt{const~x~=~3;}, you can only access the constant by name in
 the scope in which it was declared, but the value of \texttt{\&x} will be valid
 globally.
 
@@ -833,14 +833,14 @@ line.
 \label{sub:statements:static}
 \begin{verbatim}
 Static = "static", ["volatile"], ["threadlocal"],
-         WordExclAt, [typename], ":", Expression,
-         [{",", WordExclAt, [typename], ":", Expression}] ;
+         WordExclAt, [typename], "=", Expression,
+         [{",", WordExclAt, [typename], "=", Expression}] ;
 \end{verbatim}
 
 Note the general format:
 \begin{verbatim}
-static a: 0;
-static threadlocal b: 3;
+static a = 0;
+static threadlocal b = 3, c = 4;
 \end{verbatim}
 
 A static variable is one whose value is retained across calls to the function.
@@ -850,7 +850,7 @@ Boolean, or null literal, due to the way the initialiser is stored. Casts of
 these need not be permitted, because the type can be specified explicitly.
 
 Note that because constant arithmetic folding comes before typechecking,
-\texttt{static~x:~-3} is valid even though \texttt{-3} is not a literal: it
+\texttt{static~x~=~-3} is valid even though \texttt{-3} is not a literal: it
 will be folded into one.
 
 %%%%%%%%
@@ -959,10 +959,10 @@ and in all child scopes. A variable may be redeclared in a scope, which override
 the declaration for that scope and its children. For example:
 \begin{verbatim}
 {
-    let x: 2;
+    let x = 2;
     // x is 2 here
     {
-        let x: "Hello";
+        let x = "Hello";
         // x is "Hello" here
     }
     // x is still 2 here
@@ -1210,10 +1210,10 @@ int main (u8[][] args) {
 extern size strlen (u8*);
 extern u8* strcpy (u8*, u8*);
 int main (int argc, u8** argv) nomangle allowconflict {
-    u8[][] args = new u8[][] (argc);
-    for (let i: 0; i < argc; ++i) {
-        let len: strlen (argv[i]);
-        u8[i] = new u8[] (len + 1);
+    let args = new u8[][] (argc);
+    for (let i = 0; i < argc; ++i) {
+        let len = strlen (argv[i]);
+        args[i] := new u8[] (len + 1);
         strcpy (u8[i], argv[i]);
     }
     return $$name "$F5hello4mainC$PPE" (args);

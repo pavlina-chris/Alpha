@@ -17,7 +17,7 @@ import java.math.BigInteger;
 
 /**
  * Static variable assignment. Syntax:
- *  - ST := static {VARIABLE} : {expression} [ , {VARIABLE} : {expression} ]* ;
+ *  - ST := static {VARIABLE} = {expression} [ , {VARIABLE} = {expression} ]* ;
  *  - VARIABLE := {name} [ {type} ]?
  */
 public class StStatic extends Statement
@@ -66,17 +66,17 @@ public class StStatic extends Statement
             // Type and colon
             token = stream.next ();
             if (token.is (Token.NO_MORE))
-                throw UnexpectedEOF.after (": or type", stream.last ());
-            else if (token.is (Token.OPER, ":"))
+                throw UnexpectedEOF.after ("= or type", stream.last ());
+            else if (token.is (Token.OPER, "="))
                 type = null;
             else {
                 stream.putback (token);
                 type = TypeParser.parse (stream, env);
                 token = stream.next ();
                 if (token.is (Token.NO_MORE))
-                    throw UnexpectedEOF.after (":", stream.last ());
-                else if (!token.is (Token.OPER, ":"))
-                    throw Unexpected.after (":", stream.last ());
+                    throw UnexpectedEOF.after ("=", stream.last ());
+                else if (!token.is (Token.OPER, "="))
+                    throw Unexpected.after ("=", stream.last ());
             }
 
             // Value

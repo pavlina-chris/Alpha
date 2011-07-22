@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 /**
  * Variable assignment. Syntax:
- *  - LET := let {VARIABLE} : {expression} [ , {VARIABLE} : {expression} ]* ;
+ *  - LET := let {VARIABLE} = {expression} [ , {VARIABLE} = {expression} ]* ;
  *  - VARIABLE := {name} [ {type} ]?
  */
 public class StLet extends Statement
@@ -61,17 +61,17 @@ public class StLet extends Statement
             // Type and colon
             token = stream.next ();
             if (token.is (Token.NO_MORE))
-                throw UnexpectedEOF.after (": or type", stream.last ());
-            else if (token.is (Token.OPER, ":"))
+                throw UnexpectedEOF.after ("= or type", stream.last ());
+            else if (token.is (Token.OPER, "="))
                 type = null;
             else {
                 stream.putback (token);
                 type = TypeParser.parse (stream, env);
                 token = stream.next ();
                 if (token.is (Token.NO_MORE))
-                    throw UnexpectedEOF.after (":", stream.last ());
-                else if (!token.is (Token.OPER, ":"))
-                    throw Unexpected.after (":", stream.last ());
+                    throw UnexpectedEOF.after ("=", stream.last ());
+                else if (!token.is (Token.OPER, "="))
+                    throw Unexpected.after ("=", stream.last ());
             }
 
             // Value

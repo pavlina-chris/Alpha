@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 /**
  * Const assignment. Syntax:
- *  - CONST := const {CONSTANT} : {expression} [ , {CONSTANT} : {expression} ]*;
+ *  - CONST := const {CONSTANT} = {expression} [ , {CONSTANT} = {expression} ]*;
  *  - CONSTANT := {name} [ {type} ]?
  */
 public class StConst extends Statement
@@ -57,17 +57,17 @@ public class StConst extends Statement
             // Type and colon
             token = stream.next ();
             if (token.is (Token.NO_MORE))
-                throw UnexpectedEOF.after (": or type", stream.last ());
-            else if (token.is (Token.OPER, ":"))
+                throw UnexpectedEOF.after ("= or type", stream.last ());
+            else if (token.is (Token.OPER, "="))
                 type = null;
             else {
                 stream.putback (token);
                 type = TypeParser.parse (stream, env);
                 token = stream.next ();
                 if (token.is (Token.NO_MORE))
-                    throw UnexpectedEOF.after (":", stream.last ());
-                else if (!token.is (Token.OPER, ":"))
-                    throw Unexpected.after (":", stream.last ());
+                    throw UnexpectedEOF.after ("=", stream.last ());
+                else if (!token.is (Token.OPER, "="))
+                    throw Unexpected.after ("=", stream.last ());
             }
 
             // Value

@@ -759,7 +759,10 @@ public class Lexer implements ErrorAnnotator
         case ',':
             oper = ","; break;
         case ':':
-            oper = ":"; break;
+            switch (ch2) {
+            case '=': oper = ":="; break;
+            default:  oper = ":"; break;
+            } break;
         case ';':
             oper = ";"; break;
         case '.':
