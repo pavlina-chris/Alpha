@@ -149,9 +149,7 @@ public class StIf extends Statement
 
         String cond = new Conversion (emitter, function)
             .operation (Conversion.ConvOp.TRUNC)
-            .source (LLVMType.getLLVMName
-                     (((Expression) values[0]).getType ()),
-                     c.getValueString ())
+            .source ("i8", c.getValueString ())
             .dest ("i1").build ();
         
         // Branch
