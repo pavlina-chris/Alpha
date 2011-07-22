@@ -26,6 +26,7 @@ public class StLet extends Statement
     private List<String> realNames;
     private List<Type> types;
     private List<Expression> expressions;
+    Method method;
     List<Cast> casts;
 
     public StLet (Env env, TokenStream stream, Method method) throws CError {
@@ -36,6 +37,7 @@ public class StLet extends Statement
             throw new RuntimeException ("StLet instantiated without let kwd");
         }
 
+        this.method = method;
         names = new ArrayList<String> ();
         realNames = new ArrayList<String> ();
         types = new ArrayList<Type> ();
@@ -117,17 +119,14 @@ public class StLet extends Statement
                        .dest (types.get (i)));
             casts.get (i).checkTypes (env, resolver);
                        
+            method.addAlloca (LLVMType.getLLVMName (types.get (i)),
+                              realNames.get (i));
         }
             
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         for (int i = 0; i < names.size (); ++i) {
-            new alloca (emitter, function)
-                .type (LLVMType.getLLVMName (types.get (i)))
-                .result (realNames.get (i))
-                .build ();
-            
             expressions.get (i).genLLVM (env, emitter, function);
             Type.Encoding enc = types.get (i).getEncoding ();
 

@@ -19,6 +19,8 @@ public class Method extends FunctionLike
 {
     private Token token;
     private List<AST> children;
+    List<String> allocaTypes;
+    List<String> allocaNames;
     int numberTemps;
 
     /**
@@ -29,6 +31,8 @@ public class Method extends FunctionLike
     {
         super ();
         numberTemps = 0;
+        allocaTypes = new ArrayList<String> ();
+        allocaNames = new ArrayList<String> ();
         token = stream.peek ();
         this.parse (stream, env, allowStatic, /* allowNomangle */ true,
                     /* alloowAllowconflict */ true, /* allowGlobal */ true,
@@ -59,6 +63,13 @@ public class Method extends FunctionLike
      */
     public void requireTemps (int n) {
         numberTemps = (n > numberTemps) ? n : numberTemps;
+    }
+
+    /**
+     * Add an alloca to the top of the function. */
+    public void addAlloca (String type, String name) {
+        allocaTypes.add (type);
+        allocaNames.add (name);
     }
 
     public Token getToken () {
@@ -166,6 +177,14 @@ public class Method extends FunctionLike
         for (int i = 0; i < numberTemps; ++i) {
             new alloca (emitter, func)
                 .type ("i128").result ("%.T" + Integer.toString (i))
+                .build ();
+        }
+
+        // Make the allocations
+        for (int i = 0; i < allocaTypes.size (); ++i) {
+            new alloca (emitter, func)
+                .type (allocaTypes.get (i))
+                .result (allocaNames.get (i))
                 .build ();
         }
 
