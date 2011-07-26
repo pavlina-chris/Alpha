@@ -1,3 +1,5 @@
+< > <= >= == != === !==
+Special = error (must be := or ==)
 %/%%
 ++ --
 Volatile
