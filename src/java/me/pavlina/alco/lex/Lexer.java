@@ -714,8 +714,8 @@ public class Lexer implements ErrorAnnotator
                 case '=': oper = ">>="; break;
                 default:  oper = ">>"; break;
                 } break;
-            case '=': oper = "<="; break;
-            default:  oper = "<";
+            case '=': oper = ">="; break;
+            default:  oper = ">";
             } break;
         case '&':
             switch (ch2) {
@@ -736,12 +736,20 @@ public class Lexer implements ErrorAnnotator
             } break;
         case '!':
             switch (ch2) {
-            case '=': oper = "!="; break;
+            case '=':
+                switch (ch3) {
+                case '=': oper = "!=="; break;
+                default: oper = "!="; break;
+                } break;
             default:  oper = "!"; break;
             } break;
         case '=':
             switch (ch2) {
-            case '=': oper = "=="; break;
+            case '=':
+                switch (ch3) {
+                case '=': oper = "==="; break;
+                default:  oper = "=="; break;
+                } break;
             default:  oper = "=";
             } break;
         case '(':

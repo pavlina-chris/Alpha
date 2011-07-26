@@ -23,6 +23,7 @@ public class ConstantFold {
             List<AST> children = item.getChildren ();
             if (children == null) return item;
             for (int i = 0; i < children.size (); ++i) {
+                if (children.get (i) == null) continue;
                 children.set (i, run (children.get (i)));
             }
             return item;

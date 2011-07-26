@@ -611,6 +611,14 @@ Type IDs are:
       \texttt{/} & Binary & L$\to$R & Division \\ \hline
       \texttt{+} & Binary & L$\to$R & Addition \\
       \texttt{-} & Binary & L$\to$R & Subtraction \\ \hline
+      \texttt{<} & Binary & L$\to$R & $<$ \\
+      \texttt{<=} & Binary & L$\to$R & $\leq$ \\
+      \texttt{>} & Binary & L$\to$R & $>$ \\
+      \texttt{>=} & Binary & L$\to$R & $\geq$ \\ \hline
+      \texttt{!=} & Binary & L$\to$R & $\not=$ (by value) \\
+      \texttt{==} & Binary & L$\to$R & $=$ (by value) \\
+      \texttt{!==} & Binary & L$\to$R & $\not=$ (by reference) \\
+      \texttt{===} & Binary & L$\to$R & $=$ (by reference) \\ \hline
       \texttt{:=} & Binary & R$\to$L & Assignment \\
       \texttt{*=} & Binary & R$\to$L & Arithmetic assignment \\
       \texttt{/=} & Binary & R$\to$L & Arithmetic assignment \\
@@ -738,6 +746,43 @@ numeric operands, and simply performs multiplication.
 The division operator is ``\texttt{/}''. This operator is only defined for
 numeric operands, and simply performs division.
 
+%%%%%%%%%%%%%%%%%%%%%
+% BY-VALUE COMPARISON
+\subsection{By-value comparison (\texttt{<}, \texttt{>}, \texttt{<=},
+  \texttt{>=}, \texttt{==}, \texttt{!=})}
+\label{sub:operators:valcomp}
+By-value comparison operators, of course, perform comparison by value. The
+inequality comparators have a higher precedence than the equality
+comparators. Type coercion is performed first, except in the special case of
+array comparison (see below). Integer types should be compared using whichever
+comparison (signed or unsigned) makes sense for that type; floats should be
+compared with the ``ordered and less than'', ``ordered and equal'',
+{\it etc.} modes.
+
+\textbf{Arrays:} Array comparison is performed by lexical ordering, similar to
+the way strings are compared. For example, $\{1, 1, 1, 1\} < \{2, 3\}$.
+Array types cannot be coerced, but the values inside should be. Note that
+obviously, for the \texttt{==} and \texttt{!=} comparisons, length should be
+checked first to avoid having to run the entire length of the arrays every
+time.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% BY-REFERENCE COMPARISON
+\subsection{By-reference comparison (\texttt{===}, \texttt{!==})}
+\label{sub:operators:refcomp}
+By-reference comparison operators compare references. For primitive types
+(integer, float, Boolean, {\it etc.}), this is exactly equivalent to a
+by-value comparison. For anything with a pointer (arrays and objects), this
+directly compares those pointers. It is like Python's \texttt{is} operator
+and Java's \texttt{==} operator. These operators cannot be overloaded.
+
+It is legal for compilers to output a warning when comparing primitives
+by reference, since this is rarely what is desired. The semantics are the
+same, but it suggests that the programmer may not have written what he
+intended.
+
+%%%%%%%%%%%%%%
+% ARITH ASSIGN
 \subsection{Arithmetic assign (\texttt{*=}, \texttt{/=}, \texttt{+=},
   \texttt{-=})}
 \label{sub:operators:arithas}

@@ -1,4 +1,3 @@
-< > <= >= == != === !==
 Special = error (must be := or ==)
 %/%%
 ++ --
