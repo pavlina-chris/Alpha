@@ -431,6 +431,7 @@ public abstract class Expression extends AST implements HasType
         UNOPS = new HashMap<String, OperatorCreator> ();
 
         BINOPS.put (":=", OpAssign.CREATOR);
+        BINOPS.put ("=", OpEqError.CREATOR);
         BINOPS.put (",", OpComma.CREATOR);
         BINOPS.put ("as", OpCast.CREATOR);
         //BINOPS.put (".", OpMember.CREATOR);
