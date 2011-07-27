@@ -370,19 +370,21 @@ public class Type implements HasType {
     {
         Encoding enc = t.getEncoding ();
         int size = t.getSize ();
-        if (enc == Encoding.FLOAT) {
-            if (size == 8)      return 1;
-            else                return 2;
+        if (enc == Encoding.BOOL) {
+            return 5;
+        } else if (enc == Encoding.FLOAT) {
+            if (size == 8)      return 10;
+            else                return 15;
         } else if (enc == Encoding.UINT) {
-            if (size == 8)      return 3;
-            else if (size == 4) return 4;
-            else if (size == 2) return 5;
-            else                return 6;
+            if (size == 8)      return 20;
+            else if (size == 4) return 25;
+            else if (size == 2) return 30;
+            else                return 35;
         } else if (enc == Encoding.SINT) {
-            if (size == 8)      return 7;
-            else if (size == 4) return 8;
-            else if (size == 2) return 9;
-            else                return 10;
+            if (size == 8)      return 40;
+            else if (size == 4) return 45;
+            else if (size == 2) return 50;
+            else                return 55;
         } else
             return -1;
     }

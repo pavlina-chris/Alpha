@@ -54,8 +54,13 @@ public class CmpNum {
         Type.Encoding enc = vtype.getEncoding ();
         if (enc != Type.Encoding.SINT &&
             enc != Type.Encoding.UINT &&
-            enc != Type.Encoding.FLOAT) {
-            throw CError.at ("invalid types for division", token);
+            enc != Type.Encoding.FLOAT &&
+            enc != Type.Encoding.BOOL) {
+            throw CError.at ("invalid types for compare", token);
+        }
+        if (enc == Type.Encoding.BOOL &&
+            (this.cmp != Comparison.EQ && this.cmp != Comparison.NE)) {
+            throw CError.at ("invalid comparison for type 'bool'", token);
         }
         rtype = new Type (env, "bool", null);
     }
@@ -63,8 +68,45 @@ public class CmpNum {
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         if (vtype.getEncoding () == SINT || vtype.getEncoding () == UINT)
             genLLVM_int (env, emitter, function);
+        else if (vtype.getEncoding () == BOOL)
+            genLLVM_bool (env, emitter, function);
         else
             genLLVM_flt (env, emitter, function);
+    }
+
+    public void genLLVM_bool (Env env, LLVMEmitter emitter, Function function) {
+        icmp.Icmp cmp;
+        switch (this.cmp) {
+        case EQ:
+            cmp = icmp.Icmp.EQ;
+            break;
+        case NE:
+            cmp = icmp.Icmp.NE;
+            break;
+        default:
+            throw new RuntimeException ("Invalid compare");
+        }
+
+        String lhsTrue = new icmp (emitter, function)
+            .comparison (icmp.Icmp.NE)
+            .type (LLVMType.getLLVMName (vtype))
+            .operands (lhsV, "0")
+            .build ();
+        String rhsTrue = new icmp (emitter, function)
+            .comparison (icmp.Icmp.NE)
+            .type (LLVMType.getLLVMName (vtype))
+            .operands (rhsV, "0")
+            .build ();
+        String cmpResult = new icmp (emitter, function)
+            .comparison (cmp)
+            .type ("i1")
+            .operands (lhsTrue, rhsTrue)
+            .build ();
+        valueString = new Conversion (emitter, function)
+            .operation (Conversion.ConvOp.SEXT)
+            .source ("i1", cmpResult)
+            .dest ("i8")
+            .build ();
     }
 
     public void genLLVM_int (Env env, LLVMEmitter emitter, Function function) {

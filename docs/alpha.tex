@@ -427,6 +427,7 @@ Types higher in the following list are ``greater''. If two values are of the
 same type class but different width, the wider is ``greater''.
 
 \begin{itemize}
+\item{$\R{B}$}
 \item{$\R{FP}$}
 \item{$\R{UI}$}
 \item{$\R{SI}$}
@@ -441,14 +442,16 @@ Additionally, any operation which performs coercion should convert its
 result type to non-\texttt{const}. Therefore, the type of \texttt{z} below
 is \texttt{int}, not \texttt{int~const}:
 
-As a separate coercion rule, the binary logical operators should coerce both
-operands to $\R{B}$.
-
 \begin{verbatim}
 const x = 1;
 const y = 2;
 let z = x + y;
 \end{verbatim}
+
+The reason Boolean is placed at the top is so that one cannot write nonsense
+like \texttt{true~+~2}. Rather than casting \texttt{true} to $-1$ and giving
+the result of $1$, \texttt{2} will cast to \texttt{true}, then the \texttt{+}
+operator will report an inability to add Booleans.
 
 %%%%%%%%%%%%%%%%
 % CONSTANT TYPES
