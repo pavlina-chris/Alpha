@@ -116,6 +116,14 @@ public class Package extends AST
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
         for (AST i: children) {
+            if (Method.class.isInstance (i)) {
+                resolver.addFunction ((Method) i, i.getToken ());
+            }
+            else if (Extern.class.isInstance (i)) {
+                resolver.addFunction ((Extern) i, i.getToken ());
+            }
+        }
+        for (AST i: children) {
             i.checkTypes (env, resolver);
         }
     }

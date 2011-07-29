@@ -10,6 +10,8 @@ package me.pavlina.alco.language;
 public class Keywords
 {
 
+    private Keywords () {}
+
     /**
      * List of all Alpha keywords, excluding type names
      */

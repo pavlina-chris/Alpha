@@ -32,7 +32,8 @@ public class Extern extends FunctionLike
         this.parse (stream, env, /* allowStatic*/ false,
                     /* allowNomangle */ true, /* allowAllowconflict */ false,
                     /* allowGlobal */ false, /* allowMultRet */ false,
-                    /* nomangleRedundant */ true, /* allowUnnamed */ true);
+                    /* nomangleRedundant */ true, /* allowUnnamed */ true,
+                    /* allowOperator */ false);
 
         nomangle = true;
         Token temp = stream.next ();
@@ -53,7 +54,7 @@ public class Extern extends FunctionLike
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
-        resolver.addFunction (this, this.getToken ());
+        // Do nothing
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {

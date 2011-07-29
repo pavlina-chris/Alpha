@@ -84,9 +84,12 @@ public class StReturn extends Statement
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        if (value[0] == null)
+        if (value[0] == null) {
+            // Starting a new block. Increment temp counter to avoid
+            // "instruction expected to be numbered '%blah'" errors from LLC
+            emitter.getTemporary ("%");
             new ret (emitter, function).build ();
-        else {
+        } else {
             List<Type> methodTypes = method.getTypes ();
             for (int i = 1; i < values.size (); ++i) {
                 values.get (i).genLLVM (env, emitter, function);
@@ -109,6 +112,9 @@ public class StReturn extends Statement
                 .dest (methodTypes.get (0));
             c.genLLVM (env, emitter, function);
 
+            // Starting a new block. Increment temp counter to avoid
+            // "instruction expected to be numbered '%blah'" errors from LLC
+            emitter.getTemporary ("%");
             new ret (emitter, function)
                 .value (LLVMType.getLLVMName (values.get (0).getType ()),
                         c.getValueString ())

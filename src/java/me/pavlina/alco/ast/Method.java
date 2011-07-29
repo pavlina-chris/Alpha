@@ -37,7 +37,8 @@ public class Method extends FunctionLike
         this.parse (stream, env, allowStatic, /* allowNomangle */ true,
                     /* alloowAllowconflict */ true, /* allowGlobal */ true,
                     /* allowMultRet */ true,
-                    /* nomangleRedundant */ false, /* allowUnnamed */ false);
+                    /* nomangleRedundant */ false, /* allowUnnamed */ false,
+                    /* allowOperator */ true);
         this.pkg = pkg;
 
         children = new ArrayList<AST> ();
@@ -81,7 +82,6 @@ public class Method extends FunctionLike
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
-        resolver.addFunction (this, this.getToken ());
         Resolver newResolver = new Resolver (resolver);
         for (int i = 0; i < argtypes.size (); ++i)
             newResolver.addVariable (argnames.get (i), argtypes.get (i));

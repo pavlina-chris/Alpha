@@ -3,6 +3,7 @@
 package me.pavlina.alco.ast;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.Keywords;
+import me.pavlina.alco.language.Operators;
 import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.lex.TokenStream;
@@ -10,6 +11,8 @@ import me.pavlina.alco.lex.Token;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * AST function. Represents any function-like object, such as a method or an
@@ -19,6 +22,10 @@ public abstract class FunctionLike extends AST
     /**
      * Unmangled name of the function */
     protected String name;
+
+    /**
+     * Whether the name is an operator */
+    protected boolean operator;
 
     /**
      * Return type of the function, or null for 'void' */
@@ -67,12 +74,15 @@ public abstract class FunctionLike extends AST
      * @param nomangleRedundant Whether "nomangle" should trigger a
      *  "nomangle is redundant here" warning
      * @param allowUnnamed Whether to allow unnamed args
+     * @param allowOperator Whether to allow this to be an operator overload
+     *  declaration
      */
     protected void parse (TokenStream stream, Env env, boolean allowStatic,
                           boolean allowNomangle, boolean allowAllowconflict,
                           boolean allowGlobal, boolean allowMultRet,
                           boolean nomangleRedundant,
-                          boolean allowUnnamed) throws CError {
+                          boolean allowUnnamed,
+                          boolean allowOperator) throws CError {
 
         _static = nomangle = false;
 
@@ -119,6 +129,7 @@ public abstract class FunctionLike extends AST
 
         // Name
         token = stream.next ();
+        operator = false;
         if (token.is (Token.EXTRA, "$$name")) {
             token = stream.next ();
             if (token.is (Token.NO_MORE))
@@ -126,6 +137,9 @@ public abstract class FunctionLike extends AST
             name = token.value;
         } else if (token.is (Token.NO_MORE)) {
             throw Unexpected.after ("name", stream.last ());
+        } else if (token.is (Token.OPER) && allowOperator &&
+                   Operators.isOverloadable (token.value)) {
+            operator = true;
         } else if (!token.is (Token.WORD) ||
                    Keywords.isKeyword (token.value, true)) {
             throw Unexpected.at ("name", token);
@@ -197,6 +211,8 @@ public abstract class FunctionLike extends AST
                     throw CError.at ("unexpected: nomangle", token);
                 if (nomangleRedundant)
                     env.warning_at ("nomangle is redundant here", token);
+                if (operator)
+                    throw CError.at ("operators must be mangled", token);
                 stream.next ();
                 nomangle = true;
 
@@ -240,6 +256,8 @@ public abstract class FunctionLike extends AST
     public String getMangledName () {
         if (nomangle)
             return name;
+        if (operator)
+            return getMangledOperator ();
         StringBuilder sb = new StringBuilder ();
         if (global) {
             sb.append ("$G");
@@ -252,6 +270,20 @@ public abstract class FunctionLike extends AST
             sb.append (name.length ());
             sb.append (name);
         }
+        for (Type i: types)
+            sb.append (i.getEncodedName ());
+        sb.append ('$');
+        for (Type i: argtypes)
+            sb.append (i.getEncodedName ());
+        return sb.toString ();
+    }
+
+    /**
+     * Get the mangled name of an operator method */
+    private String getMangledOperator () {
+        StringBuilder sb = new StringBuilder ();
+        sb.append ("$O");
+        sb.append (Operators.OPERATOR_TO_ID.get (name));
         for (Type i: types)
             sb.append (i.getEncodedName ());
         sb.append ('$');

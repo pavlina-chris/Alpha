@@ -52,7 +52,6 @@ public class OpCall extends Expression.Operator {
         children[1] = op;
     }
 
-    // Code shared between checkTypes and checkTypesMult
     /**
      * This checkTypes does not allocate temporary variables. It is used
      * by codegen.AssignCall. */

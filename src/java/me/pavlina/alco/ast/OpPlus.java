@@ -18,11 +18,13 @@ import java.util.Arrays;
  */
 public class OpPlus extends Expression.Operator {
     Token token;
+    Method method;
     Expression[] children;
     Expression pointer;
     Expression integer;
     AddNum addnum;
     AddPtr addptr;
+    Overload overload;
     Coerce coerce;
     Type type;
     String valueString;
@@ -32,6 +34,7 @@ public class OpPlus extends Expression.Operator {
 
     public OpPlus (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
+        this.method = method;
         children = new Expression[2];
     }
 
@@ -61,6 +64,20 @@ public class OpPlus extends Expression.Operator {
         children[0].checkTypes (env, resolver);
         children[1].checkTypes (env, resolver);
 
+        try {
+            checkTypes_ (env, resolver);
+        } catch (CError e) {
+            addptr = null;
+            addnum = null;
+            overload = new Overload (token, method);
+            overload.operator ("+").children (children);
+            if (!overload.find (env, resolver)) throw e;
+            overload.checkTypes (env, resolver);
+            type = overload.getType ();
+        }
+    }
+
+    public void checkTypes_ (Env env, Resolver resolver) throws CError {
         Type.Encoding lhsE = children[0].getType ().getEncoding ();
         Type.Encoding rhsE = children[1].getType ().getEncoding ();
 
@@ -114,7 +131,7 @@ public class OpPlus extends Expression.Operator {
             addptr.genLLVM (env, emitter, function);
             valueString = addptr.getValueString ();
 
-        } else {
+        } else if (addnum != null) {
             coerce.lhsV (children[0].getValueString ());
             coerce.rhsV (children[1].getValueString ());
             coerce.genLLVM (env, emitter, function);
@@ -122,6 +139,10 @@ public class OpPlus extends Expression.Operator {
             addnum.rhs (coerce.getValueStringR ());
             addnum.genLLVM (env, emitter, function);
             valueString = addnum.getValueString ();
+
+        } else {
+            overload.genLLVM (env, emitter, function);
+            valueString = overload.getValueString ();
         }
     }
 
