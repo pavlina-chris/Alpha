@@ -28,7 +28,7 @@ public abstract class FunctionLike extends AST
     protected boolean operator;
 
     /**
-     * Return type of the function, or null for 'void' */
+     * Return type of the function */
     protected Type type;
 
     /**
@@ -102,7 +102,7 @@ public abstract class FunctionLike extends AST
         if (token.is (Token.WORD, "void")) {
             stream.next ();
             types = new ArrayList<Type> (0);
-            type = null;
+            type = Type.getNull ();
         } else if (token.is (Token.OPER, "(")) {
             if (!allowMultRet)
                 throw CError.at ("multiple return types not allowed here",
@@ -142,6 +142,15 @@ public abstract class FunctionLike extends AST
             operator = true;
         } else if (!token.is (Token.WORD) ||
                    Keywords.isKeyword (token.value, true)) {
+            if (token.is (Token.OPER, "(") &&
+                type.getEncoding () == Type.Encoding.POINTER) {
+                CError e = Unexpected.at ("name", token);
+                String note =
+                    "Perhaps you meant to overload multiplication?\n"
+                    + "(" + type.getSubtype ().toString () + ") * (...\n";
+                e.setNote (note);
+                throw e;
+            }
             throw Unexpected.at ("name", token);
         }
         name = token.value;
@@ -341,11 +350,18 @@ public abstract class FunctionLike extends AST
     public String toString () {
         StringBuilder sb = new StringBuilder ();
         if (_static) sb.append ("static ");
-        if (type == null)
+        if (type.getEncoding () == Type.Encoding.NULL)
             sb.append ("void");
-        else if (types.size () == 1)
+        else if (types.size () == 1) {
+            // If name is *, we put the type in parentheses. Otherwise, the
+            // parser would pick up the * as a pointer type qualifier and see
+            // no name.
+            if (name.equals ("*"))
+                sb.append ("(");
             sb.append (type);
-        else {
+            if (name.equals ("*"))
+                sb.append (")");
+        } else {
             sb.append ("(");
             for (int i = 0; i < types.size (); ++i) {
                 if (i != 0) sb.append (", ");

@@ -77,7 +77,7 @@ public class OpPlus extends Expression.Operator {
         }
     }
 
-    public void checkTypes_ (Env env, Resolver resolver) throws CError {
+    private void checkTypes_ (Env env, Resolver resolver) throws CError {
         Type.Encoding lhsE = children[0].getType ().getEncoding ();
         Type.Encoding rhsE = children[1].getType ().getEncoding ();
 

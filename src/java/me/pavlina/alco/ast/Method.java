@@ -92,7 +92,7 @@ public class Method extends FunctionLike
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         // Declaration at top of file
         FDeclare decl = new FDeclare
-            (this.getMangledName (), LLVMType.getLLVMName (this.getType ()));
+            (this.getMangledName (), LLVMType.getLLVMNameV (this.getType ()));
         if (types.size () > 1) {
             for (int i = 1; i < types.size (); ++i) {
                 decl.addParameter (LLVMType.getLLVMName (types.get (i)) + "*");
@@ -111,7 +111,7 @@ public class Method extends FunctionLike
 
         // Method
         Function func = new Function
-            (this.getMangledName (), LLVMType.getLLVMName (this.getType ()));
+            (this.getMangledName (), LLVMType.getLLVMNameV (this.getType ()));
         if (types.size () > 1) {
             for (int i = 1; i < types.size (); ++i) {
                 func.addParameter (LLVMType.getLLVMName (types.get (i)) + "*",

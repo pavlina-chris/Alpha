@@ -9,6 +9,8 @@ public class LLVMType {
 
     private LLVMType () {}
 
+    /**
+     * Get the LLVM equivalent name to an Alpha type */
     public static String getLLVMName (Type type) {
         
         if (type == null) return "void";
@@ -30,9 +32,17 @@ public class LLVMType {
             return getLLVMName (type.getSubtype ()) + "*";
         } else if (enc == Type.Encoding.BOOL) {
             return "i8";
+        } else if (enc == Type.Encoding.NULL) {
+            return "%.nonprim";
         } else
             throw new RuntimeException ("Missed an encoding!");
-
     }
 
+    /**
+     * Same as getLLVMName(), but returns "void" for the null type */
+    public static String getLLVMNameV (Type type) {
+        if (type.getEncoding () == Type.Encoding.NULL)
+            return "void";
+        return getLLVMName (type);
+    }
 }

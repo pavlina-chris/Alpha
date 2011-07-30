@@ -453,6 +453,7 @@ public abstract class Expression extends AST implements HasType
         BINOPS.put ("!==", OpRNe.CREATOR);
         
         UNOPS.put ("*", OpDeref.CREATOR);
+        UNOPS.put ("&", OpAddress.CREATOR);
         UNOPS.put ("-", OpNeg.CREATOR);
     }
 }

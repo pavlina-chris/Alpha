@@ -60,7 +60,7 @@ public class Extern extends FunctionLike
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         // Declaration at top of file
         FDeclare decl = new FDeclare
-            (this.getMangledName (), LLVMType.getLLVMName (this.getType ()));
+            (this.getMangledName (), LLVMType.getLLVMNameV (this.getType ()));
         for (Type i: argtypes) {
             if (i.getEncoding () == Type.Encoding.OBJECT ||
                 i.getEncoding () == Type.Encoding.ARRAY) {

@@ -108,12 +108,16 @@ public class StStatic extends Statement
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
+        for (Expression i: expressions)
+            i.checkTypes (env, resolver);
         for (int i = 0; i < names.size (); ++i) {
             if (types.get (i) == null) {
                 types.set (i, expressions.get (i).getType ());
             } else {
-
+                Type.checkCoerce (expressions.get (i),
+                                  types.get (i), token);
             }
+
             realNames.set
                 (i, resolver.addGlobalLocal
                  (names.get (i), types.get (i)).getName ());

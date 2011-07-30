@@ -17,10 +17,10 @@ public class Precedence {
     public static final int SHIFT = 100;
     public static final int ADD = 110;
     public static final int MUL = 120;
+    public static final int CAST = 125;
     public static final int INCR = 130;
     public static final int NEG = 130;
     public static final int DEREF = 130;
-    public static final int CAST = 135;
     public static final int MEMBER = 140;
     public static final int CALL = 140;
     public static final int INDEX = 140;

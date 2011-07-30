@@ -43,9 +43,7 @@ public class OpCall extends Expression.Operator {
     }
 
     public Type getType () {
-        Type t = function.getType ();
-        if (t == null) return null;
-        return t.getNormalised ();
+        return function.getType ().getNormalised ();
     }
 
     public void setOperands (Expression op, Expression ignore) {
@@ -118,7 +116,7 @@ public class OpCall extends Expression.Operator {
 
         call callbuilder = new call
             (emitter, function)
-            .type (LLVMType.getLLVMName (this.getType ()))
+            .type (LLVMType.getLLVMNameV (this.getType ()))
             .pointer ("@" + this.function.getMangledName ());
         for (int i = 1; i < returns.size (); ++i) {
             callbuilder.arg (LLVMType.getLLVMName (returns.get (i)) + "*",
@@ -130,6 +128,11 @@ public class OpCall extends Expression.Operator {
                              valueStrings.get (i));
         }
         valueString = callbuilder.build ();
+        if (valueString == null) {
+            valueString = new load (emitter, function)
+                .pointer ("%.nonprim", "@.null")
+                .build ();
+        }
     }
 
     /**

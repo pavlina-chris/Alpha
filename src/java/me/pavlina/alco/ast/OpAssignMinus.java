@@ -18,9 +18,12 @@ import java.util.Arrays;
  * Subtraction assignment operator (-=). */
 public class OpAssignMinus extends Expression.Operator {
     Token token;
+    Method method;
+    Type type;
     Expression[] children;
     Expression pointer, integer;
     String valueString;
+    Overload overload;
     Cast cast;
     Sub1Ptr sub1ptr;
     SubNum subnum;
@@ -32,6 +35,7 @@ public class OpAssignMinus extends Expression.Operator {
     {
         token = stream.next ();
         children = new Expression[2];
+        this.method = method;
     }
 
     public int getPrecedence () {
@@ -56,7 +60,7 @@ public class OpAssignMinus extends Expression.Operator {
     }
 
     public Type getType () {
-        return children[0].getType ().getNormalised ();
+        return type;
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -64,6 +68,22 @@ public class OpAssignMinus extends Expression.Operator {
         children[0].checkPointer (true, token);
         children[1].checkTypes (env, resolver);
 
+        try {
+            checkTypes_ (env, resolver);
+        } catch (CError e) {
+            subnum = null;
+            sub1ptr = null;
+            overload = new Overload (token, method);
+            OpAddress addrOf = new OpAddress (token, children[0]);
+            addrOf.checkTypes (env, resolver);
+            overload.operator ("-=").children (addrOf, children[1]);
+            if (!overload.find (env, resolver)) throw e;
+            overload.checkTypes (env, resolver);
+            type = overload.getType ();
+        }
+    }
+
+    private void checkTypes_ (Env env, Resolver resolver) throws CError {
         Type.Encoding lhsE = children[0].getType ().getEncoding ();
         Type.Encoding rhsE = children[1].getType ().getEncoding ();
 
@@ -94,6 +114,7 @@ public class OpAssignMinus extends Expression.Operator {
                 .type (children[0].getType ());
             subnum.checkTypes (env, resolver);
         }
+        type = children[0].getType ().getNormalised ();
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
@@ -106,19 +127,29 @@ public class OpAssignMinus extends Expression.Operator {
             sub1ptr.integerV (children[1].getValueString ());
             sub1ptr.genLLVM (env, emitter, function);
             valueString = sub1ptr.getValueString ();
-        } else {
+            new store (emitter, function)
+                .pointer (ptr)
+                .value (LLVMType.getLLVMName (children[0].getType ()),
+                        valueString)
+                .build ();
+
+        } else if (subnum != null) {
             cast.value (children[1].getValueString ());
             cast.genLLVM (env, emitter, function);
             subnum.lhs (children[0].getValueString ());
             subnum.rhs (cast.getValueString ());
             subnum.genLLVM (env, emitter, function);
             valueString = subnum.getValueString ();
+            new store (emitter, function)
+                .pointer (ptr)
+                .value (LLVMType.getLLVMName (children[0].getType ()),
+                        valueString)
+                .build ();
+
+        } else {
+            overload.genLLVM (env, emitter, function);
+            valueString = overload.getValueString ();
         }
-        new store (emitter, function)
-            .pointer (ptr)
-            .value (LLVMType.getLLVMName (children[0].getType ()),
-                    valueString)
-            .build ();
     }
 
     @SuppressWarnings("unchecked")

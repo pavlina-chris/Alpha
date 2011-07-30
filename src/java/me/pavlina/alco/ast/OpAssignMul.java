@@ -18,9 +18,12 @@ import java.util.Arrays;
  * Multiplication assignment operator (*=). */
 public class OpAssignMul extends Expression.Operator {
     Token token;
+    Method method;
+    Type type;
     Expression[] children;
     Expression pointer, integer;
     String valueString;
+    Overload overload;
     Cast cast;
     MulNum mulnum;
 
@@ -31,6 +34,7 @@ public class OpAssignMul extends Expression.Operator {
     {
         token = stream.next ();
         children = new Expression[2];
+        this.method = method;
     }
 
     public int getPrecedence () {
@@ -55,7 +59,7 @@ public class OpAssignMul extends Expression.Operator {
     }
 
     public Type getType () {
-        return children[0].getType ().getNormalised ();
+        return type;
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -63,6 +67,21 @@ public class OpAssignMul extends Expression.Operator {
         children[0].checkPointer (true, token);
         children[1].checkTypes (env, resolver);
 
+        try {
+            checkTypes_ (env, resolver);
+        } catch (CError e) {
+            mulnum = null;
+            overload = new Overload (token, method);
+            OpAddress addrOf = new OpAddress (token, children[0]);
+            addrOf.checkTypes (env, resolver);
+            overload.operator ("*=").children (addrOf, children[1]);
+            if (!overload.find (env, resolver)) throw e;
+            overload.checkTypes (env, resolver);
+            type = overload.getType ();
+        }
+    }
+
+    private void checkTypes_ (Env env, Resolver resolver) throws CError {
         Type.checkCoerce (children[1], children[0], token);
         cast = new Cast (token)
             .type (children[1].getType ())
@@ -76,19 +95,26 @@ public class OpAssignMul extends Expression.Operator {
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
-        String ptr = children[0].getPointer (env, emitter, function);
+
+        if (mulnum != null) {
+            String ptr = children[0].getPointer (env, emitter, function);
         
-        cast.value (children[1].getValueString ());
-        cast.genLLVM (env, emitter, function);
-        mulnum.lhs (children[0].getValueString ());
-        mulnum.rhs (cast.getValueString ());
-        mulnum.genLLVM (env, emitter, function);
-        valueString = mulnum.getValueString ();
-        new store (emitter, function)
-            .pointer (ptr)
-            .value (LLVMType.getLLVMName (children[0].getType ()),
-                    valueString)
-            .build ();
+            cast.value (children[1].getValueString ());
+            cast.genLLVM (env, emitter, function);
+            mulnum.lhs (children[0].getValueString ());
+            mulnum.rhs (cast.getValueString ());
+            mulnum.genLLVM (env, emitter, function);
+            valueString = mulnum.getValueString ();
+            new store (emitter, function)
+                .pointer (ptr)
+                .value (LLVMType.getLLVMName (children[0].getType ()),
+                        valueString)
+                .build ();
+
+        } else {
+            overload.genLLVM (env, emitter, function);
+            valueString = overload.getValueString ();
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -18,9 +18,11 @@ import java.util.Arrays;
  */
 public class OpDiv extends Expression.Operator {
     Token token;
+    Method method;
     Expression[] children;
     Type type;
     String valueString;
+    Overload overload;
     Coerce coerce;
     DivNum divnum;
 
@@ -30,11 +32,7 @@ public class OpDiv extends Expression.Operator {
     public OpDiv (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
         children = new Expression[2];
-    }
-
-    public OpDiv (Token token) {
-        this.token = token;
-        children = new Expression[2];
+        this.method = method;
     }
 
     public int getPrecedence () {
@@ -58,6 +56,19 @@ public class OpDiv extends Expression.Operator {
         children[0].checkTypes (env, resolver);
         children[1].checkTypes (env, resolver);
 
+        try {
+            checkTypes_ (env, resolver);
+        } catch (CError e) {
+            divnum = null;
+            overload = new Overload (token, method);
+            overload.operator ("/").children (children);
+            if (!overload.find (env, resolver)) throw e;
+            overload.checkTypes (env, resolver);
+            type = overload.getType ();
+        }
+    }
+
+    private void checkTypes_ (Env env, Resolver resolver) throws CError {
         coerce = new Coerce (token)
             .lhsT (children[0].getType ())
             .rhsT (children[1].getType ());
@@ -79,13 +90,20 @@ public class OpDiv extends Expression.Operator {
     {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
-        coerce.lhsV (children[0].getValueString ());
-        coerce.rhsV (children[1].getValueString ());
-        coerce.genLLVM (env, emitter, function);
-        divnum.lhs (coerce.getValueStringL ());
-        divnum.rhs (coerce.getValueStringR ());
-        divnum.genLLVM (env, emitter, function);
-        valueString = divnum.getValueString ();
+
+        if (divnum != null) {
+            coerce.lhsV (children[0].getValueString ());
+            coerce.rhsV (children[1].getValueString ());
+            coerce.genLLVM (env, emitter, function);
+            divnum.lhs (coerce.getValueStringL ());
+            divnum.rhs (coerce.getValueStringR ());
+            divnum.genLLVM (env, emitter, function);
+            valueString = divnum.getValueString ();
+
+        } else {
+            overload.genLLVM (env, emitter, function);
+            valueString = overload.getValueString ();
+        }
     }
 
     @SuppressWarnings("unchecked")

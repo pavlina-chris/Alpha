@@ -18,11 +18,13 @@ import java.util.Arrays;
  */
 public class OpMinus extends Expression.Operator {
     Token token;
+    Method method;
     Expression[] children;
     Expression pointer, integer;
     SubNum subnum;
     Sub2Ptr sub2ptr;
     Sub1Ptr sub1ptr;
+    Overload overload;
     Coerce coerce;
     Type type;
     String valueString;
@@ -32,11 +34,7 @@ public class OpMinus extends Expression.Operator {
     public OpMinus (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
         children = new Expression[2];
-    }
-
-    public OpMinus (Token token) {
-        this.token = token;
-        children = new Expression[2];
+        this.method = method;
     }
 
     public int getPrecedence () {
@@ -60,6 +58,21 @@ public class OpMinus extends Expression.Operator {
         children[0].checkTypes (env, resolver);
         children[1].checkTypes (env, resolver);
 
+        try {
+            checkTypes_ (env, resolver);
+        } catch (CError e) {
+            sub2ptr = null;
+            sub1ptr = null;
+            subnum = null;
+            overload = new Overload (token, method);
+            overload.operator ("-").children (children);
+            if (!overload.find (env, resolver)) throw e;
+            overload.checkTypes (env, resolver);
+            type = overload.getType ();
+        }
+    }
+
+    private void checkTypes_ (Env env, Resolver resolver) throws CError {
         Type.Encoding lhsE = children[0].getType ().getEncoding ();
         Type.Encoding rhsE = children[1].getType ().getEncoding ();
 
@@ -126,7 +139,7 @@ public class OpMinus extends Expression.Operator {
             sub1ptr.genLLVM (env, emitter, function);
             valueString = sub1ptr.getValueString ();
 
-        } else {
+        } else if (subnum != null) {
             coerce.lhsV (children[0].getValueString ());
             coerce.rhsV (children[1].getValueString ());
             coerce.genLLVM (env, emitter, function);
@@ -134,6 +147,10 @@ public class OpMinus extends Expression.Operator {
             subnum.rhs (coerce.getValueStringR ());
             subnum.genLLVM (env, emitter, function);
             valueString = subnum.getValueString ();
+
+        } else {
+            overload.genLLVM (env, emitter, function);
+            valueString = overload.getValueString ();
         }
     }
 

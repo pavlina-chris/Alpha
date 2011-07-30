@@ -145,6 +145,12 @@ public class Package extends AST
         StringConstant pkgname = StringConstant.getPointerConst
             ("@AL_PKG_NAME", name);
         emitter.add (pkgname);
+        Typedef nonprim = new Typedef ("%.nonprim", "{i64, i64}");
+        emitter.add (nonprim);
+        Constant nullconst = new Constant
+            ("@.null", "%.nonprim", "{i64 0, i64 0}",
+             FHead.Linkage.EXTERNALLY_VISIBLE);
+        emitter.add (nullconst);
         for (AST i: children) {
             i.genLLVM (env, emitter, function);
         }

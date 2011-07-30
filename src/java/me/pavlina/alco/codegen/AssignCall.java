@@ -137,7 +137,7 @@ public class AssignCall {
 
         // Build the call
         call callbuilder = new call (emitter, function)
-            .type (LLVMType.getLLVMName (call.getType ()))
+            .type (LLVMType.getLLVMNameV (call.getType ()))
             .pointer ("@" + call.getFunction ().getMangledName ());
         for (int i = 1; i < returns.size (); ++i) {
             if (temps.get (i).equals ("")) {
@@ -159,7 +159,7 @@ public class AssignCall {
         String firstReturn = callbuilder.build ();
 
         // Cast and assign the first return value
-        if (!types.get (0).equals (nullType)) {
+        if (!types.get (0).equals (nullType) && returns.size () > 0) {
             String val;
             if (types.get (0).equals (returns.get (0))) {
                 val = firstReturn;

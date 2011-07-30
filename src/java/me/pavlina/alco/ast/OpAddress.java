@@ -8,31 +8,33 @@ import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.Resolver;
-import me.pavlina.alco.codegen.*;
 import java.util.List;
 import java.util.Arrays;
 
 /**
- * Negation operator. */
-public class OpNeg extends Expression.Operator {
+ * Address-of operator. */
+public class OpAddress extends Expression.Operator {
     Token token;
-    Method method;
-    Type type;
     Expression[] children;
     String valueString;
-    NegNum negnum;
-    Overload overload;
+    Type type;
 
     public static Expression.OperatorCreator CREATOR;
 
-    public OpNeg (Env env, TokenStream stream, Method method) throws CError {
+    public OpAddress (Env env, TokenStream stream, Method method)
+        throws CError
+    {
         token = stream.next ();
         children = new Expression[1];
-        this.method = method;
+    }
+
+    public OpAddress (Token token, Expression child) {
+        this.token = token;
+        children = new Expression[] {child};
     }
 
     public int getPrecedence () {
-        return me.pavlina.alco.language.Precedence.NEG;
+        return me.pavlina.alco.language.Precedence.DEREF;
     }
 
     public Expression.Associativity getAssociativity () {
@@ -57,27 +59,12 @@ public class OpNeg extends Expression.Operator {
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
         children[0].checkTypes (env, resolver);
-
-        try {
-            checkTypes_ (env, resolver);
-        } catch (CError e) {
-            negnum = null;
-            overload = new Overload (token, method);
-            overload.operator ("-").children (children[0]);
-            if (!overload.find (env, resolver)) throw e;
-            overload.checkTypes (env, resolver);
-            type = overload.getType ();
-        }
-    }
-
-    private void checkTypes_ (Env env, Resolver resolver) throws CError {
-        negnum = new NegNum (token).type (children[0].getType ());
-        negnum.checkTypes (env, resolver);
-        type = children[0].getType ().getNormalised ();
+        children[0].checkPointer (false, token);
+        type = children[0].getType ().getPointer (env);
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
-        throw CError.at ("cannot assign to negation", token);
+        throw CError.at ("cannot assign to address-of", token);
     }
 
     public String getPointer (Env env, LLVMEmitter emitter, Function function) {
@@ -85,23 +72,13 @@ public class OpNeg extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.print ("(negate ");
+        out.print ("(address ");
         children[0].print (out);
         out.print (")");
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        children[0].genLLVM (env, emitter, function);
-
-        if (negnum != null) {
-            negnum.operand (children[0].getValueString ());
-            negnum.genLLVM (env, emitter, function);
-            valueString = negnum.getValueString ();
-
-        } else {
-            overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
-        }
+        valueString = children[0].getPointer (env, emitter, function);
     }
 
     @SuppressWarnings("unchecked")
@@ -117,7 +94,7 @@ public class OpNeg extends Expression.Operator {
         CREATOR = new Expression.OperatorCreator () {
                 public Operator create (Env env, TokenStream stream,
                                         Method method) throws CError {
-                    return new OpNeg (env, stream, method);
+                    return new OpAddress (env, stream, method);
                 }
             };
     }

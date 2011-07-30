@@ -164,6 +164,18 @@ public class Type implements HasType {
     }
 
     /**
+     * Get a pointer type to this type. */
+    public Type getPointer (Env env) {
+        Type t = new Type ();
+        t.name = "";
+        t.size = env.getBits () / 8;
+        t.encoding = Encoding.POINTER;
+        t.subtypes = new ArrayList<Type> (1);
+        t.subtypes.add (this);
+        return t;
+    }
+
+    /**
      * Get the size in bytes. */
     public int getSize () {
         return size;
@@ -622,7 +634,7 @@ public class Type implements HasType {
             return subtypes.get (0).toString () + "*"
                 + (isConst ? " const" : "");
         else if (encoding == Encoding.NULL)
-            return "(null)" + (isConst ? " const" : "");
+            return "<null>" + (isConst ? " const" : "");
         else if (encoding == Encoding.BOOL)
             return "bool" + (isConst ? " const" : "");
         else if (encoding == Encoding.OBJECT) {
@@ -638,7 +650,7 @@ public class Type implements HasType {
             sb.append ('>');
             return sb.toString () + (isConst ? " const" : "");
         }
-        return super.toString ();
+        throw new RuntimeException ("Invalid type");
     }
 
     /**

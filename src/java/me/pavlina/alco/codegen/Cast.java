@@ -248,7 +248,8 @@ public class Cast {
             // OK
 
         } else {
-            throw CError.at ("invalid cast", token);
+            throw CError.at ("invalid cast: " + srcT.toString ()
+                             + " to " + dstT.toString (), token);
         }
     }
 

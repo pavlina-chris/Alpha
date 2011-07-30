@@ -15,12 +15,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * Multiplication assignment operator (*=). */
+ * Division assignment operator (/=). */
 public class OpAssignDiv extends Expression.Operator {
     Token token;
+    Method method;
+    Type type;
     Expression[] children;
     Expression pointer, integer;
     String valueString;
+    Overload overload;
     Cast cast;
     DivNum divnum;
 
@@ -31,6 +34,7 @@ public class OpAssignDiv extends Expression.Operator {
     {
         token = stream.next ();
         children = new Expression[2];
+        this.method = method;
     }
 
     public int getPrecedence () {
@@ -55,7 +59,7 @@ public class OpAssignDiv extends Expression.Operator {
     }
 
     public Type getType () {
-        return children[0].getType ().getNormalised ();
+        return type;
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -63,6 +67,21 @@ public class OpAssignDiv extends Expression.Operator {
         children[0].checkPointer (true, token);
         children[1].checkTypes (env, resolver);
 
+        try {
+            checkTypes_ (env, resolver);
+        } catch (CError e) {
+            divnum = null;
+            overload = new Overload (token, method);
+            OpAddress addrOf = new OpAddress (token, children[0]);
+            addrOf.checkTypes (env, resolver);
+            overload.operator ("/=").children (addrOf, children[1]);
+            if (!overload.find (env, resolver)) throw e;
+            overload.checkTypes (env, resolver);
+            type = overload.getType ();
+        }
+    }
+
+    private void checkTypes_ (Env env, Resolver resolver) throws CError {
         Type.checkCoerce (children[1], children[0], token);
         cast = new Cast (token)
             .type (children[1].getType ())
@@ -71,24 +90,32 @@ public class OpAssignDiv extends Expression.Operator {
         divnum = new DivNum (token)
             .type (children[0].getType ());
         divnum.checkTypes (env, resolver);
+        type = children[0].getType ().getNormalised ();
     }
 
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
-        String ptr = children[0].getPointer (env, emitter, function);
+
+        if (divnum != null) {
+            String ptr = children[0].getPointer (env, emitter, function);
         
-        cast.value (children[1].getValueString ());
-        cast.genLLVM (env, emitter, function);
-        divnum.lhs (children[0].getValueString ());
-        divnum.rhs (cast.getValueString ());
-        divnum.genLLVM (env, emitter, function);
-        valueString = divnum.getValueString ();
-        new store (emitter, function)
-            .pointer (ptr)
-            .value (LLVMType.getLLVMName (children[0].getType ()),
-                    valueString)
-            .build ();
+            cast.value (children[1].getValueString ());
+            cast.genLLVM (env, emitter, function);
+            divnum.lhs (children[0].getValueString ());
+            divnum.rhs (cast.getValueString ());
+            divnum.genLLVM (env, emitter, function);
+            valueString = divnum.getValueString ();
+            new store (emitter, function)
+                .pointer (ptr)
+                .value (LLVMType.getLLVMName (children[0].getType ()),
+                        valueString)
+                .build ();
+
+        } else {
+            overload.genLLVM (env, emitter, function);
+            valueString = overload.getValueString ();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -101,7 +128,7 @@ public class OpAssignDiv extends Expression.Operator {
     }
 
     public void print (java.io.PrintStream out) {
-        out.print ("(assign-mult");
+        out.print ("(assign-div");
         for (Expression i: children) {
             out.print (" ");
             i.print (out);
