@@ -31,11 +31,6 @@ public class OpRNe extends Expression.Operator {
         children = new Expression[2];
     }
 
-    public OpRNe (Token token) {
-        this.token = token;
-        children = new Expression[2];
-    }
-
     public int getPrecedence () {
         return me.pavlina.alco.language.Precedence.REL_EQ;
     }

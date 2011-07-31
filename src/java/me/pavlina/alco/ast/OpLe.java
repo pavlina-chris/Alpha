@@ -34,11 +34,6 @@ public class OpLe extends Expression.Operator {
         this.method = method;
     }
 
-    public OpLe (Token token) {
-        this.token = token;
-        children = new Expression[2];
-    }
-
     public int getPrecedence () {
         return me.pavlina.alco.language.Precedence.REL_INEQ;
     }

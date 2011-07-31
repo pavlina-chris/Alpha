@@ -24,15 +24,6 @@ public class OpCast extends Expression.Operator {
 
     public static Expression.OperatorCreator CREATOR;
 
-    /**
-     * Generate a cast from an expression at typecheck time. This is used
-     * for coercion. */
-    public OpCast (HasType value, Type type, Env env) {
-        children = new Expression[]
-            { (Expression) value, new TypeValue (type) };
-        token = ((Expression) value).getToken ();
-    }
-
     public OpCast (Env env, TokenStream stream, Method method) throws CError {
         children = new Expression[2];
         token = stream.next ();

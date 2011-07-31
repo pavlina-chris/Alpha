@@ -34,11 +34,6 @@ public class OpVNe extends Expression.Operator {
         this.method = method;
     }
 
-    public OpVNe (Token token) {
-        this.token = token;
-        children = new Expression[2];
-    }
-
     public int getPrecedence () {
         return me.pavlina.alco.language.Precedence.REL_EQ;
     }
