@@ -111,7 +111,7 @@ public class Assign {
         for (int i = 0; i < limit; ++i) {
             new store (emitter, function)
                 .pointer (pointers[i])
-                .value (LLVMType.getLLVMName (sources.get (i).getType ()),
+                .value (LLVMType.getLLVMName (dests.get (i).getType ()),
                         values[i])
                 .build ();
         }
