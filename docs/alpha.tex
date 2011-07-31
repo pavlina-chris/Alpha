@@ -106,7 +106,7 @@ digit       = "0" | "1" > "9" ;
 alpha       = "A" > "Z" | "a" > "z" ;
 printable   = \20 > \7E ;
 exponent    = ("e" | "E"), [("+" | "-")], {digit} ;
-Real        = [{digit}], ".", {digit}, [exponent] ;
+Real        = {digit}, ".", {digit}, [exponent] ;
 hex         = digit | "A" > "F" | "a" > "f" ;
 dec         = digit ;
 oct         = digit -("8" | "9") ;
@@ -121,7 +121,7 @@ uarithop    = "++" | "--" | "~" | "-" ;
 barithop    = "*" | "/" | "%" | "%%" | "+" | "-" | "<<" | ">>" | "&" |
               "^" | "|" ;
 logop       = "!" | "&&" | "||" ;
-eqop        = "<" | "<=" | ">" | ">=" | "==" | "!=" | "is" | "isnot" ;
+eqop        = "<" | "<=" | ">" | ">=" | "==" | "!=" | "===" | "!==" ;
 assignop    = (barithop, "=") | ":=" ;
 typeop      = "sizeof" | "new" | "delete" | "hastype" | "typename" |
               "as" ;

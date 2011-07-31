@@ -179,7 +179,7 @@ public class Lexer implements ErrorAnnotator
 
     private void consumeNumber () throws CError {
         boolean breakFor = false;
-        int radix = 100;
+        int radix = 10;
         boolean radixAllowed = false;
         boolean dotAllowed = true;
         boolean expAllowed = true;
@@ -335,6 +335,45 @@ public class Lexer implements ErrorAnnotator
                          "in base " + radix + " number");
                 collector.append (ch);
                 break;
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'P':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'Y':
+            case 'Z':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'y':
+            case 'z':
+                throw new UnexpectedChar
+                    (ch, line, col, this,
+                     "in base " + radix + " number");
             case '.':
                 if (!dotAllowed)
                     throw new UnexpectedChar (ch, line, col, this);
