@@ -1384,6 +1384,8 @@ The following expressions must be replaced:
 \begin{itemize}
 \item{\texttt{Integer / Integer}}
 \item{\texttt{Integer * Integer}}
+\item{\texttt{Integer \% Integer}}
+\item{\texttt{Integer \%\% Integer}}
 \item{\texttt{Integer + Integer}}
 \item{\texttt{Integer - Integer}}
 \item{\texttt{-Integer}}
@@ -1394,10 +1396,12 @@ The following expressions must be replaced:
 \item{\texttt{-FP}}
 \end{itemize}
 
-Note the special case of divide-by-zero. For \texttt{n / 0}, a compiler error
-shall be emitted. For \texttt{n / 0.0}, the division shall be performed
-anyway. IEEE-754 states that $0 / 0$ should yield NaN, $(n > 0) / 0$ should
-yield $+\infty$, and $(n < 0) / 0$ should yield $-\infty$.
+Note the special cases of divide-by-zero, remainder-by-zero, and
+modulo-by-non-positive. For integers, a compiler error shall be emitted. For
+floating point, the operation shall be performed anyway, and the result as
+specified by IEEE-754 compiled in. IEEE-754 specifies that $0/0$ should yield
+NaN, $(n > 0)/0$ should yield $+\infty$, $(n < 0) / 0$ should yield
+$-\infty$. $n \textrm{ mod } 0$ yields NaN regardless of the value of $n$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % IMPLEMENTATION

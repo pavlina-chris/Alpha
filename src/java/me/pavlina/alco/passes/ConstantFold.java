@@ -34,6 +34,12 @@ public class ConstantFold {
         if (OpDiv.class.isInstance (item))
             return run ((OpDiv) item);
 
+        else if (OpMod.class.isInstance (item))
+            return run ((OpMod) item);
+
+        else if (OpRem.class.isInstance (item))
+            return run ((OpRem) item);
+
         else if (OpMinus.class.isInstance (item))
             return run ((OpMinus) item);
 
@@ -65,8 +71,6 @@ public class ConstantFold {
         children.set (1, run (children.get (1)));
         Expression lhs = (Expression) children.get (0);
         Expression rhs = (Expression) children.get (1);
-            children.set (0, run (lhs));
-            children.set (1, run (rhs));
 
         if (IntValue.class.isInstance (lhs) &&
             IntValue.class.isInstance (rhs)) {
@@ -86,6 +90,72 @@ public class ConstantFold {
             lhsR.setValue (lhsR.getValue () / rhsR.getValue ());
             return lhsR;
 
+        } else {
+            return item;
+        }
+    }
+
+    /**
+     * Modulo */
+    private static Expression run (OpMod item) throws CError {
+        List<AST> children = item.getChildren ();
+        children.set (0, run (children.get (0)));
+        children.set (1, run (children.get (1)));
+        Expression lhs = (Expression) children.get (0);
+        Expression rhs = (Expression) children.get (1);
+
+        if (IntValue.class.isInstance (lhs) &&
+            IntValue.class.isInstance (rhs)) {
+            IntValue lhsI = (IntValue) lhs;
+            IntValue rhsI = (IntValue) rhs;
+            try {
+                lhsI.setValue (lhsI.getValue ().mod (rhsI.getValue ()));
+            } catch (ArithmeticException e) {
+                throw CError.at ("integer modulo by zero or less than zero",
+                                 item.getToken ());
+            }
+            return lhsI;
+
+        } else if (RealValue.class.isInstance (lhs) &&
+                   RealValue.class.isInstance (rhs)) {
+            RealValue lhsR = (RealValue) lhs;
+            RealValue rhsR = (RealValue) rhs;
+            double L = lhsR.getValue ();
+            double R = rhsR.getValue ();
+            lhsR.setValue (((L % R) + R) % R);
+            return lhsR;
+        } else {
+            return item;
+        }
+    }
+
+    /**
+     * Remainder */
+    private static Expression run (OpRem item) throws CError {
+        List<AST> children = item.getChildren ();
+        children.set (0, run (children.get (0)));
+        children.set (1, run (children.get (1)));
+        Expression lhs = (Expression) children.get (0);
+        Expression rhs = (Expression) children.get (1);
+
+        if (IntValue.class.isInstance (lhs) &&
+            IntValue.class.isInstance (rhs)) {
+            IntValue lhsI = (IntValue) lhs;
+            IntValue rhsI = (IntValue) rhs;
+            try {
+                lhsI.setValue (lhsI.getValue ().remainder (rhsI.getValue ()));
+            } catch (ArithmeticException e) {
+                throw CError.at ("integer remainder by zero",
+                                 item.getToken ());
+            }
+            return lhsI;
+
+        } else if (RealValue.class.isInstance (lhs) &&
+                   RealValue.class.isInstance (rhs)) {
+            RealValue lhsR = (RealValue) lhs;
+            RealValue rhsR = (RealValue) rhs;
+            lhsR.setValue (lhsR.getValue () % rhsR.getValue ());
+            return lhsR;
         } else {
             return item;
         }
