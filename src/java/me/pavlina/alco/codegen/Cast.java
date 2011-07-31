@@ -52,9 +52,9 @@ public class Cast {
         // See Standard:Types:Casting:AllowedCasts
 
         // Integer literal cast
-        if ((srcE == Type.Encoding.SINT || srcE == Type.Encoding.UINT) &&
-            (dstE == Type.Encoding.SINT || dstE == Type.Encoding.SINT) &&
-            srcT.getValue () != null) {
+        if (((srcE == Type.Encoding.SINT) || (srcE == Type.Encoding.UINT)) &&
+            ((dstE == Type.Encoding.SINT) || (dstE == Type.Encoding.UINT)) &&
+            (srcT.getValue () != null)) {
 
             BigInteger intVal = srcT.getValue ();
             BigInteger min, max;
@@ -94,7 +94,7 @@ public class Cast {
             return;
         }
 
-        if (srcT.equalsNoConst (dstT)) {
+        else if (srcT.equalsNoConst (dstT)) {
             // T to T
             // OK
    
@@ -263,14 +263,14 @@ public class Cast {
 
         // Integer literal cast
         if ((srcE == Type.Encoding.SINT || srcE == Type.Encoding.UINT) &&
-            (dstE == Type.Encoding.SINT || dstE == Type.Encoding.SINT) &&
+            (dstE == Type.Encoding.SINT || dstE == Type.Encoding.UINT) &&
             srcT.getValue () != null) {
             BigInteger intVal = srcT.getValue ();
             valueString = intVal.toString ();
             return;
         }
 
-        if (srcT.equalsNoConst (dstT)) {
+        else if (srcT.equalsNoConst (dstT)) {
             // T to T
             valueString = val;
    
