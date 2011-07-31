@@ -20,12 +20,12 @@ public class Operators
             "~", "*", "/", "%", "%%", "+", "-", "<<",
             ">>", "&", "^", "|", "<", "<=", ">", ">=",
             "==", "!=", "-=", "*=", "/=", "%=", "%%=", "+=",
-            "<<=", ">>=", "&=", "^=", "|="};
+            "<<=", ">>=", "&=", "^=", "|=", "++", "--"};
         String[] ids = {
             "A", "C", "D", "E", "F", "G", "H", "I",
             "J", "K", "L", "M", "N", "O", "P", "Q",
             "R", "S", "h", "c", "d", "e", "f", "g",
-            "i", "j", "k", "l", "m"};
+            "i", "j", "k", "l", "m", "T", "U"};
         _OPERATOR_TO_ID = new HashMap<String, String> ();
         _ID_TO_OPERATOR = new HashMap<String, String> ();
         for (int i = 0; i < operators.length; ++i) {

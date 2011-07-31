@@ -61,6 +61,8 @@ public class OpRNe extends Expression.Operator {
             .type (coerce.getType ())
             .cmp (CmpNum.Comparison.NE);
         cmpnum.checkTypes (env, resolver);
+
+        env.warning_at ("by-reference comparison of primitives", token);
     }
 
     public String getValueString () {

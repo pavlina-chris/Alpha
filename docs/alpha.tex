@@ -667,7 +667,8 @@ added to the language for the specific purpose of \emph{not} being
 overloadable. They will always reliably compare whether one reference is equal
 to another, whether or not equality checks were overloaded for that class.
 
-The operation-assignment operators (\texttt{+=}, \texttt{*=}, etc.) are really
+The operation-assignment operators (\texttt{+=}, \texttt{*=}, etc.) and the
+increment/decrement operators are really
 mutation operators; they are supposed to modify an object in place rather than
 replace it. To allow both object mutation object types and actual assignment
 for primitives, operation-assignment operators take a pointer to their first
@@ -724,7 +725,9 @@ The following operators may be overloaded:
 \texttt{>>=},
 \texttt{\&=},
 \texttt{\^{}=},
-\texttt{|=}
+\texttt{|=},
+\texttt{++},
+\texttt{--}
 
 \subsection{Cast (\texttt{as})}
 \label{sub:operators:cast}
@@ -836,6 +839,17 @@ numeric operands, and simply performs multiplication.
 The division operator is ``\texttt{/}''. This operator is only defined for
 numeric operands, and simply performs division.
 
+%%%%%%%%%%%%%%%%%%%%%%
+% MODULO AND REMAINDER
+\subsection{Modulo and remainder (\texttt{\%}, \texttt{\%\%})}
+\label{sub:operators:modrem}
+The modulo and remainder operators are ``\texttt{\%}'' and ``\texttt{\%\%}''.
+The modulo operator returns the true mathematical modulo, such that
+\texttt{-1~\%~10} gives \texttt{9}. The remainder operator returns the
+remainder, such that \texttt{-1~\%\%~10} gives \texttt{-1}. When implementing
+literal arithmetic folding, be sure to know which type the language in which
+you are writing the compiler uses.
+
 %%%%%%%%%%%%%%%%%%%%%
 % BY-VALUE COMPARISON
 \subsection{By-value comparison (\texttt{<}, \texttt{>}, \texttt{<=},
@@ -874,7 +888,7 @@ intended.
 %%%%%%%%%%%%%%
 % ARITH ASSIGN
 \subsection{Arithmetic assign (\texttt{*=}, \texttt{/=}, \texttt{+=},
-  \texttt{-=})}
+  \texttt{-=}, \texttt{\%=}, \texttt{\%\%=})}
 \label{sub:operators:arithas}
 Arithmetic assignment operators perform arithmetic and assignment at the same
 time. The type semantics are typically identical to those for assignment
@@ -887,6 +901,20 @@ type of the operands, the special-case semantics apply. For example, if
 For non-primitives, this is a mutating operation. For example, when performing
 array concatenation, the intermediate value is optimised away and the
 array is directly expanded.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% INCREMENT AND DECREMENT
+\subsection {Increment and decrement (\texttt{++}, \texttt{--})}
+\label{sub:operators:incdec}
+Increment and decrement operators add or subtract $1$ from the value of the
+variable, respectively. The value of the increment/decrement operation is the
+resulting value, after the operation is performed (Alpha only supports prefix
+inc/dec, not postfix). For example, if \texttt{x~==~2}, then
+\texttt{++x~==~3} and then \texttt{x~==~3}.
+
+Increment and decrement are only defined for integers and pointers. They are
+mutating operations like the arithmetic assignments by convention, though there
+is no default defined meaning for increment/decrement on non-primitives.
 
 \subsection{Negation (\texttt{-})}
 \label{sub:operators:neg}
@@ -1263,7 +1291,7 @@ identifiers are:
 \QQ{$\sim$}{A}  && \QQ{*}{C}   \QQ{/}{D}   \QQ{\%}{E}  \QQ{\%\%}{F}  \QQ{+}{G}   \QQ{-}{H} \\
 \QQ{<<}{I}      \QQ{>>}{J}  \QQ{\&}{K}  \QQ{\^}{L}  \QQ{|}{M}   \QQ{<}{N}     \QQ{<=}{O}  \QQ{>}{P} \\
 \QQ{>=}{Q}      \QQ{==}{R}  \QQ{!=}{S}  \QQ{-=}{h}  \QQ{*=}{c}  \QQ{/=}{d}    \QQ{\%=}{e} \QQ{\%\%=}{f} \\
-\QQ{+=}{g}      \QQ{<<=}{i} \QQ{>>=}{j} \QQ{\&=}{k} \QQ{\^{}=}{l} \QQ{|=}{m}    &&&& \\
+\QQ{+=}{g}      \QQ{<<=}{i} \QQ{>>=}{j} \QQ{\&=}{k} \QQ{\^{}=}{l} \QQ{|=}{m}  \QQ{++}{T}  \QQ{--}{U} \\
 \cline{1-16}
 \end{tabular}
 \end{center}
