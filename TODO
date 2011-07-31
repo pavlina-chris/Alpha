@@ -1,4 +1,6 @@
 Operator overloading
+Clean up OpXx (Token) constructors (I don't think we use them)
 %/%%
 ++ --
+## Check for bugs. Evaluate behavior and test.
 Volatile

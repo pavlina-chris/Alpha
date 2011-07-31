@@ -639,6 +639,93 @@ Type IDs are:
   \end{threeparttable}
 \end{center}
 
+%%%%%%%%%%%%%
+% OVERLOADING
+\subsection{Overloading}
+\label{sub:operators:overloading}
+
+In Alpha, almost any operator usage which would otherwise result in a compile
+error
+may be overloaded. Operator overloads are global functions, though the
+\texttt{global} keyword is implicit. They are never class methods. An operator
+overload is simply written as a function, with the operator itself as the
+function name. For example:
+
+\begin{verbatim}
+bool == (int a, double b) {
+    return a == b as int;
+}
+\end{verbatim}
+
+This overload on \texttt{==} allows comparing \texttt{int} to \texttt{double}.
+With this function defined, (e.g) \texttt{3 == 3.5} will be valid. Note that
+with this definition, \texttt{3 == 3.5} incorrectly returns \texttt{true}
+--- you see why it was decided not to implement implicit integer-float casts.
+
+The by-reference equality comparisons (\texttt{===} and \texttt{!==}) were
+added to the language for the specific purpose of \emph{not} being
+overloadable. They will always reliably compare whether one reference is equal
+to another, whether or not equality checks were overloaded for that class.
+
+The operation-assignment operators (\texttt{+=}, \texttt{*=}, etc.) are really
+mutation operators; they are supposed to modify an object in place rather than
+replace it. To allow both object mutation object types and actual assignment
+for primitives, operation-assignment operators take a pointer to their first
+argument:
+
+\begin{verbatim}
+int += (int *a, double b) {
+    return (*a += b as int);
+}
+\end{verbatim}
+
+This defines \texttt{+=} on \texttt{int} and \texttt{double}.
+
+An overloaded operator may return any type; it is not required to return the
+type which it normally would return. For example, \texttt{int += double}
+may return a \texttt{u8[]}, if you are insane.
+
+When overloading the \texttt{*} operator, beware of the type parser.
+When the compiler encounters \texttt{int~*~(int~a,~double~b)}, it sees
+\fbox{int *} \fbox{ ( \fbox{int} a, \fbox{double} b ) }. This is, of course,
+a function declaration with a missing name, and the compiler will complain. The
+correct way to write this is \texttt{(int)~*~(int~a,~double~b)}. Because of the
+way multiple-return functions are defined, the parser sees the opening
+parenthesis and expects the return type(s) to be inside. It reads this as
+\fbox{int} \fbox{*} \fbox{ ( \fbox{int} a, \fbox{double} b ) }.
+
+The following operators may be overloaded:
+
+\texttt{$\sim$},
+\texttt{*},
+\texttt{/},
+\texttt{\%},
+\texttt{\%\%},
+\texttt{+},
+\texttt{-},
+\texttt{<<},
+\texttt{>>},
+\texttt{\&},
+\texttt{\^},
+\texttt{|},
+\texttt{<},
+\texttt{<=},
+\texttt{>},
+\texttt{>=},
+\texttt{==},
+\texttt{!=},
+\texttt{+=},
+\texttt{-=},
+\texttt{*=},
+\texttt{/=},
+\texttt{\%=},
+\texttt{\%\%=},
+\texttt{<<=},
+\texttt{>>=},
+\texttt{\&=},
+\texttt{\^{}=},
+\texttt{|=}
+
 \subsection{Cast (\texttt{as})}
 \label{sub:operators:cast}
 
