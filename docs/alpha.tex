@@ -609,7 +609,8 @@ Type IDs are:
       \texttt{*} & Unary & R$\to$L & Dereference \\
       \texttt{\&} & Unary & R$\to$L & Address of \\
       \texttt{-} & Unary & R$\to$L & Negation \\
-      \texttt{!} & Unary & R$\to$L & Logical negation \\ \hline
+      \texttt{!} & Unary & R$\to$L & Logical negation \\
+      \texttt{~} & Unary & R$\to$L & Bitwise complement \\ \hline
       \texttt{++} & Unary & R$\to$L & Prefix increment \\
       \texttt{--} & Unary & R$\to$L & Prefix decrement \\ \hline
       \texttt{as} $type$ & Binary$^\dagger$ & L$\to$R & Cast to $type$ \\ \hline
@@ -885,6 +886,13 @@ should only evaluate RHS if LHS is true).
 The NOT operator is ``\texttt{!}''. This implicitly casts its operand to
 Boolean, then performs a logical negation (returning \texttt{true} for
 \texttt{false} and {\it vice versa}).
+
+%%%%%%%%%%%%
+% COMPLEMENT
+\subsection{Bitwise complement (\texttt{~})}
+\label{sub:operators:complement}
+The bitwise complement is ``\texttt{~}''. It is only defined for integer types,
+and should invert each bit of the value.
 
 %%%%%%%%%%%%%%%%%%%%%
 % BY-VALUE COMPARISON

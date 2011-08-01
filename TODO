@@ -1,5 +1,4 @@
-~
-& | ^ literal arithmetic folding
+& | ^ ! ~ literal arithmetic folding
 %= %%=
 Fix definition: globals should only evalute once
 Volatile
