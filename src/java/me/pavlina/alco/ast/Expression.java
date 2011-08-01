@@ -465,6 +465,7 @@ public abstract class Expression extends AST implements HasType
         UNOPS.put ("*", OpDeref.CREATOR);
         UNOPS.put ("&", OpAddress.CREATOR);
         UNOPS.put ("-", OpNeg.CREATOR);
+        UNOPS.put ("!", OpLNot.CREATOR);
         UNOPS.put ("++", OpIncrement.CREATOR);
         UNOPS.put ("--", OpDecrement.CREATOR);
     }

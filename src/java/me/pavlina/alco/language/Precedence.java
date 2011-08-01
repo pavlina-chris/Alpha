@@ -12,6 +12,8 @@ public class Precedence {
     public static final int MEMBER = 140;
     public static final int DEREF = 130;
     public static final int NEG = 130;
+    public static final int NOT = 130;
+    public static final int COMPL = 130;
     public static final int INCR = 130;
     public static final int CAST = 125;
     public static final int MUL = 120;

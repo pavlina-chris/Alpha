@@ -608,7 +608,8 @@ Type IDs are:
       \hline
       \texttt{*} & Unary & R$\to$L & Dereference \\
       \texttt{\&} & Unary & R$\to$L & Address of \\
-      \texttt{-} & Unary & R$\to$L & Negation \\ \hline
+      \texttt{-} & Unary & R$\to$L & Negation \\
+      \texttt{!} & Unary & R$\to$L & Logical negation \\ \hline
       \texttt{++} & Unary & R$\to$L & Prefix increment \\
       \texttt{--} & Unary & R$\to$L & Prefix decrement \\ \hline
       \texttt{as} $type$ & Binary$^\dagger$ & L$\to$R & Cast to $type$ \\ \hline
@@ -876,6 +877,14 @@ Boolean according to the implicit cast rules and return Boolean. Both
 operators should only evaluate the right-hand operand if it is necessary to
 determine the result (OR should only evaluate RHS if LHS is false, and AND
 should only evaluate RHS if LHS is true).
+
+%%%%%
+% NOT
+\subsection{Not (\texttt{!})}
+\label{sub:operators:not}
+The NOT operator is ``\texttt{!}''. This implicitly casts its operand to
+Boolean, then performs a logical negation (returning \texttt{true} for
+\texttt{false} and {\it vice versa}).
 
 %%%%%%%%%%%%%%%%%%%%%
 % BY-VALUE COMPARISON
