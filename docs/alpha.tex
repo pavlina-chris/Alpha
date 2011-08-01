@@ -1476,6 +1476,10 @@ specified by IEEE-754 compiled in. IEEE-754 specifies that $0/0$ should yield
 NaN, $(n > 0)/0$ should yield $+\infty$, $(n < 0) / 0$ should yield
 $-\infty$. $n \textrm{ mod } 0$ yields NaN regardless of the value of $n$.
 
+The bitwise operations are not folded. This is because their value, especially
+when considering negatives, can depend considerably on the width and sign of
+the type, and computing this properly at compile time could be error-prone.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % IMPLEMENTATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
