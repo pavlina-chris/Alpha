@@ -1,3 +1,5 @@
 & | ^ && || !
+%= %%=
 Fix definition: globals should only evalute once
 Volatile
+?:
