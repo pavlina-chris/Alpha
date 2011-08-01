@@ -5,6 +5,8 @@ package me.pavlina.alco.language;
 /**
  * This class contains precedence constants for all operators. */
 public class Precedence {
+    private Precedence () {}
+
     public static final int INDEX = 140;
     public static final int CALL = 140;
     public static final int MEMBER = 140;

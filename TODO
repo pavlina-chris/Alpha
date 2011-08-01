@@ -1,5 +1,7 @@
-&& || !
+!
+& | ^ literal arithmetic folding
 %= %%=
 Fix definition: globals should only evalute once
 Volatile
 ?:
+Fix LLVM label order of StIf
