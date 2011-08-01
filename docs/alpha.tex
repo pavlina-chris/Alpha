@@ -609,11 +609,16 @@ Type IDs are:
       \texttt{*} & Unary & R$\to$L & Dereference \\
       \texttt{\&} & Unary & R$\to$L & Address of \\
       \texttt{-} & Unary & R$\to$L & Negation \\ \hline
+      \texttt{++} & Unary & R$\to$L & Prefix increment \\
+      \texttt{--} & Unary & R$\to$L & Prefix decrement \\ \hline
       \texttt{as} $type$ & Binary$^\dagger$ & L$\to$R & Cast to $type$ \\ \hline
       \texttt{*} & Binary & L$\to$R & Multiplication \\
       \texttt{/} & Binary & L$\to$R & Division \\ \hline
       \texttt{+} & Binary & L$\to$R & Addition \\
       \texttt{-} & Binary & L$\to$R & Subtraction \\ \hline
+      \texttt{\&} & Binary & L$\to$R & Bitwise $\land$ \\ \hline
+      \texttt{\^} & Binary & L$\to$R & Bitwise $\oplus$ \\ \hline
+      \texttt{|} & Binary & L$\to$R & Bitwise $\lor$ \\ \hline
       \texttt{<} & Binary & L$\to$R & $<$ \\
       \texttt{<=} & Binary & L$\to$R & $\leq$ \\
       \texttt{>} & Binary & L$\to$R & $>$ \\
@@ -850,6 +855,15 @@ remainder, such that \texttt{-1~\%\%~10} gives \texttt{-1}. When implementing
 literal arithmetic folding, be sure to know which type the language in which
 you are writing the compiler uses.
 
+%%%%%%%%%
+% BITWISE
+\subsection{Bitwise operations (\texttt{\&}, \texttt{\^}, \texttt{|})}
+\label{sub:operators:bitwise}
+The bitwise operations perform the AND ($\land$, \texttt{\&}),
+XOR ($\oplus$, \texttt{\^{}}), and OR ($\lor$, \texttt{|}) operations
+bit-for-bit. They are only defined for integer types, and work identically on
+signed and unsigned integers (operating on the raw bit representation).
+
 %%%%%%%%%%%%%%%%%%%%%
 % BY-VALUE COMPARISON
 \subsection{By-value comparison (\texttt{<}, \texttt{>}, \texttt{<=},
@@ -888,7 +902,8 @@ intended.
 %%%%%%%%%%%%%%
 % ARITH ASSIGN
 \subsection{Arithmetic assign (\texttt{*=}, \texttt{/=}, \texttt{+=},
-  \texttt{-=}, \texttt{\%=}, \texttt{\%\%=})}
+  \texttt{-=}, \texttt{\%=}, \texttt{\%\%=}, \texttt{\&=}, \texttt{\^{}=},
+  \texttt{|=})}
 \label{sub:operators:arithas}
 Arithmetic assignment operators perform arithmetic and assignment at the same
 time. The type semantics are typically identical to those for assignment
