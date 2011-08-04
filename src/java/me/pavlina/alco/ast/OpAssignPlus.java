@@ -128,6 +128,7 @@ public class OpAssignPlus extends Expression.Operator {
                 .pointer (ptr)
                 .value (LLVMType.getLLVMName (children[0].getType ()),
                         valueString)
+                ._volatile (children[0].getType ().isVolatile ())
                 .build ();
             valueString = addptr.getValueString ();
         } else if (addnum != null) {
@@ -140,6 +141,7 @@ public class OpAssignPlus extends Expression.Operator {
                 .pointer (ptr)
                 .value (LLVMType.getLLVMName (children[0].getType ()),
                         valueString)
+                ._volatile (children[0].getType ().isVolatile ())
                 .build ();
             valueString = addnum.getValueString ();
         } else {

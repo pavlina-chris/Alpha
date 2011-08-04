@@ -94,7 +94,7 @@ public class Cast {
             return;
         }
 
-        else if (srcT.equalsNoConst (dstT)) {
+        else if (srcT.equalsNoQual (dstT)) {
             // T to T
             // OK
    
@@ -270,7 +270,7 @@ public class Cast {
             return;
         }
 
-        else if (srcT.equalsNoConst (dstT)) {
+        else if (srcT.equalsNoQual (dstT)) {
             // T to T
             valueString = val;
    

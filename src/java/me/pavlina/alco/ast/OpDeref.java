@@ -75,6 +75,7 @@ public class OpDeref extends Expression.Operator {
         String ptr = children[0].getValueString ();
         valueString = new load (emitter, function)
             .pointer (LLVMType.getLLVMName (getType ()), ptr)
+            ._volatile (getType ().isVolatile ())
             .build ();
     }
 

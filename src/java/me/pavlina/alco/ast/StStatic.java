@@ -22,13 +22,13 @@ import java.math.BigInteger;
  */
 public class StStatic extends Statement
 {
-    private Token token;
-    private List<String> names;
-    private List<String> realNames;
-    private List<Type> types;
-    private List<Expression> expressions;
-    private List<String> initialisers;
-    private boolean threadlocal;
+    Token token;
+    List<String> names;
+    List<String> realNames;
+    List<Type> types;
+    List<Expression> expressions;
+    List<String> initialisers;
+    boolean threadlocal, _volatile;
 
     public StStatic (Env env, TokenStream stream, Method method) throws CError {
         Token token;
@@ -39,9 +39,15 @@ public class StStatic extends Statement
                 ("StStatic instantiated without let kwd");
         }
 
-        if (stream.peek ().is (Token.WORD, "threadlocal")) {
-            threadlocal = true;
-            stream.next ();
+        while (true) {
+            if (stream.peek ().is (Token.WORD, "threadlocal")) {
+                threadlocal = true;
+                stream.next ();
+            } else if (stream.peek ().is (Token.WORD, "volatile")) {
+                _volatile = true;
+                stream.next ();
+            } else
+                break;
         }
 
         names = new ArrayList<String> ();
@@ -117,6 +123,8 @@ public class StStatic extends Statement
                 Type.checkCoerce (expressions.get (i),
                                   types.get (i), token);
             }
+            if (_volatile)
+                types.set (i, types.get (i).getVolatile ());
 
             realNames.set
                 (i, resolver.addGlobalLocal

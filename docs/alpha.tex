@@ -171,6 +171,7 @@ names.
 \texttt{return} (\ref{sub:statements:return}),
 \texttt{let} (\ref{sub:statements:vardecl}),
 \texttt{const} (\ref{sub:statements:vardecl}, \ref{sub:types:const}),
+\texttt{volatile} (\ref{sub:statements:vardecl}, \ref{sub:types:volatile}),
 \texttt{static} (\ref{sub:methods:static}, \ref{sub:classes:static},
   \ref{sub:statements:static}),
 \texttt{nomangle} (\ref{sub:cconv:nomangle}),
@@ -239,6 +240,7 @@ Floating point, $n$ bits & $\R{FP}_n$ \\
 Pointer to $T$ & $T^*$ \\
 Array of $T$ & $T^{[]}$ \\
 Constant $T$ & $\overline{T}$ \\
+Volatile $T$ & $\widetilde{T}$ \\
 Class $\R{c}$ & $\K{c}$ \\
 Class $\R{c} \textrm{ with arguments } k, \ldots, k$ & $\K{c}(k, \ldots, k)$ \\
 Null type & $\emptyset$ \\
@@ -270,6 +272,7 @@ $\R{FP}_{64}$ & \texttt{double} \\
 $T^{[]}$ & $T$\texttt{[]} \\
 $T^*$ & $T$\texttt{*} \\
 $\overline{T}$ & $T$ \texttt{const} \\
+$\widetilde{T}$ & $T$ \texttt{volatile} \\
 $\mathrm{c}$ & \texttt{c} \\
 $\mathrm{c}(k,\ldots,k)$ & \texttt{c$<$k,~...,~k$>$} \\
 \hline
@@ -368,6 +371,8 @@ permitted:
     \texttt{true}.}
   \item{$\overline{T} \both T$ \\
     Add or remove the \texttt{const} specifier.}
+  \item{$\widetilde{T} \both T$ \\
+    Add or remove the \texttt{volatile} specifier.}
   \item{$T \to \R{B}$ where $T$ is a class \\
     \texttt{null} becomes \texttt{false}; anything else becomes
     \texttt{true}.}
@@ -408,6 +413,7 @@ $B$. The compiler should insert the cast implicitly.
 \item{$T^{[]} \to T^*$}
 \item{$T^{[]} \to \R{B}$}
 \item{$T \to \overline{T}$}
+\item{$T \leftrightarrow \widetilde{T}$}
 \item{$T \to \R{B}$ where $T$ is a class}
 \item{$\emptyset \to \R{SI}_a$}
 \item{$\emptyset \to \R{UI}_a$}
@@ -438,8 +444,9 @@ For example, the addition operator gives a special meaning to the addition of
 (pointer + int). Normally, non-numeric types (including pointers)
 cannot be used in arithmetic.
 
-Additionally, any operation which performs coercion should convert its
-result type to non-\texttt{const}. Therefore, the type of \texttt{z} below
+Additionally, any operation which performs coercion should normalise its
+result type to non-\texttt{const}, non-\texttt{volatile}.
+Therefore, the type of \texttt{z} below
 is \texttt{int}, not \texttt{int~const}:
 
 \begin{verbatim}
@@ -476,6 +483,15 @@ possibly stored in read-only memory. The latter is a variable, but one that will
 cause a compiler error if you assign to it. The latter will always be assignable
 if you cast off the \texttt{const}, while the former may cause a segmentation
 fault if that is done.
+
+%%%%%%%%%%%%%%%%
+% VOLATILE TYPES
+\subsection{Volatile types}
+\label{sub:types:volatile}
+See \ref{sub:statements:vardecl}.
+A volatile type $\widetilde{T}$ may be specified as $T$~\texttt{volatile}.
+For a variable declared volatile, all reads and writes must be performed as
+written; none may be optimised out.
 
 %%%%%%
 % NULL
@@ -1022,6 +1038,10 @@ A VarDecl declares all of its variables for use in the current scope. The
 expression, which is required, is evaluated at runtime and assigned to the
 variable.
 
+A volatile variable is one for which all reads and writes must occur as written.
+For example, in the case of a read immediately following a write, the compiler
+may not eliminate the read because it already knows the value.
+
 A ConstDecl declares all of its constants for use in the current scope, with the
 additional requirement that they be globally usable (but not by name). That is,
 if you declare \texttt{const~x~=~3;}, you can only access the constant by name in
@@ -1037,7 +1057,7 @@ Boolean.
 \subsection{Static variable declaration (\texttt{static})}
 \label{sub:statements:static}
 \begin{verbatim}
-Static = "static", ["volatile"], ["threadlocal"],
+Static = "static", [{"volatile" | "threadlocal"}],
          WordExclAt, [typename], "=", Expression,
          [{",", WordExclAt, [typename], "=", Expression}] ;
 \end{verbatim}
@@ -1057,6 +1077,10 @@ these need not be permitted, because the type can be specified explicitly.
 Note that because constant arithmetic folding comes before typechecking,
 \texttt{static~x~=~-3} is valid even though \texttt{-3} is not a literal: it
 will be folded into one.
+
+A volatile static is one for which all reads and writes must occur as written.
+For example, in the case of a read immediately following a write, the compiler
+may not eliminate the read because it already knows the value.
 
 %%%%%%%%
 % RETURN

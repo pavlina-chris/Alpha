@@ -29,6 +29,7 @@ public class Type implements HasType {
     int size;
     Encoding encoding;
     boolean isConst;
+    boolean isVolatile;
     BigInteger intVal;
 
     /**
@@ -45,9 +46,14 @@ public class Type implements HasType {
         
         int modsLength = mods.length;
         isConst = false;
-        // Eat any 'const' keywords
-        while (modsLength != 0 && mods[modsLength - 1] == Modifier.CONST) {
-            isConst = true;
+        // Eat any qualifier keywords
+        while (modsLength != 0) {
+            if (mods[modsLength - 1] == Modifier.CONST) {
+                isConst = true;
+            } else if (mods[modsLength - 1] == Modifier.VOLATILE) {
+                isVolatile = true;
+            } else break;
+            --modsLength;
         }
 
         // If there are no mods, type creation is simple.
@@ -194,6 +200,12 @@ public class Type implements HasType {
     }
 
     /**
+     * Get whether the type is volatile */
+    public boolean isVolatile () {
+        return isVolatile;
+    }
+
+    /**
      * Return a copy of this which is constant. */
     public Type getConst () {
         Type t = new Type ();
@@ -203,6 +215,21 @@ public class Type implements HasType {
         t.encoding = encoding;
         t.intVal = intVal;
         t.isConst = true;
+        t.isVolatile = isVolatile;
+        return t;
+    }
+
+    /**
+     * Return a copy of this which is volatile */
+    public Type getVolatile () {
+        Type t = new Type ();
+        t.name = name;
+        t.subtypes = subtypes;
+        t.size = size;
+        t.encoding = encoding;
+        t.intVal = intVal;
+        t.isConst = isConst;
+        t.isVolatile = true;
         return t;
     }
 
@@ -216,6 +243,21 @@ public class Type implements HasType {
         t.encoding = encoding;
         t.intVal = intVal;
         t.isConst = false;
+        t.isVolatile = isVolatile;
+        return t;
+    }
+
+    /**
+     * Return a copy of this which is not volatile. */
+    public Type getNotVolatile () {
+        Type t = new Type ();
+        t.name = name;
+        t.subtypes = subtypes;
+        t.size = size;
+        t.encoding = encoding;
+        t.intVal = intVal;
+        t.isConst = isConst;
+        t.isVolatile = false;
         return t;
     }
 
@@ -224,8 +266,14 @@ public class Type implements HasType {
      * and value qualifiers removed. The type of (a op b) is usually the
      * normalised type of the operands, once they have been coerced. */
     public Type getNormalised () {
-        Type t = this.getNotConst ();
+        Type t = new Type ();
+        t.name = name;
+        t.subtypes = subtypes;
+        t.size = size;
+        t.encoding = encoding;
         t.intVal = null;
+        t.isConst = false;
+        t.isVolatile = false;
         return t;
     }
 
@@ -238,7 +286,8 @@ public class Type implements HasType {
         t.subtypes = subtypes;
         t.size = size;
         t.encoding = encoding;
-        t.isConst = false;
+        t.isConst = isConst;
+        t.isVolatile = isVolatile;
         t.intVal = null;
         return t;
     }
@@ -429,7 +478,7 @@ public class Type implements HasType {
             // Same type - no cast
             return true;
 
-        } else if (vtype.equalsNoConst (dtype) && !vtype.isConst () &&
+        } else if (vtype.equalsNoQual (dtype) && !vtype.isConst () &&
                    dtype.isConst ()) {
             // T to T const
             return true;
@@ -545,12 +594,12 @@ public class Type implements HasType {
 
     /**
      * Return whether two types are equivalent.
-     *  - Integer: size, sign and const are equal
-     *  - Float: size and const are equal
-     *  - Array: subtype and const are equal
-     *  - Pointer: subtype and const are equal
-     *  - Object: name, arguments and const are equal
-     *  - Boolean: const is equal
+     *  - Integer: size, sign, const and volatile are equal
+     *  - Float: size, const and volatile are equal
+     *  - Array: subtype, const and volatile are equal
+     *  - Pointer: subtype, const and volatile are equal
+     *  - Object: name, arguments, const and volatile are equal
+     *  - Boolean: const and volatile are equal
      *
      * Therefore: i32 == int, i32* == int*, list&lt;i32&gt; == list&lt;int&gt;
      *  i32 const != i32
@@ -560,17 +609,20 @@ public class Type implements HasType {
         if (encoding == Encoding.UINT ||
             encoding == Encoding.SINT ||
             encoding == Encoding.FLOAT) {
-            return size == type.size && isConst == type.isConst;
+            return size == type.size && isConst == type.isConst
+                && isVolatile == type.isVolatile;
         }
         else if (encoding == Encoding.ARRAY ||
                  encoding == Encoding.POINTER) {
             return subtypes.get (0).equals (type.subtypes.get (0))
-                && isConst == type.isConst;
+                && isConst == type.isConst
+                && isVolatile == type.isVolatile;
         }
         else if (encoding == Encoding.OBJECT) {
             if (!name.equals (type.name)) return false;
             if (subtypes.size () != type.subtypes.size ()) return false;
             if (isConst != type.isConst) return false;
+            if (isVolatile != type.isVolatile) return false;
             for (int i = 0; i < subtypes.size (); ++i) {
                 if (! subtypes.get (i).equals (type.subtypes.get (i)))
                     return false;
@@ -578,7 +630,7 @@ public class Type implements HasType {
             return true;
         }
         else if (encoding == Encoding.BOOL) {
-            return isConst == type.isConst;
+            return isConst == type.isConst && isVolatile == type.isVolatile;
         }
         else if (encoding == Encoding.NULL) {
             return true;
@@ -587,8 +639,8 @@ public class Type implements HasType {
     }
 
     /**
-     * Return whether two types are equivalent, ignoring const. */
-    public boolean equalsNoConst (Type type) {
+     * Return whether two types are equivalent, ignoring const and volatile. */
+    public boolean equalsNoQual (Type type) {
         if (type.encoding != encoding) return false;
         if (encoding == Encoding.UINT ||
             encoding == Encoding.SINT ||
@@ -623,20 +675,25 @@ public class Type implements HasType {
      *  - Object: base name + args in &lt;&gt;
      */
     public String toString () {
+        String suffix;
+        suffix = (isConst ? " const" : "");
+        if (isVolatile)
+            suffix = suffix + " volatile";
+
         if (encoding == Encoding.UINT ||
             encoding == Encoding.SINT ||
             encoding == Encoding.FLOAT)
-            return name + (isConst ? " const" : "");
+            return name + suffix;
         else if (encoding == Encoding.ARRAY)
             return subtypes.get (0).toString () + "[]"
-                + (isConst ? " const" : "");
+                + suffix;
         else if (encoding == Encoding.POINTER)
             return subtypes.get (0).toString () + "*"
-                + (isConst ? " const" : "");
+                + suffix;
         else if (encoding == Encoding.NULL)
-            return "<null>" + (isConst ? " const" : "");
+            return "<null>" + suffix;
         else if (encoding == Encoding.BOOL)
-            return "bool" + (isConst ? " const" : "");
+            return "bool" + suffix;
         else if (encoding == Encoding.OBJECT) {
             if (subtypes == null) return name;
             StringBuilder sb = new StringBuilder (name);
@@ -648,7 +705,8 @@ public class Type implements HasType {
                 sb.append (i.toString ());
             }
             sb.append ('>');
-            return sb.toString () + (isConst ? " const" : "");
+            sb.append (suffix);
+            return sb.toString ();
         }
         throw new RuntimeException ("Invalid type");
     }
@@ -660,7 +718,7 @@ public class Type implements HasType {
 
     /**
      * Type modifiers */
-    public enum Modifier { ARRAY, POINTER, CONST }
+    public enum Modifier { ARRAY, POINTER, CONST, VOLATILE }
 
     private static Map<String, Encoding> PRIMITIVE_ENCODINGS;
     private static Map<String, Integer> PRIMITIVE_SIZES;

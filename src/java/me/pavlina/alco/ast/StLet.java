@@ -21,12 +21,13 @@ import java.util.ArrayList;
  */
 public class StLet extends Statement
 {
-    private Token token;
-    private List<String> names;
-    private List<String> realNames;
-    private List<Type> types;
-    private List<Expression> expressions;
+    Token token;
+    List<String> names;
+    List<String> realNames;
+    List<Type> types;
+    List<Expression> expressions;
     Method method;
+    boolean _volatile;
     List<Cast> casts;
 
     public StLet (Env env, TokenStream stream, Method method) throws CError {
@@ -35,6 +36,11 @@ public class StLet extends Statement
         this.token = stream.next ();
         if (!this.token.is (Token.WORD, "let")) {
             throw new RuntimeException ("StLet instantiated without let kwd");
+        }
+
+        if (stream.peek ().is (Token.WORD, "volatile")) {
+            stream.next ();
+            _volatile = true;
         }
 
         this.method = method;
@@ -111,6 +117,8 @@ public class StLet extends Statement
             if (types.get (i) == null) {
                 types.set (i, expressions.get (i).getType ());
             }
+            if (_volatile)
+                types.set (i, types.get (i).getVolatile ());
             realNames.set
                 (i, resolver.addVariable
                  (names.get (i), types.get (i)).getName ());
@@ -144,6 +152,7 @@ public class StLet extends Statement
                     .pointer (realNames.get (i))
                     .value (LLVMType.getLLVMName (types.get (i)),
                             c.getValueString ())
+                    ._volatile (_volatile || types.get (i).isVolatile ())
                     .build ();
             }
 
@@ -166,11 +175,13 @@ public class StLet extends Statement
                 new store (emitter, function)
                     .pointer (elem1)
                     .value ("i64", "0")
+                    ._volatile (_volatile || types.get (i).isVolatile ())
                     .build ();
 
                 new store (emitter, function)
                     .pointer (elem2)
                     .value ("i64", "0")
+                    ._volatile (_volatile || types.get (i).isVolatile ())
                     .build ();
             }
 
@@ -197,9 +208,11 @@ public class StLet extends Statement
                     .pointer ("%.nonprim", psrcElem2).build ();
 
                 new store (emitter, function)
-                    .pointer (pdestElem1).value ("i64", srcElem1).build ();
+                    .pointer (pdestElem1).value ("i64", srcElem1)
+                    ._volatile (_volatile).build ();
                 new store (emitter, function)
-                    .pointer (pdestElem2).value ("i64", srcElem2).build ();
+                    .pointer (pdestElem2).value ("i64", srcElem2)
+                    ._volatile (_volatile).build ();
             }
         }
     }

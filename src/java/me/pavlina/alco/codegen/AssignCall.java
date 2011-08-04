@@ -119,7 +119,7 @@ public class AssignCall {
                     .build ();
                 temps.add (temp);
 
-            } else if (returns.get (i).equalsNoConst (types.get (i))) {
+            } else if (returns.get (i).equalsNoQual (types.get (i))) {
                 temps.add ("");
 
             } else {
@@ -173,6 +173,7 @@ public class AssignCall {
             new store (emitter, function)
                 .pointer (pointers.get (0))
                 .value (LLVMType.getLLVMName (types.get (0)), val)
+                ._volatile (returns.get (0).isVolatile ())
                 .build ();
         }
 
@@ -193,6 +194,7 @@ public class AssignCall {
                     .pointer (pointers.get (i))
                     .value (LLVMType.getLLVMName (types.get (i)),
                             c.getValueString ())
+                    ._volatile (returns.get (i).isVolatile ())
                     .build ();
             }
         }

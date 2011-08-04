@@ -74,6 +74,8 @@ public class TypeParser {
                 mods.add (Type.Modifier.ARRAY);
             } else if (token.is (Token.WORD, "const")) {
                 mods.add (Type.Modifier.CONST);
+            } else if (token.is (Token.WORD, "volatile")) {
+                mods.add (Type.Modifier.VOLATILE);
             } else {
                 stream.putback (token);
                 break;

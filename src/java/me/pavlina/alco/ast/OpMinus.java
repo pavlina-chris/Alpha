@@ -80,7 +80,7 @@ public class OpMinus extends Expression.Operator {
             // pointer-pointer
             Type lhsT = children[0].getType ();
             Type rhsT = children[1].getType ();
-            if (!lhsT.getSubtype ().equalsNoConst (rhsT.getSubtype ())) {
+            if (!lhsT.getSubtype ().equalsNoQual (rhsT.getSubtype ())) {
                 throw CError.at ("subtracting pointers of different types",
                                  token);
             }

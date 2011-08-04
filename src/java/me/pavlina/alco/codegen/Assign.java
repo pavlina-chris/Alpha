@@ -113,6 +113,7 @@ public class Assign {
                 .pointer (pointers[i])
                 .value (LLVMType.getLLVMName (dests.get (i).getType ()),
                         values[i])
+                ._volatile (dests.get (i).getType ().isVolatile ())
                 .build ();
         }
     }

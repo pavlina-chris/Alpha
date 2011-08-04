@@ -17,8 +17,8 @@ public class Keywords
      */
     public static final String[] KEYWORDS = {
         "class", "method", "extern",
-        "let", "const", "static", "threadlocal", "nomangle", "null",
-        "allowconflict", "global",
+        "let", "const", "static", "volatile", "threadlocal", "nomangle",
+        "null", "allowconflict", "global",
         "record", "switch", "case", "default", "if", "else", "for",
         "foreach", "do", "while", "return", "as", "true", "false"};
 

@@ -110,6 +110,7 @@ public class OpAssignDiv extends Expression.Operator {
                 .pointer (ptr)
                 .value (LLVMType.getLLVMName (children[0].getType ()),
                         valueString)
+                ._volatile (children[0].getType ().isVolatile ())
                 .build ();
 
         } else {

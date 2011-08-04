@@ -102,6 +102,7 @@ public class OpDecrement extends Expression.Operator {
                 .pointer (ptr)
                 .value (LLVMType.getLLVMName (children[0].getType ()),
                         valueString)
+                ._volatile (children[0].getType ().isVolatile ())
                 .build ();
         } else if ((overload == null) && !ptrSub) {
             valueString = new Binary (emitter, function)
@@ -113,6 +114,7 @@ public class OpDecrement extends Expression.Operator {
                 .pointer (ptr)
                 .value (LLVMType.getLLVMName (children[0].getType ()),
                         valueString)
+                ._volatile (children[0].getType ().isVolatile ())
                 .build ();
         } else {
             overload.genLLVM (env, emitter, function);

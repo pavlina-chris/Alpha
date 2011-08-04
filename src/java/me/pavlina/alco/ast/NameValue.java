@@ -78,6 +78,7 @@ public class NameValue extends Expression
         valueString = new
             load (emitter, function)
             .pointer (LLVMType.getLLVMName (type), realName)
+            ._volatile (type.isVolatile ())
             .build ();
     }
     
