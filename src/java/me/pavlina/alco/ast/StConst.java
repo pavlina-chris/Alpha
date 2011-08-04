@@ -152,32 +152,49 @@ public class StConst extends Statement
                                  "zeroinitializer",
                                  FHead.Linkage.INTERNAL));
             
+                String initialisedVar =
+                    "@.INITIALISED." + realNames.get (i).substring (1);
+
+                emitter.add
+                    (new Global (initialisedVar,
+                                 "i32", "0", FHead.Linkage.INTERNAL));
+
+                String Lassign = ".L" + Integer.toString
+                    (emitter.getTemporary ("%.L"));
+                String Lassigned = ".L" + Integer.toString
+                    (emitter.getTemporary ("%.L"));
+
+                String assigned = new call (emitter, function)
+                    .type ("i32").pointer ("@llvm.atomic.swap.i32.p0i32")
+                    .arg (LLVMType.getLLVMName (types.get (i)) + "*",
+                          initialisedVar)
+                    .arg ("i32", "1").build ();
+                
+                new _switch (emitter, function)
+                    .value ("i32", assigned).dest ("%" + Lassigned)
+                    .addDest ("0", "%" + Lassign).build ();
+
+                new label (emitter, function).name (Lassign).build ();
                 expressions.get (i).genLLVM (env, emitter, function);
                 Type.Encoding enc = types.get (i).getEncoding ();
-
-                // Simple assign
                 if (enc == Type.Encoding.UINT ||
                     enc == Type.Encoding.SINT ||
                     enc == Type.Encoding.FLOAT ||
+                    enc == Type.Encoding.BOOL ||
                     enc == Type.Encoding.POINTER) {
-                
+                    // Simple assign
                     String val = expressions.get (i).getValueString ();
                     Cast c = new Cast (token)
                         .value (val).type (expressions.get (i).getType ())
                         .dest (types.get (i));
                     c.genLLVM (env, emitter, function);
                     val = c.getValueString ();
-
                     new store (emitter, function)
                         .pointer (realNames.get (i))
                         .value (LLVMType.getLLVMName (types.get (i)), val)
                         .build ();
-                }
-
-
-                // Obj/arr assign
-                else if (enc == Type.Encoding.ARRAY ||
-                         enc == Type.Encoding.OBJECT) {
+                } else {
+                    // Nonprimitive assign
                     String valueString = expressions.get (i).getValueString ();
                     String pdestElem1 = new getelementptr (emitter, function)
                         .type ("%.nonprim").pointer (realNames.get (i))
@@ -191,17 +208,18 @@ public class StConst extends Statement
                     String psrcElem2 = new getelementptr (emitter, function)
                         .type ("%.nonprim").pointer (valueString)
                         .inbounds (true).addIndex (0).addIndex (1).build ();
-
                     String srcElem1 = new load (emitter, function)
                         .pointer ("%.nonprim", psrcElem1).build ();
                     String srcElem2 = new load (emitter, function)
                         .pointer ("%.nonprim", psrcElem2).build ();
-
                     new store (emitter, function)
                         .pointer (pdestElem1).value ("i64", srcElem1).build ();
                     new store (emitter, function)
                         .pointer (pdestElem2).value ("i64", srcElem2).build ();
                 }
+                new branch (emitter, function).ifTrue ("%" + Lassigned).build();
+
+                new label (emitter, function).name (Lassigned).build ();
             }
         }
     }

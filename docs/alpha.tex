@@ -1028,15 +1028,11 @@ if you declare \texttt{const~x~=~3;}, you can only access the constant by name i
 the scope in which it was declared, but the value of \texttt{\&x} will be valid
 globally.
 
-The expression for a constant need not be constant itself; it will be evaluated
-at runtime. If a constant is not declared volatile and the compiler is not being
-run in debug mode, the compiler may fold constants which are known at compile time
-into literals. However, it is not required to do this.
-
-Note that because constants are globally available, yet assigned at runtime, a
-constant is only valid after its declaration. Despite being a constant, the
-assignment shall be executed every time the program passes over the \texttt{const}
-line.
+The expression for a constant need not be constant itself; it can be evaluated
+at runtime. If this is necessary, it shall be evaluated exactly once during the
+execution of the program..
+This can be accomplished easily using an atomic swap on a helper
+Boolean.
 
 \subsection{Static variable declaration (\texttt{static})}
 \label{sub:statements:static}

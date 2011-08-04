@@ -151,6 +151,11 @@ public class Package extends AST
             ("@.null", "%.nonprim", "{i64 0, i64 0}",
              FHead.Linkage.EXTERNALLY_VISIBLE);
         emitter.add (nullconst);
+        FDeclare atomicswapi32 = new FDeclare
+            ("llvm.atomic.swap.i32.p0i32", "i32");
+        atomicswapi32.addParameter ("i32*");
+        atomicswapi32.addParameter ("i32");
+        emitter.add (atomicswapi32);
         for (AST i: children) {
             i.genLLVM (env, emitter, function);
         }
