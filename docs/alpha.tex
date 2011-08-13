@@ -647,6 +647,7 @@ Type IDs are:
       \texttt{===} & Binary & L$\to$R & $=$ (by reference) \\ \hline
       \texttt{\&\&} & Binary & L$\to$R & Logical $\land$ \\ \hline
       \texttt{||} & Binary & L$\to$R & Logical $\lor$ \\ \hline
+      \texttt{?:} & Ternary$^\ddag$ & R$\to$L & Conditional expression \\ \hline
       \texttt{:=} & Binary & R$\to$L & Assignment \\
       \texttt{*=} & Binary & R$\to$L & Arithmetic assignment \\
       \texttt{/=} & Binary & R$\to$L & Arithmetic assignment \\
@@ -660,6 +661,9 @@ Type IDs are:
           cast operator requires a special ``dummy value'' to represent the type. The
           expression parser will have to implicitly create this dummy value when it sees
           a cast operator.}}
+      \item{$\ddag$ \small{It is suggested that the ternary operator \texttt{?:}
+          be implemented as two binary operators, \texttt{?} and \texttt{:},
+          with equal precedence.}}
     \end{tablenotes}
   \end{threeparttable}
 \end{center}
@@ -894,6 +898,19 @@ Boolean according to the implicit cast rules and return Boolean. Both
 operators should only evaluate the right-hand operand if it is necessary to
 determine the result (OR should only evaluate RHS if LHS is false, and AND
 should only evaluate RHS if LHS is true).
+
+%%%%%%%%%%%%%%%%%%%%%
+% TERNARY CONDITIONAL
+\subsection{Ternary conditional (\texttt{?:})}
+\label{sub:operators:ternary}
+The ternary conditional operator is ``\texttt{?:}''. This operator, of course,
+takes three operands, as \texttt{a~?~b~:~c}. It should cast the first operand
+to Boolean according to the implicit cast rules, and cast the second and third
+operands together using the arithmetic coercion rules. The type of the entire
+expression is the resulting casted type of the second and third operands.
+It first evaluates the first operand. If this operand is true, it will
+then evaluate and return the second. Otherwise, it will evaluate and return the
+third.
 
 %%%%%
 % NOT

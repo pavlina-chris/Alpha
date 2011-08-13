@@ -147,10 +147,10 @@ public class StIf extends Statement
             .dest (new Type (env, "bool", null));
         c.genLLVM (env, emitter, function);
 
-        String cond = new Conversion (emitter, function)
-            .operation (Conversion.ConvOp.TRUNC)
-            .source ("i8", c.getValueString ())
-            .dest ("i1").build ();
+        String cond = new icmp (emitter, function)
+            .comparison (icmp.Icmp.NE)
+            .type ("i8").operands (c.getValueString (), "0")
+            .build ();
         
         // Branch
         new branch (emitter, function)

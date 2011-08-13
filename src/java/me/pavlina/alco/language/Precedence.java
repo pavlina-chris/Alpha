@@ -7,6 +7,7 @@ package me.pavlina.alco.language;
 public class Precedence {
     private Precedence () {}
 
+    // IF CHANGING, UPDATE "alpha.tex" (SEARCH FOR "PRECEDENCE")
     public static final int INDEX = 140;
     public static final int CALL = 140;
     public static final int MEMBER = 140;
@@ -26,6 +27,8 @@ public class Precedence {
     public static final int REL_EQ = 80;
     public static final int LOG_AND = 40;
     public static final int LOG_OR = 30;
+    public static final int COLON = 25;
+    public static final int QUESTION = 25;
     public static final int ASSIGNMENT = 20;
     public static final int COMMA = 10;
 }

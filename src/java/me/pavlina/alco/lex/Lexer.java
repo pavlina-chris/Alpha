@@ -167,6 +167,7 @@ public class Lexer implements ErrorAnnotator
                 case ';':
                 case ':':
                 case '.':
+                case '?':
                     consumeOper ();
                     break;
                 default:
@@ -189,34 +190,6 @@ public class Lexer implements ErrorAnnotator
         for (; col < lines.get (line).length (); ++col) {
             char ch = lines.get (line).charAt (col);
             switch (ch) {
-            case ' ':
-            case 0x0009:
-            case 0x000a:
-            case 0x000b:
-            case 0x000c:
-            case 0x000d:
-            case '/':
-            case '~':
-            case '*':
-            case '%':
-            case '<':
-            case '>':
-            case '&':
-            case '^':
-            case '|':
-            case '!':
-            case '=':
-            case '(':
-            case ')':
-            case '[':
-            case ']':
-            case '{':
-            case '}':
-            case ',':
-                // Stop character. Move col back and break out of the loop
-                --col;
-                breakFor = true;
-                break;
             case '+':
             case '-':
                 // Stop character or exponent sign.
@@ -400,36 +373,6 @@ public class Lexer implements ErrorAnnotator
         for (; col < lines.get (line).length (); ++col) {
             char ch = lines.get (line).charAt (col);
             switch (ch) {
-            case ' ':
-            case 0x0009:
-            case 0x000a:
-            case 0x000b:
-            case 0x000c:
-            case 0x000d:
-            case '/':
-            case '~':
-            case '*':
-            case '%':
-            case '<':
-            case '>':
-            case '&':
-            case '^':
-            case '|':
-            case '!':
-            case '=':
-            case '(':
-            case ')':
-            case '[':
-            case ']':
-            case '{':
-            case '}':
-            case ',':
-            case '+':
-            case '-':
-                // Stop character. Move col back and break out of the loop
-                --col;
-                breakFor = true;
-                break;
             case '@':
                 // Only valid as the first character
                 if (col != firstCol)
@@ -525,7 +468,6 @@ public class Lexer implements ErrorAnnotator
 
     private void consumeExtrastandard () throws CError {
         boolean breakFor = false;
-        boolean hasAt = false;
         int firstCol = col;
         for (; col < lines.get (line).length (); ++col) {
             // The first two characters must be $$
@@ -539,36 +481,6 @@ public class Lexer implements ErrorAnnotator
                 continue;
             }
             switch (ch) {
-            case ' ':
-            case 0x0009:
-            case 0x000a:
-            case 0x000b:
-            case 0x000c:
-            case 0x000d:
-            case '/':
-            case '~':
-            case '*':
-            case '%':
-            case '<':
-            case '>':
-            case '&':
-            case '^':
-            case '|':
-            case '!':
-            case '=':
-            case '(':
-            case ')':
-            case '[':
-            case ']':
-            case '{':
-            case '}':
-            case ',':
-            case '+':
-            case '-':
-                // Stop character. Move col back and break out of the loop
-                --col;
-                breakFor = true;
-                break;
             case '0':
             case '1':
             case '2':
@@ -818,6 +730,8 @@ public class Lexer implements ErrorAnnotator
             } else {
                 oper = "."; break;
             }
+        case '?':
+            oper = "?"; break;
         }
 
         if (oper == null)

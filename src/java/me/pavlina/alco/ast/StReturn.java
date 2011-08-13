@@ -101,7 +101,7 @@ public class StReturn extends Statement
 
                 new store (emitter, function)
                     .pointer ("%.R" + Integer.toString (i))
-                    .value (LLVMType.getLLVMName (values.get (i).getType ()),
+                    .value (LLVMType.getLLVMName (methodTypes.get (i)),
                             c.getValueString ())
                     .build ();
             }
@@ -116,7 +116,7 @@ public class StReturn extends Statement
             // "instruction expected to be numbered '%blah'" errors from LLC
             emitter.getTemporary ("%");
             new ret (emitter, function)
-                .value (LLVMType.getLLVMName (values.get (0).getType ()),
+                .value (LLVMType.getLLVMName (methodTypes.get (0)),
                         c.getValueString ())
                 .build ();
         }
