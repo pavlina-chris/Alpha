@@ -130,13 +130,13 @@ public class StIf extends Statement
     public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
         String labelIfTrue = ".L" + Integer.toString
             (emitter.getTemporary ("%.L"));
-        String labelIfFalse;
-        String labelEnd = ".L" + Integer.toString
+        String labelIfFalse = ".L" + Integer.toString
             (emitter.getTemporary ("%.L"));
+        String labelEnd;
         if (values[2] == null)
-            labelIfFalse = labelEnd;
+            labelEnd = labelIfFalse;
         else
-            labelIfFalse = ".L" + Integer.toString
+            labelEnd = ".L" + Integer.toString
                 (emitter.getTemporary ("%.L"));
         
         // Condition
