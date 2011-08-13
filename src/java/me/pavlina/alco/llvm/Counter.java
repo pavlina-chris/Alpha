@@ -37,7 +37,7 @@ public class Counter {
         if (count_ != null)
             return count_;
         else
-            return new Integer (1);
+            return Integer.valueOf (1);
     }
 
     /**

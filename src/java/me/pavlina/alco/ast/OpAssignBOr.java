@@ -21,13 +21,12 @@ public class OpAssignBOr extends Expression.Operator {
     Method method;
     Type type;
     Expression[] children;
-    Expression pointer, integer;
     String valueString;
     Overload overload;
     Cast cast;
     BitOr bitor;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpAssignBOr (Env env, TokenStream stream, Method method)
         throws CError

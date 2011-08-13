@@ -15,7 +15,6 @@ import java.util.ArrayList;
  * Assignment of call to multiple destinations. */
 public class AssignCall {
     Token token;
-    String valueString;
     List<Expression> dests;
     List<Type> types;
     List<Type> returns;

@@ -6,12 +6,10 @@ package me.pavlina.alco.llvm;
  * Label */
 public class label
 {
-    Counter counter;
     Function function;
     String name;
 
     public label (Counter counter, Function function) {
-        this.counter = counter;
         this.function = function;
     }
 

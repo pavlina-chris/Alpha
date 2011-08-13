@@ -18,18 +18,16 @@ import java.util.Arrays;
  */
 public class OpLAnd extends Expression.Operator {
     Token token;
-    Method method;
     Expression[] children;
     Type type;
     String valueString;
     Cast castL, castR;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpLAnd (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
         children = new Expression[2];
-        this.method = method;
     }
 
     public int getPrecedence () {

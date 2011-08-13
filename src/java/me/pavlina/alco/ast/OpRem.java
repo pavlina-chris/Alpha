@@ -26,7 +26,7 @@ public class OpRem extends Expression.Operator {
     Coerce coerce;
     RemNum remnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpRem (Env env, TokenStream stream, Method method) throws CError {

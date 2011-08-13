@@ -6,7 +6,6 @@ package me.pavlina.alco.llvm;
  * store */
 public class store
 {
-    private Counter counter;
     private Function function;
     private String pointer;
     private String value;
@@ -15,7 +14,6 @@ public class store
     private boolean _volatile;
 
     public store (Counter counter, Function function) {
-        this.counter = counter;
         this.function = function;
         align = 0;
         _volatile = false;

@@ -6,15 +6,12 @@ package me.pavlina.alco.llvm;
  * branch */
 public class branch
 {
-    private Counter counter;
     private Function function;
-    private String result;
     private String cond;
     private String ifTrue;
     private String ifFalse;
 
     public branch (Counter counter, Function function) {
-        this.counter = counter;
         this.function = function;
     }
 

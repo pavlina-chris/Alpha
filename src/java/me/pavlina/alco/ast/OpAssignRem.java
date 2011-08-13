@@ -26,7 +26,7 @@ public class OpAssignRem extends Expression.Operator {
     Cast cast;
     RemNum remnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpAssignRem (Env env, TokenStream stream, Method method)
         throws CError

@@ -28,7 +28,7 @@ public class OpAssignPlus extends Expression.Operator {
     AddNum addnum;
     AddPtr addptr;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpAssignPlus (Env env, TokenStream stream, Method method)
         throws CError

@@ -26,7 +26,7 @@ public class OpBAnd extends Expression.Operator {
     Coerce coerce;
     BitAnd bitand;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpBAnd (Env env, TokenStream stream, Method method) throws CError {

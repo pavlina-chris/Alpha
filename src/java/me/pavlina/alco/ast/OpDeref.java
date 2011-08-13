@@ -18,7 +18,7 @@ public class OpDeref extends Expression.Operator {
     private Expression[] children;
     private String valueString;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpDeref (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();

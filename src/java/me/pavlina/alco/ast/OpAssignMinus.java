@@ -28,7 +28,7 @@ public class OpAssignMinus extends Expression.Operator {
     Sub1Ptr sub1ptr;
     SubNum subnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpAssignMinus (Env env, TokenStream stream, Method method)
         throws CError

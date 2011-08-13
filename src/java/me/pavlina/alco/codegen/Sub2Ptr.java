@@ -12,12 +12,10 @@ import me.pavlina.alco.lex.Token;
 /**
  * Subtraction of pointers. Subtracts two pointers of the same type. */
 public class Sub2Ptr {
-    Token token;
     String lhsV, rhsV, valueString;
     Type type, ptrT;
 
     public Sub2Ptr (Token token) {
-        this.token = token;
     }
 
     /**

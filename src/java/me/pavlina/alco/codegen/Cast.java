@@ -6,7 +6,6 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.lex.Token;
-import me.pavlina.alco.ast.Expression;
 import me.pavlina.alco.llvm.*;
 import java.math.BigInteger;
 import static me.pavlina.alco.language.IntLimits.*;
@@ -16,7 +15,6 @@ public class Cast {
     Type srcT, dstT;
     String valueString, val;
     Token token;
-    Expression expr;
 
     public Cast (Token token) {
         this.token = token;
@@ -88,7 +86,7 @@ public class Cast {
             if (min.compareTo (intVal) > 0 ||
                 max.compareTo (intVal) < 0) {
                 throw CError.at ("integer literal outside range for type",
-                                 expr.getToken ());
+                                 token);
             }
 
             return;

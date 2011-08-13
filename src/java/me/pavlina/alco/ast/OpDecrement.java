@@ -25,7 +25,7 @@ public class OpDecrement extends Expression.Operator {
     Overload overload;
     boolean ptrSub;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpDecrement (Env env, TokenStream stream, Method method)
         throws CError

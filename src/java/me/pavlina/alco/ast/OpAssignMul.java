@@ -21,13 +21,12 @@ public class OpAssignMul extends Expression.Operator {
     Method method;
     Type type;
     Expression[] children;
-    Expression pointer, integer;
     String valueString;
     Overload overload;
     Cast cast;
     MulNum mulnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpAssignMul (Env env, TokenStream stream, Method method)
         throws CError

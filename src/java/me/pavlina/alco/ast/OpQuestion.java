@@ -23,7 +23,7 @@ public class OpQuestion extends Expression.Operator {
     Cast cast;
     int coerceSide;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpQuestion (Env env, TokenStream stream, Method method)
         throws CError

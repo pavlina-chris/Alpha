@@ -20,7 +20,7 @@ public class OpColon extends Expression.Operator {
     private Token token;
     private Expression[] children;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpColon (Env env, TokenStream stream, Method method) throws CError {

@@ -129,9 +129,7 @@ public class Compiler
                                 destFile.getPath ());
         }
 
-        if (!destFile.exists ()) {
-            destFile.createNewFile ();
-        }
+        destFile.createNewFile ();
 
         FileChannel src = null, dest = null;
         try {

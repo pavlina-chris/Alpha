@@ -18,17 +18,15 @@ import java.util.Arrays;
  */
 public class OpLNot extends Expression.Operator {
     Token token;
-    Method method;
     Expression[] children;
     Type type;
     String valueString;
     Cast cast;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpLNot (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
-        this.method = method;
     }
 
     public int getPrecedence () {

@@ -19,7 +19,7 @@ public class OpAddress extends Expression.Operator {
     String valueString;
     Type type;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpAddress (Env env, TokenStream stream, Method method)
         throws CError

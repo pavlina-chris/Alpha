@@ -6,13 +6,11 @@ package me.pavlina.alco.llvm;
  * ret */
 public class ret
 {
-    private Counter counter;
     private Function function;
     private String type;
     private String value;
 
     public ret (Counter counter, Function function) {
-        this.counter = counter;
         this.function = function;
     }
 

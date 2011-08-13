@@ -23,7 +23,7 @@ public class OpNeg extends Expression.Operator {
     NegNum negnum;
     Overload overload;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpNeg (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();

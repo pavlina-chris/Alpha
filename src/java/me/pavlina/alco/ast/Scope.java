@@ -16,9 +16,8 @@ import java.util.ArrayList;
  * AST scope. This holds variables and parses code. */
 public class Scope extends AST
 {
-    private Token token;
-    private List<AST> children;
-    private Resolver resolver;
+    Token token;
+    List<AST> children;
 
     /**
      * Parse and initialise the scope. Because resolution is done with the help

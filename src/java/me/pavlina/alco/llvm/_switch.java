@@ -8,7 +8,6 @@ import java.util.ArrayList;
  * _switch */
 public class _switch
 {
-    private Counter counter;
     private Function function;
     private String type;
     private String value;
@@ -17,7 +16,6 @@ public class _switch
     private List<String> dests;
 
     public _switch (Counter counter, Function function) {
-        this.counter = counter;
         this.function = function;
         values = new ArrayList<String> ();
         dests = new ArrayList<String> ();

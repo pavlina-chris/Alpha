@@ -22,7 +22,7 @@ public class OpCast extends Expression.Operator {
     private String valueString;
     Cast cast;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpCast (Env env, TokenStream stream, Method method) throws CError {
         children = new Expression[2];

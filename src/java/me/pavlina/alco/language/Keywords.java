@@ -15,7 +15,7 @@ public class Keywords
     /**
      * List of all Alpha keywords, excluding type names
      */
-    public static final String[] KEYWORDS = {
+    static final String[] KEYWORDS = {
         "class", "method", "extern",
         "let", "const", "static", "volatile", "threadlocal", "nomangle",
         "null", "allowconflict", "global",
@@ -25,7 +25,7 @@ public class Keywords
     /**
      * List of all Alpha special type names
      */
-    public static final String[] TYPES = {
+    static final String[] TYPES = {
         "i8", "i16", "i32", "i64", "ssize", "int",
         "u8", "u16", "u32", "u64", "size", "unsigned",
         "float", "double", "var", "void", "bool"};

@@ -26,7 +26,7 @@ public class OpAssignMod extends Expression.Operator {
     Cast cast;
     ModNum modnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpAssignMod (Env env, TokenStream stream, Method method)
         throws CError

@@ -665,7 +665,12 @@ public class Type implements HasType {
         return false;
     }
 
-
+    /**
+     * Dummy hashCode () */
+    public int hashCode () {
+        assert false : "No hashCode() written";
+        return 1;
+    }
 
     /**
      * Return a string representing the type.

@@ -22,13 +22,10 @@ import java.util.Arrays;
 public class OpAssign extends Expression.Operator {
     private Token token;
     private Expression[] children;
-    List<Expression> srcs, dests;
-    List<Type> types;
-    String valueString;
     Assign assign;
     AssignCall assigncall;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpAssign (Env env, TokenStream stream, Method method) throws CError {

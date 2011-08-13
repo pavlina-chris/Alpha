@@ -29,7 +29,7 @@ public class OpPlus extends Expression.Operator {
     Type type;
     String valueString;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpPlus (Env env, TokenStream stream, Method method) throws CError {

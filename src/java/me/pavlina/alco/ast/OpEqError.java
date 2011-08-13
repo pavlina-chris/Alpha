@@ -21,7 +21,7 @@ public class OpEqError extends Expression.Operator {
 
     Token token;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpEqError (Env env, TokenStream stream, Method method) throws CError
     {

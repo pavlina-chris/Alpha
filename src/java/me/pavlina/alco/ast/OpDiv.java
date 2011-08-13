@@ -26,7 +26,7 @@ public class OpDiv extends Expression.Operator {
     Coerce coerce;
     DivNum divnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpDiv (Env env, TokenStream stream, Method method) throws CError {

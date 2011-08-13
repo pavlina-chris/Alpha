@@ -344,6 +344,13 @@ public abstract class FunctionLike extends AST
     }
 
     /**
+     * Dummy hashCode() */
+    public int hashCode () {
+        assert false : "No hashCode() written";
+        return 1;
+    }
+
+    /**
      * Return a string version of the function declaration. This is used for
      * print() methods and for ambiguous-name errors (which list all
      * possibilities) */

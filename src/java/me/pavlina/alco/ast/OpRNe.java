@@ -24,7 +24,7 @@ public class OpRNe extends Expression.Operator {
     Type type;
     String valueString;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpRNe (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();

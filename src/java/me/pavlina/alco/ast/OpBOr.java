@@ -26,7 +26,7 @@ public class OpBOr extends Expression.Operator {
     Coerce coerce;
     BitOr bitor;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpBOr (Env env, TokenStream stream, Method method) throws CError {

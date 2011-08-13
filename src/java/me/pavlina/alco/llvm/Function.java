@@ -4,6 +4,7 @@ package me.pavlina.alco.llvm;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import me.pavlina.alco.llvm.FHead.*;
 
 /**
@@ -43,7 +44,7 @@ public class Function extends RootCodeObj
         this.linkage = linkage;
         this.visibility = visibility;
         this.cconv = cconv;
-        this.retattrs = retattrs;
+        this.retattrs = Arrays.copyOf (retattrs, retattrs.length);
         this.fattrs = fattrs;
 
         paramAttrs = new ArrayList<ParamAttribute[]> ();

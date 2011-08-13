@@ -26,7 +26,7 @@ public class OpLe extends Expression.Operator {
     Overload overload;
     String valueString;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpLe (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();

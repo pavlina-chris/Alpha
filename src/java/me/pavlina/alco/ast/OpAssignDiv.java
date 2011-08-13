@@ -21,13 +21,12 @@ public class OpAssignDiv extends Expression.Operator {
     Method method;
     Type type;
     Expression[] children;
-    Expression pointer, integer;
     String valueString;
     Overload overload;
     Cast cast;
     DivNum divnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpAssignDiv (Env env, TokenStream stream, Method method)
         throws CError

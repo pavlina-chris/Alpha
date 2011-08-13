@@ -25,7 +25,7 @@ public class OpIncrement extends Expression.Operator {
     Overload overload;
     boolean ptrAdd;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpIncrement (Env env, TokenStream stream, Method method)
         throws CError

@@ -26,7 +26,7 @@ public class OpVEq extends Expression.Operator {
     Overload overload;
     String valueString;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpVEq (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();

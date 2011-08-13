@@ -243,7 +243,7 @@ public class Resolver
     /**
      * This represents a variable reference. It holds the declared type and the
      * real name of the variable, and is returned from resolveVariable(). */
-    public class Variable {
+    public static class Variable {
         private String name;
         private int disambigCounter;
         private Type type;

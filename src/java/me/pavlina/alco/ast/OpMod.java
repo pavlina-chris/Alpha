@@ -26,7 +26,7 @@ public class OpMod extends Expression.Operator {
     Coerce coerce;
     ModNum modnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpMod (Env env, TokenStream stream, Method method) throws CError {

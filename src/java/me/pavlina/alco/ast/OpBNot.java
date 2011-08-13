@@ -23,7 +23,7 @@ public class OpBNot extends Expression.Operator {
     CompNum compnum;
     Overload overload;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
     public OpBNot (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();

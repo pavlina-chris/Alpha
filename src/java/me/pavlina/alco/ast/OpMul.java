@@ -26,7 +26,7 @@ public class OpMul extends Expression.Operator {
     Coerce coerce;
     MulNum mulnum;
 
-    public static Expression.OperatorCreator CREATOR;
+    public static final Expression.OperatorCreator CREATOR;
 
 
     public OpMul (Env env, TokenStream stream, Method method) throws CError {

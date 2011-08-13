@@ -132,7 +132,7 @@ public class StReturn extends Statement
         }
     }
 
-    public static Statement.StatementCreator CREATOR;
+    public static final Statement.StatementCreator CREATOR;
     static {
         CREATOR = new Statement.StatementCreator () {
                 public Statement create (Env env, TokenStream stream,
