@@ -17,12 +17,7 @@ import java.util.Arrays;
 
 /**
  * If (duh). Syntax:
- * if (expression) statement;
- * if (expression) expression;
  * if (expression) scope
- *
- * else statement;
- * else expression;
  * else scope
  */
 public class StIf extends Statement
@@ -56,27 +51,7 @@ public class StIf extends Statement
         if (stream.peek ().is (Token.NO_MORE))
             throw UnexpectedEOF.after ("body", stream.last ());
 
-        // Try a scope
-        if (stream.peek ().is (Token.OPER, "{")) {
-            values[1] = new Scope (env, stream, method);
-        }
-
-        else {
-            // Try a statement
-            values[1] = Statement.parse (env, stream, method);
-            
-            if (values[1] == null) {
-                // Try an expression
-                values[1] = Expression.parse (env, stream, method, ";");
-                if (values[1] == null)
-                    throw Unexpected.after ("body", stream.last ());
-                temp = stream.next ();
-                if (temp.is (Token.NO_MORE))
-                    throw UnexpectedEOF.after (";", stream.last ());
-                else if (!temp.is (Token.OPER, ";"))
-                    throw Unexpected.after (";", stream.last ());
-            }
-        }
+        values[1] = new Scope (env, stream, method);
 
         // Else?
         temp = stream.peek ();
@@ -86,27 +61,7 @@ public class StIf extends Statement
         }
         stream.next ();
 
-        // Try a scope
-        if (stream.peek ().is (Token.OPER, "{")) {
-            values[2] = new Scope (env, stream, method);
-        }
-
-        else {
-            // Try a statement
-            values[2] = Statement.parse (env, stream, method);
-            
-            if (values[2] == null) {
-                // Try an expression
-                values[2] = Expression.parse (env, stream, method, ";");
-                if (values[2] == null)
-                    throw Unexpected.after ("body", stream.last ());
-                temp = stream.next ();
-                if (temp.is (Token.NO_MORE))
-                    throw UnexpectedEOF.after (";", stream.last ());
-                else if (!temp.is (Token.OPER, ";"))
-                    throw Unexpected.after (";", stream.last ());
-            }
-        }
+        values[2] = new Scope (env, stream, method);
     }
 
     public Token getToken ()

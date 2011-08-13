@@ -25,36 +25,68 @@ public class Scope extends AST
     public Scope (Env env, TokenStream stream, Method method)
         throws CError
     {
-        this.token = stream.next ();
-        if (!this.token.is (Token.OPER, "{")) {
-            throw new RuntimeException ("Scope instantiated without {");
-        }
+        this.token = stream.peek ();
         children = new ArrayList<AST> ();
-        while (true) {
-            Token token = stream.next ();
-            if (token.is (Token.OPER, "}"))
-                break;
-            else if (token.is (Token.NO_MORE))
-                throw UnexpectedEOF.after ("}", stream.last ());
-            stream.putback (token);
-            
+
+        if (this.token.is (Token.OPER, "{")) {
+            // Block scope
+            stream.next ();
+            while (true) {
+                Token token = stream.next ();
+                if (token.is (Token.OPER, "}"))
+                    break;
+                else if (token.is (Token.NO_MORE))
+                    throw UnexpectedEOF.after ("}", stream.last ());
+                stream.putback (token);
+
+                if (token.is (Token.OPER, "{")) {
+                    // Nested scope
+                    Scope scope = new Scope (env, stream, method);
+                    children.add (scope);
+                    continue;
+                }
+
+                // Try a statement
+                Statement statement = Statement.parse (env, stream, method);
+                if (statement != null) {
+                    children.add (statement);
+                    continue;
+                }
+
+                // Try an expression
+                Expression expression = Expression.parse (env, stream, method,
+                                                          ";");
+                if (expression != null) {
+                    token = stream.next ();
+                    if (token.is (Token.NO_MORE))
+                        throw UnexpectedEOF.after (";", stream.last ());
+                    else if (!token.is (Token.OPER, ";"))
+                        throw Unexpected.after (";", stream.last ());
+                    children.add (expression);
+                    continue;
+                }
+
+                // Nothing good
+                throw Unexpected.at ("statement or expression", token);
+            }
+        } else {
             // Try a statement
             Statement statement = Statement.parse (env, stream, method);
             if (statement != null) {
                 children.add (statement);
-                continue;
+                return;
             }
 
             // Try an expression
             Expression expression = Expression.parse (env, stream, method, ";");
             if (expression != null) {
-                token = stream.next ();
+                Token token = stream.next ();
                 if (token.is (Token.NO_MORE))
                     throw UnexpectedEOF.after (";", stream.last ());
                 else if (!token.is (Token.OPER, ";"))
                     throw Unexpected.after (";", stream.last ());
                 children.add (expression);
-                continue;
+                return;
             }
 
             // Nothing good
