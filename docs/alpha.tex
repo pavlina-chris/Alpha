@@ -1189,6 +1189,15 @@ if (evaluatesFalse)
 % WHILE
 \subsection{Pre-conditional loop (\texttt{while})}
 \label{sub:statements:while}
+The pre-conditional loop executes its contents \emph{while} a given condition
+is true, hence the name. The syntax is:
+
+\begin{verbatim}
+WhileLoop = "while", "(", Expresion, ")", Scope ;
+\end{verbatim}
+
+The condition, which is implicitly casted to $\R{B}$, shall be evaluated at the
+top of the loop.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SCOPE
