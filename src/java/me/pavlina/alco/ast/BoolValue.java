@@ -7,8 +7,7 @@ import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.Type;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
+import me.pavlina.alco.llvm.*;
 import java.util.List;
 import java.io.PrintStream;
 
@@ -30,14 +29,15 @@ public class BoolValue extends Expression
             value = false;
         else
             throw new RuntimeException ("BoolValue created for non-bool");
+        this.parent = parent;
     }
 
     public boolean getValue () {
         return value;
     }
     
-    public String getValueString () {
-        return value ? "-1" : "0";
+    public Instruction getInstruction () {
+        return new Placeholder (value ? "-1" : "0", "i8");
     }
 
     public Token getToken () {
@@ -56,7 +56,7 @@ public class BoolValue extends Expression
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         // Generate nothing. We instead emit a constant from getValueString()
     }
 
@@ -64,7 +64,7 @@ public class BoolValue extends Expression
         throw CError.at ("primitive literal has no address", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

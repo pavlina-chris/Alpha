@@ -20,7 +20,7 @@ public class OpLNot extends Expression.Operator {
     Token token;
     Expression[] children;
     Type type;
-    String valueString;
+    Instruction instruction;
     Cast cast;
 
     public static final Expression.OperatorCreator CREATOR;
@@ -43,6 +43,7 @@ public class OpLNot extends Expression.Operator {
 
     public void setOperands (Expression op, Expression ignore) {
         children = new Expression[] {op};
+        op.setParent (this);
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -54,29 +55,30 @@ public class OpLNot extends Expression.Operator {
         cast.checkTypes (env, resolver);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
-        cast.value (children[0].getValueString ());
+        cast.value (children[0].getInstruction ());
         cast.genLLVM (env, emitter, function);
-        String val = cast.getValueString ();
+        Instruction val = cast.getInstruction ();
 
-        String isTrue = new icmp (emitter, function)
-            .comparison (icmp.Icmp.NE).type ("i8")
-            .operands (val, "0").build ();
-        String not = new Binary (emitter, function)
-            .operation (Binary.BinOp.XOR)
-            .type ("i1").operands (isTrue, "-1").build ();
-        valueString = new Conversion (emitter, function)
-            .operation (Conversion.ConvOp.SEXT)
-            .source ("i1", not).dest ("i8").build ();
+        Instruction isTrue = new BINARY ()
+            .op ("icmp ne").type ("i8")
+            .lhs (val).rhs ("0");
+        Instruction not = new BINARY ()
+            .op ("xor").type ("i1").lhs (isTrue).rhs ("-1");
+        instruction = new CONVERT ()
+            .op ("sext").stype ("i1").dtype ("i8").value (not);
+        function.add (isTrue);
+        function.add (not);
+        function.add (instruction);
     }
 
     @SuppressWarnings("unchecked")
@@ -104,7 +106,7 @@ public class OpLNot extends Expression.Operator {
         throw CError.at ("cannot assign to logical operation", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

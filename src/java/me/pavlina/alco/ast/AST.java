@@ -5,7 +5,7 @@ import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.compiler.errors.CError;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
-import me.pavlina.alco.llvm.LLVMEmitter;
+import me.pavlina.alco.llvm.Emitter;
 import me.pavlina.alco.llvm.Function;
 import me.pavlina.IndentOutputStream;
 import java.io.PrintStream;
@@ -18,6 +18,8 @@ import java.util.List;
 public abstract class AST
 {
 
+    AST parent;
+
     /**
      * Get the token that represents this AST object. */
     public abstract Token getToken ();
@@ -29,6 +31,18 @@ public abstract class AST
      * May return null for no children.
      */
     public abstract List<AST> getChildren ();
+
+    /**
+     * Get the parent. Will return null for the root. */
+    public AST getParent () {
+        return parent;
+    }
+
+    /**
+     * Set the parent. */
+    public void setParent (AST parent) {
+        this.parent = parent;
+    }
 
     /**
      * Check types and resolve names. All items which create names, of course,
@@ -44,8 +58,7 @@ public abstract class AST
      * @param function Current LLVM function object; may be null outside of
      * a function.
      */
-    public abstract void genLLVM (Env env, LLVMEmitter emitter,
-                                  Function function);
+    public abstract void genLLVM (Env env, Emitter emitter, Function function);
 
     /**
      * Print a description of the AST object to the PrintStream. */

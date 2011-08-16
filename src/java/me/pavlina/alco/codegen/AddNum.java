@@ -14,7 +14,7 @@ import me.pavlina.alco.lex.Token;
  * Numeric addition. Adds two values of the SAME TYPE */
 public class AddNum {
     Token token;
-    String lhsV, rhsV, valueString;
+    Instruction lhsV, rhsV, value;
     Type type;
     
     public AddNum (Token token) {
@@ -23,14 +23,14 @@ public class AddNum {
 
     /**
      * Set the left-hand operand. */
-    public AddNum lhs (String lhsV) {
+    public AddNum lhs (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public AddNum rhs (String rhsV) {
+    public AddNum rhs (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
@@ -51,30 +51,29 @@ public class AddNum {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        Binary.BinOp operation;
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        String op;
         Type.Encoding enc = type.getEncoding ();
         switch (enc) {
         case SINT:
         case UINT:
-            operation = Binary.BinOp.ADD;
+            op = "add";
             break;
         case FLOAT:
-            operation = Binary.BinOp.FADD;
+            op = "fadd";
             break;
         default:
             throw new RuntimeException ("Adding unsupported items");
         }
 
-        valueString = new Binary (emitter, function)
-            .operation (operation)
+        value = new BINARY ()
+            .op (op)
             .type (LLVMType.getLLVMName (type))
-            .operands (lhsV, rhsV)
-            .build ();
+            .lhs (lhsV).rhs (rhsV);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return value;
     }
 
     public Type getType () {

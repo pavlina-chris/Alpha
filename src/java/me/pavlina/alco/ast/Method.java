@@ -17,8 +17,8 @@ import java.util.Collections;
  * AST method. This represents (and parses) just one method. */
 public class Method extends FunctionLike
 {
-    private Token token;
-    private List<AST> children;
+    Token token;
+    List<AST> children;
     List<String> allocaTypes;
     List<String> allocaNames;
     int numberTemps;
@@ -45,6 +45,7 @@ public class Method extends FunctionLike
 
         // Create a Scope for this method. It will parse the code.
         Scope scope = new Scope (env, stream, this);
+        scope.setParent (this);
         children.add (scope);
     }
 
@@ -89,10 +90,11 @@ public class Method extends FunctionLike
             i.checkTypes (env, newResolver);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         // Declaration at top of file
         FDeclare decl = new FDeclare
-            (this.getMangledName (), LLVMType.getLLVMNameV (this.getType ()));
+            ("@" + this.getMangledName (),
+             LLVMType.getLLVMNameV (this.getType ()));
         if (types.size () > 1) {
             for (int i = 1; i < types.size (); ++i) {
                 decl.addParameter (LLVMType.getLLVMName (types.get (i)) + "*");
@@ -111,7 +113,8 @@ public class Method extends FunctionLike
 
         // Method
         Function func = new Function
-            (this.getMangledName (), LLVMType.getLLVMNameV (this.getType ()));
+            ("@" + this.getMangledName (),
+             LLVMType.getLLVMNameV (this.getType ()));
         if (types.size () > 1) {
             for (int i = 1; i < types.size (); ++i) {
                 func.addParameter (LLVMType.getLLVMName (types.get (i)) + "*",
@@ -132,71 +135,60 @@ public class Method extends FunctionLike
         }
         emitter.add (func);
 
-        // Save the counter
-        Object countSave1 = emitter.resetCount ("%");
-        Object countSave2 = emitter.resetCount ("%.L");
-        Object countSave3 = emitter.resetCount ("%.T");
-        
         // Copy arguments into local variables
         for (int i = 0; i < argtypes.size (); ++i) {
             Type.Encoding enc = argtypes.get (i).getEncoding ();
-            new alloca (emitter, func)
-                .type (LLVMType.getLLVMName (argtypes.get (i)))
-                .result ("%" + argnames.get (i))
-                .build ();
+            ALLOCA alloca = new ALLOCA ()
+                .type (LLVMType.getLLVMName (argtypes.get (i)));
+            alloca.setId ("%" + argnames.get (i));
+            func.add (alloca);
+
             if (enc == Type.Encoding.OBJECT ||
                 enc == Type.Encoding.ARRAY) {
-                String pdest1 = new getelementptr (emitter, func)
-                    .type ("%.nonprim")
-                    .pointer ("%" + argnames.get (i))
-                    .inbounds (true)
-                    .addIndex (0).addIndex (0).build ();
-                String pdest2 = new getelementptr (emitter, func)
-                    .type ("%.nonprim")
-                    .pointer ("%" + argnames.get (i))
-                    .inbounds (true)
-                    .addIndex (0).addIndex (1).build ();
-                new store (emitter, func)
-                    .pointer (pdest1)
-                    .value ("i64", "%." + Integer.toString (i) + ".T")
-                    .build ();
-                new store (emitter, func)
-                    .pointer (pdest2)
-                    .value ("i64", "%." + Integer.toString (i) + ".V")
-                    .build ();
+                Instruction pdest1 = new GETELEMENTPTR ()
+                    .type ("%.nonprim").value ("%" + argnames.get (i))
+                    .inbounds (true).addIndex (0).addIndex (0);
+                Instruction pdest2 = new GETELEMENTPTR ()
+                    .type ("%.nonprim").value ("%" + argnames.get (i))
+                    .inbounds (true).addIndex (0).addIndex (1);
+                Instruction s1 = new STORE ()
+                    .pointer (pdest1).type ("i64")
+                    .value ("%." + Integer.toString (i) + ".T");
+                Instruction s2 = new STORE ()
+                    .pointer (pdest2).type ("i64")
+                    .value ("%." + Integer.toString (i) + ".V");
+                func.add (pdest1);
+                func.add (pdest2);
+                func.add (s1);
+                func.add (s2);
             } else {
-                new store (emitter, func)
-                    .pointer ("%" + argnames.get (i))
-                    .value (LLVMType.getLLVMName (argtypes.get (i)),
-                            "%." + Integer.toString (i))
-                    .build ();
+                func.add (new STORE ()
+                          .pointer ("%" + argnames.get (i))
+                          .type (LLVMType.getLLVMName (argtypes.get (i)))
+                          .value ("%." + Integer.toString (i)));
             }
         }
 
         // Create the temps
         for (int i = 0; i < numberTemps; ++i) {
-            new alloca (emitter, func)
-                .type ("i128").result ("%.T" + Integer.toString (i))
-                .build ();
+            ALLOCA alloca = new ALLOCA ()
+                .type ("i128");
+            alloca.setId ("%.T" + Integer.toString (i));
+            func.add (alloca);
         }
 
         // Make the allocations
         for (int i = 0; i < allocaTypes.size (); ++i) {
-            new alloca (emitter, func)
-                .type (allocaTypes.get (i))
-                .result (allocaNames.get (i))
-                .build ();
+            ALLOCA alloca = new ALLOCA ()
+                .type (allocaTypes.get (i));
+            alloca.setId (allocaNames.get (i));
+            func.add (alloca);
         }
 
         // Write the function code
         for (AST i: children) {
             i.genLLVM (env, emitter, func);
         }
-
-        // Restore the counter
-        emitter.setCount ("%", countSave1);
-        emitter.setCount ("%.L", countSave2);
-        emitter.setCount ("%.T", countSave3);
     }
 
     public void print (PrintStream out) {

@@ -14,7 +14,7 @@ import me.pavlina.alco.lex.Token;
  * Numeric multiplication. Multiplies two values of the SAME TYPE */
 public class MulNum {
     Token token;
-    String lhsV, rhsV, valueString;
+    Instruction lhsV, rhsV, instruction;
     Type type;
     
     public MulNum (Token token) {
@@ -23,14 +23,14 @@ public class MulNum {
 
     /**
      * Set the left-hand operand. */
-    public MulNum lhs (String lhsV) {
+    public MulNum lhs (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public MulNum rhs (String rhsV) {
+    public MulNum rhs (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
@@ -51,30 +51,30 @@ public class MulNum {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        Binary.BinOp operation;
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        String op;
         Type.Encoding enc = type.getEncoding ();
         switch (enc) {
         case SINT:
         case UINT:
-            operation = Binary.BinOp.MUL;
+            op = "mul";
             break;
         case FLOAT:
-            operation = Binary.BinOp.FMUL;
+            op = "fmul";
             break;
         default:
             throw new RuntimeException ("Multiplying unsupported items");
         }
 
-        valueString = new Binary (emitter, function)
-            .operation (operation)
+        instruction = new BINARY ()
+            .op (op)
             .type (LLVMType.getLLVMName (type))
-            .operands (lhsV, rhsV)
-            .build ();
+            .lhs (lhsV).rhs (rhsV);
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {

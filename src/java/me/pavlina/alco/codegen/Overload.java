@@ -16,7 +16,7 @@ import java.util.Arrays;
  * Overloaded operator. */
 public class Overload {
     Token token;
-    String valueString;
+    Instruction instruction;
     String operator;
     FunctionLike fun;
     Method method;
@@ -74,46 +74,44 @@ public class Overload {
             method.requireTemps (1);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        List<String> valueStrings = new ArrayList<String> ();
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        List<Instruction> values = new ArrayList<Instruction> ();
         List<Type> destTypes = fun.getArgTypes ();
         for (int i = 0; i < children.length; ++i) {
             children[i].genLLVM (env, emitter, function);
-            String val = children[i].getValueString ();
+            Instruction val = children[i].getInstruction ();
             Cast c = new Cast (token)
                 .value (val)
                 .type (children[i].getType ()).dest (destTypes.get (i));
             c.genLLVM (env, emitter, function);
-            valueStrings.add (c.getValueString ());
+            values.add (c.getInstruction ());
         }
 
         // Bitcast the temporary %.T0 (i128*) into the proper pointer types
-        List<String> temps = new ArrayList<String> ();
+        List<Instruction> temps = new ArrayList<Instruction> ();
         List<Type> returns = fun.getTypes ();
         // Make temps[i] equiv. returns[i]
-        temps.add ("");
+        temps.add (null);
         for (int i = 1; i < returns.size (); ++i) {
-            String temp = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.BITCAST)
-                .source ("i128*", "%.T0")
-                .dest (LLVMType.getLLVMName (returns.get (i)) + "*")
-                .build ();
+            Instruction temp = new CONVERT ()
+                .op ("bitcast")
+                .stype ("i128*").value ("%.T0")
+                .dtype (LLVMType.getLLVMName (returns.get (i)) + "*");
+            function.add (temp);
             temps.add (temp);
         }
 
-        call callbuilder = new call (emitter, function)
+        CALL callbuilder = new CALL ()
             .type (LLVMType.getLLVMName (this.getType ()))
-            .pointer ("@" + fun.getMangledName ());
+            .fun ("@" + fun.getMangledName ());
         for (int i = 1; i < returns.size (); ++i) {
-            callbuilder.arg (LLVMType.getLLVMName (returns.get (i)) + "*",
-                             temps.get (i));
+            callbuilder.arg (temps.get (i));
         }
         for (int i = 0; i < children.length; ++i) {
-            callbuilder.arg (LLVMType.getLLVMName
-                             (destTypes.get (i).getType ()),
-                             valueStrings.get (i));
+            callbuilder.arg (values.get (i));
         }
-        valueString = callbuilder.build ();
+        function.add (callbuilder);
+        instruction = callbuilder;
     }
 
     public Type getType () {
@@ -122,7 +120,7 @@ public class Overload {
         return t.getNormalised ();
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 }

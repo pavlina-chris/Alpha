@@ -94,6 +94,7 @@ public class StStatic extends Statement
             realNames.add (null);
             types.add (type == null ? null : type.getNonLiteral ());
             expressions.add (value);
+            value.setParent (this);
 
             token = stream.next ();
             if (token.is (Token.OPER, ";"))
@@ -216,10 +217,8 @@ public class StStatic extends Statement
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        FHead.Linkage linkage = threadlocal
-            ? FHead.Linkage.THREAD_LOCAL
-            : FHead.Linkage.INTERNAL ;
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        String linkage = threadlocal ? "thread_local" : "internal";
 
         for (int i = 0; i < names.size (); ++i) {
             emitter.add

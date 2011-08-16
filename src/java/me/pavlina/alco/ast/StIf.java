@@ -41,6 +41,7 @@ public class StIf extends Statement
         values[0] = (AST) Expression.parse (env, stream, method, ")");
         if (values[0] == null)
             throw Unexpected.after ("expression", temp);
+        values[0].setParent (this);
         temp = stream.next ();
         if (temp.is (Token.NO_MORE))
             throw UnexpectedEOF.after (")", stream.last ());
@@ -52,6 +53,7 @@ public class StIf extends Statement
             throw UnexpectedEOF.after ("body", stream.last ());
 
         values[1] = new Scope (env, stream, method);
+        values[1].setParent (this);
 
         // Else?
         temp = stream.peek ();
@@ -62,6 +64,7 @@ public class StIf extends Statement
         stream.next ();
 
         values[2] = new Scope (env, stream, method);
+        values[2].setParent (this);
     }
 
     public Token getToken ()
@@ -82,49 +85,44 @@ public class StIf extends Statement
                           new Type (env, "bool", null), token);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        String labelIfTrue = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String labelIfFalse = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String labelEnd;
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        Block labelIfTrue = new Block ();
+        Block labelAfterTrue = new Block ();
+        Block labelIfFalse = new Block ();
+        Block labelEnd = null;
         if (values[2] == null)
             labelEnd = labelIfFalse;
         else
-            labelEnd = ".L" + Integer.toString
-                (emitter.getTemporary ("%.L"));
+            labelEnd = new Block ();
         
         // Condition
         values[0].genLLVM (env, emitter, function);
-        String boolCond = ((Expression) values[0]).getValueString ();
+        Instruction boolCond = ((Expression) values[0]).getInstruction ();
         Cast c = new Cast (token)
             .value (boolCond).type (((Expression) values[0]).getType ())
             .dest (new Type (env, "bool", null));
         c.genLLVM (env, emitter, function);
 
-        String cond = new icmp (emitter, function)
-            .comparison (icmp.Icmp.NE)
-            .type ("i8").operands (c.getValueString (), "0")
-            .build ();
+        Instruction cond = new BINARY ()
+            .op ("icmp ne").type ("i8").lhs (c.getInstruction ()).rhs ("0");
         
         // Branch
-        new branch (emitter, function)
-            .ifTrue ("%" + labelIfTrue).ifFalse ("%" + labelIfFalse)
-            .cond (cond).build ();
+        function.add (new BRANCH ().cond (cond).T (labelIfTrue)
+                      .F (labelIfFalse));
 
         // Case: true
-        new label (emitter, function).name (labelIfTrue).build ();
+        function.add (labelIfTrue);
         values[1].genLLVM (env, emitter, function);
-        new branch (emitter, function).ifTrue ("%" + labelEnd).build ();
+        function.add (new BRANCH ().dest (labelEnd));
 
         // Case: false?
         if (values[2] != null) {
-            new label (emitter, function).name (labelIfFalse).build ();
+            function.add (labelIfFalse);
             values[2].genLLVM (env, emitter, function);
-            new branch (emitter, function).ifTrue ("%" + labelEnd).build ();
+            function.add (new BRANCH ().dest (labelEnd));
         }
 
-        new label (emitter, function).name (labelEnd).build ();
+        function.add (labelEnd);
     }
 
     public void print (java.io.PrintStream out) {

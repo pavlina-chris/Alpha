@@ -78,102 +78,97 @@ public class AssignCall {
         call.getMethod ().requireTemps (temps);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        List<String> pointers = new ArrayList<String> (dests.size ());
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        List<Instruction> pointers = new ArrayList<Instruction> (dests.size ());
         for (Expression i: dests) {
             if (NullValue.class.isInstance (i))
-                pointers.add ("");
+                pointers.add (null);
             else
                 pointers.add (i.getPointer (env, emitter, function));
         }
 
         // Process arguments
-        List<String> valueStrings = new ArrayList<String> ();
+        List<Instruction> values = new ArrayList<Instruction> ();
         List<Type> destTypes = call.getFunction ().getArgTypes ();
         List<Expression> args = call.getArgs ();
         for (int i = 0; i < args.size (); ++i) {
             args.get (i).genLLVM (env, emitter, function);
-            String val = args.get (i).getValueString ();
+            Instruction val = args.get (i).getInstruction ();
             Cast c = new Cast (token)
                 .value (val)
                 .type (args.get (i).getType ())
                 .dest (destTypes.get (i));
             c.genLLVM (env, emitter, function);
-            valueStrings.add (c.getValueString ());
+            values.add (c.getInstruction ());
         }
 
         // Prepare bitcasts of required temporaries (they're all i128*)
-        List<String> temps = new ArrayList<String> ();
+        List<Instruction> temps = new ArrayList<Instruction> ();
         Type nullType = Type.getNull ();
         // Offset temps to allow for the first (real) return
-        temps.add ("");
+        temps.add (null);
         int tempsUsed = 0;
         for (int i = 1; i < returns.size (); ++i) {
             if (i >= types.size () || types.get (i).equals (nullType)) {
                 // Ignore
-                String temp = new Conversion (emitter, function)
-                    .operation (Conversion.ConvOp.BITCAST)
-                    .source ("i128*", "%.T0")
-                    .dest (LLVMType.getLLVMName (returns.get (i)) + "*")
-                    .build ();
+                Instruction temp = new CONVERT ()
+                    .op ("bitcast").stype ("i128*")
+                    .dtype (LLVMType.getLLVMName (returns.get (i)) + "*")
+                    .value ("%.T0");
+                function.add (temp);
                 temps.add (temp);
 
             } else if (returns.get (i).equalsNoQual (types.get (i))) {
-                temps.add ("");
+                temps.add (null);
 
             } else {
                 // Cast required
                 String dest = "%.T" + Integer.toString (tempsUsed + 1);
                 ++tempsUsed;
-                String temp = new Conversion (emitter, function)
-                    .operation (Conversion.ConvOp.BITCAST)
-                    .source ("i128*", dest)
-                    .dest (LLVMType.getLLVMName (returns.get (i)) + "*")
-                    .build ();
+                Instruction temp = new CONVERT ()
+                    .op ("bitcast").stype ("i128*")
+                    .dtype (LLVMType.getLLVMName (returns.get (i)) + "*")
+                    .value (dest);
+                function.add (temp);
                 temps.add (temp);
             }
         }
 
         // Build the call
-        call callbuilder = new call (emitter, function)
+        CALL callbuilder = new CALL ()
             .type (LLVMType.getLLVMNameV (call.getType ()))
-            .pointer ("@" + call.getFunction ().getMangledName ());
+            .fun ("@" + call.getFunction ().getMangledName ());
         for (int i = 1; i < returns.size (); ++i) {
-            if (temps.get (i).equals ("")) {
+            if (temps.get (i) == null) {
                 // Return directly into pointer
-                callbuilder.arg (LLVMType.getLLVMName (returns.get (i)) + "*",
-                                 pointers.get (i));
+                callbuilder.arg (pointers.get (i));
 
             } else {
                 // Return into temp
-                callbuilder.arg (LLVMType.getLLVMName (returns.get (i)) + "*",
-                                 temps.get (i));
+                callbuilder.arg (temps.get (i));
             }
         }
         for (int i = 0; i < args.size (); ++i) {
-            callbuilder.arg
-                (LLVMType.getLLVMName
-                 (destTypes.get (i).getType ()), valueStrings.get (i));
+            callbuilder.arg (values.get (i));
         }
-        String firstReturn = callbuilder.build ();
 
         // Cast and assign the first return value
         if (!types.get (0).equals (nullType) && returns.size () > 0) {
-            String val;
+            Instruction val;
             if (types.get (0).equals (returns.get (0))) {
-                val = firstReturn;
+                val = callbuilder;
             } else {
                 Cast c = new Cast (token)
-                    .value (firstReturn).type (returns.get (0))
+                    .value (callbuilder).type (returns.get (0))
                     .dest (types.get (0));
                 c.genLLVM (env, emitter, function);
-                val = c.getValueString ();
+                val = c.getInstruction ();
             }
-            new store (emitter, function)
-                .pointer (pointers.get (0))
-                .value (LLVMType.getLLVMName (types.get (0)), val)
-                ._volatile (returns.get (0).isVolatile ())
-                .build ();
+            function.add (new STORE ()
+                          .pointer (pointers.get (0))
+                          .type (LLVMType.getLLVMName (types.get (0)))
+                          .value (val)
+                          ._volatile (returns.get (0).isVolatile ()));
         }
 
         // Cast and assign the subsequent return values
@@ -181,25 +176,24 @@ public class AssignCall {
             if (i == types.size ()) break;
             if (!temps.get (i).equals ("") &&
                 !types.get (i).equals (nullType)) {
-                String tempVal = new load (emitter, function)
-                    .pointer (LLVMType.getLLVMName (returns.get (i)),
-                              temps.get (i))
-                    .build ();
+                Instruction tempVal = new LOAD ()
+                    .type (LLVMType.getLLVMName (returns.get (i)))
+                    .pointer (temps.get (i));
+                function.add (tempVal);
                 Cast c = new Cast (token)
                     .value (tempVal).type (returns.get (i))
                     .dest (types.get (i));
                 c.genLLVM (env, emitter, function);
-                new store (emitter, function)
-                    .pointer (pointers.get (i))
-                    .value (LLVMType.getLLVMName (types.get (i)),
-                            c.getValueString ())
-                    ._volatile (returns.get (i).isVolatile ())
-                    .build ();
+                function.add (new STORE ()
+                              .pointer (pointers.get (i))
+                              .type (LLVMType.getLLVMName (types.get (i)))
+                              .value (c.getInstruction ())
+                              ._volatile (returns.get (i).isVolatile ()));
             }
         }
     }
 
-    public String getValueString () {
-        return call.getValueString ();
+    public Instruction getInstruction () {
+        return call.getInstruction ();
     }
 }

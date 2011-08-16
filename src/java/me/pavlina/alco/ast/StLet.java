@@ -89,6 +89,7 @@ public class StLet extends Statement
             realNames.add (null);
             types.add (type == null ? null : type.getNonLiteral ());
             expressions.add (value);
+            value.setParent (this);
 
             token = stream.next ();
             if (token.is (Token.OPER, ";"))
@@ -133,7 +134,7 @@ public class StLet extends Statement
             
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         for (int i = 0; i < names.size (); ++i) {
             expressions.get (i).genLLVM (env, emitter, function);
             Type.Encoding enc = types.get (i).getEncoding ();
@@ -145,74 +146,74 @@ public class StLet extends Statement
                 enc == Type.Encoding.POINTER ||
                 enc == Type.Encoding.BOOL) {
                 
-                String val = expressions.get (i).getValueString ();
+                Instruction val = expressions.get (i).getInstruction ();
                 Cast c = casts.get (i).value (val);
                 c.genLLVM (env, emitter, function);
-                new store (emitter, function)
-                    .pointer (realNames.get (i))
-                    .value (LLVMType.getLLVMName (types.get (i)),
-                            c.getValueString ())
-                    ._volatile (_volatile || types.get (i).isVolatile ())
-                    .build ();
+                function.add
+                    (new STORE ()
+                     .pointer (realNames.get (i))
+                     .value (c.getInstruction ())
+                     ._volatile (_volatile || types.get (i).isVolatile ()));
             }
 
             // Null assign
             else if (NullValue.class.isInstance (expressions.get (i))) {
-                String elem1 = new getelementptr (emitter, function)
-                    .type ("%.nonprim")
-                    .pointer (realNames.get (i))
-                    .inbounds (true)
-                    .addIndex (0).addIndex (0)
-                    .build ();
+                Instruction elem1 = new GETELEMENTPTR ()
+                    .type ("%.nonprim").value (realNames.get (i))
+                    .inbounds (true).addIndex (0).addIndex (0).rtype ("i64*");
 
-                String elem2 = new getelementptr (emitter, function)
-                    .type ("%.nonprim")
-                    .pointer (realNames.get (i))
-                    .inbounds (true)
-                    .addIndex (0).addIndex (1)
-                    .build ();
+                Instruction elem2 = new GETELEMENTPTR ()
+                    .type ("%.nonprim").value (realNames.get (i))
+                    .inbounds (true).addIndex (0).addIndex (1).rtype ("i64*");
 
-                new store (emitter, function)
-                    .pointer (elem1)
-                    .value ("i64", "0")
-                    ._volatile (_volatile || types.get (i).isVolatile ())
-                    .build ();
-
-                new store (emitter, function)
-                    .pointer (elem2)
-                    .value ("i64", "0")
-                    ._volatile (_volatile || types.get (i).isVolatile ())
-                    .build ();
+                function.add (elem1);
+                function.add (elem2);
+                function.add
+                    (new STORE ()
+                     .pointer (elem1).type ("i64").value ("0")
+                     ._volatile (_volatile || types.get (i).isVolatile ()));
+                function.add
+                    (new STORE ()
+                     .pointer (elem2).type ("i64").value ("0")
+                     ._volatile (_volatile || types.get (i).isVolatile ()));
             }
 
             // Obj/arr assign
             else if (enc == Type.Encoding.ARRAY ||
                      enc == Type.Encoding.OBJECT) {
-                String valueString = expressions.get (i).getValueString ();
-                String pdestElem1 = new getelementptr (emitter, function)
-                    .type ("%.nonprim").pointer (realNames.get (i))
-                    .inbounds (true).addIndex (0).addIndex (0).build ();
-                String pdestElem2 = new getelementptr (emitter, function)
-                    .type ("%.nonprim").pointer (realNames.get (i))
-                    .inbounds (true).addIndex (0).addIndex (1).build ();
-                String psrcElem1 = new getelementptr (emitter, function)
-                    .type ("%.nonprim").pointer (valueString)
-                    .inbounds (true).addIndex (0).addIndex (0).build ();
-                String psrcElem2 = new getelementptr (emitter, function)
-                    .type ("%.nonprim").pointer (valueString)
-                    .inbounds (true).addIndex (0).addIndex (1).build ();
-
-                String srcElem1 = new load (emitter, function)
-                    .pointer ("%.nonprim", psrcElem1).build ();
-                String srcElem2 = new load (emitter, function)
-                    .pointer ("%.nonprim", psrcElem2).build ();
-
-                new store (emitter, function)
-                    .pointer (pdestElem1).value ("i64", srcElem1)
-                    ._volatile (_volatile).build ();
-                new store (emitter, function)
-                    .pointer (pdestElem2).value ("i64", srcElem2)
-                    ._volatile (_volatile).build ();
+                Instruction val = expressions.get (i).getInstruction ();
+                Instruction pdestElem1 = new GETELEMENTPTR ()
+                    .type ("%.nonprim").value (realNames.get (i))
+                    .inbounds (true).addIndex (0).addIndex (0)
+                    .rtype ("i64*");
+                Instruction pdestElem2 = new GETELEMENTPTR ()
+                    .type ("%.nonprim").value (realNames.get (i))
+                    .inbounds (true).addIndex (0).addIndex (1)
+                    .rtype ("i64*");
+                Instruction psrcElem1 = new GETELEMENTPTR ()
+                    .type ("%.nonprim").value (val)
+                    .inbounds (true).addIndex (0).addIndex (0)
+                    .rtype ("i64*");
+                Instruction psrcElem2 = new GETELEMENTPTR ()
+                    .type ("%.nonprim").value (val)
+                    .inbounds (true).addIndex (0).addIndex (1)
+                    .rtype ("i64*");
+                Instruction srcElem1 = new LOAD ()
+                    .type ("i64").pointer (psrcElem1);
+                Instruction srcElem2 = new LOAD ()
+                    .type ("i64").pointer (psrcElem2);
+                function.add (pdestElem1);
+                function.add (pdestElem2);
+                function.add (psrcElem1);
+                function.add (psrcElem2);
+                function.add (srcElem1);
+                function.add (srcElem2);
+                function.add (new STORE ()
+                              .pointer (pdestElem1).value (srcElem1)
+                              ._volatile (_volatile));
+                function.add (new STORE ()
+                              .pointer (pdestElem2).value (srcElem2)
+                              ._volatile (_volatile));
             }
         }
     }

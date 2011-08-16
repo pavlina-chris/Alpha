@@ -9,8 +9,7 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.Keywords;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
+import me.pavlina.alco.llvm.*;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Stack;
@@ -298,11 +297,9 @@ public abstract class Expression extends AST implements HasType
     }
 
     /**
-     * Get the LLVM value string. This is any string which is a valid value
-     * in the LLVM code. It is assumed that AST#genLLVM() has been run
-     * before calling this.
-     */
-    public abstract String getValueString ();
+     * Get the LLVM instruction that represents the value of this expression.
+     * It is assumed that AST#genLLVM() has been run before calling this. */
+    public abstract Instruction getInstruction ();
 
     /**
      * Get the type of the expression. */
@@ -319,7 +316,7 @@ public abstract class Expression extends AST implements HasType
 
     /**
      * Get a pointer to the value, if possible. This is used IN PLACE OF
-     * genLLVM() and getValueString(), and the behavior when calling both
+     * genLLVM() and getInstruction(), and the behavior when calling both
      * is undefined. This can write code if it needs to (for example, to access
      * an array element). The behavior when calling this on an object for which
      * checkPointer() throws is undefined (though if you're a good programmer,
@@ -328,8 +325,8 @@ public abstract class Expression extends AST implements HasType
     // I just know that after writing "if you're a good programmer", I'll think
     // of some reason to break my own rule :-)
     // -- Yep, I did. See OpCast.
-    public abstract String getPointer (Env env, LLVMEmitter emitter,
-                                       Function function);
+    public abstract Instruction getPointer (Env env, Emitter emitter,
+                                            Function function);
 
     public enum Associativity {LEFT, RIGHT}
     public enum Arity {UNARY, BINARY}
@@ -370,14 +367,14 @@ public abstract class Expression extends AST implements HasType
         public Associativity getAssociativity () { return Associativity.LEFT; }
         public Arity getArity () { return Arity.UNARY; }
         public void setOperands (Expression left, Expression right) {}
-        public String getValueString () { return ""; }
+        public Instruction getInstruction () { return null; }
         public Token getToken () { return token; }
         public List<AST> getChildren () { return null; }
         public void checkTypes (Env env, Resolver r) throws CError {}
         public Type getType () { return null; }
-        public void genLLVM (Env env, LLVMEmitter emitter, Function f) {}
+        public void genLLVM (Env env, Emitter emitter, Function f) {}
         public void checkPointer (boolean w, Token t) throws CError {}
-        public String getPointer (Env e, LLVMEmitter em, Function f) {
+        public Instruction getPointer (Env e, Emitter em, Function f) {
             return null; }
         public void print (java.io.PrintStream out) {}
     }
@@ -392,14 +389,14 @@ public abstract class Expression extends AST implements HasType
         public Associativity getAssociativity () { return Associativity.LEFT; }
         public Arity getArity () { return Arity.UNARY; }
         public void setOperands (Expression left, Expression right) {}
-        public String getValueString () { return ""; }
+        public Instruction getInstruction () { return null; }
         public Token getToken () { return token; }
         public List<AST> getChildren () { return null; }
         public void checkTypes (Env env, Resolver r) throws CError {}
         public Type getType () { return null; }
-        public void genLLVM (Env env, LLVMEmitter emitter, Function f) {}
+        public void genLLVM (Env env, Emitter emitter, Function f) {}
         public void checkPointer (boolean w, Token t) throws CError {}
-        public String getPointer (Env e, LLVMEmitter em, Function f) {
+        public Instruction getPointer (Env e, Emitter em, Function f) {
             return null; }
         public void print (java.io.PrintStream out) {}
     }

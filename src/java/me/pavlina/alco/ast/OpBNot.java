@@ -19,7 +19,7 @@ public class OpBNot extends Expression.Operator {
     Method method;
     Type type;
     Expression[] children;
-    String valueString;
+    Instruction instruction;
     CompNum compnum;
     Overload overload;
 
@@ -45,10 +45,11 @@ public class OpBNot extends Expression.Operator {
 
     public void setOperands (Expression op, Expression ignore) {
         children[0] = op;
+        op.setParent (this);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
@@ -80,7 +81,7 @@ public class OpBNot extends Expression.Operator {
         throw CError.at ("cannot assign to complement", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 
@@ -90,17 +91,17 @@ public class OpBNot extends Expression.Operator {
         out.print (")");
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
 
         if (compnum != null) {
-            compnum.operand (children[0].getValueString ());
+            compnum.operand (children[0].getInstruction ());
             compnum.genLLVM (env, emitter, function);
-            valueString = compnum.getValueString ();
+            instruction = compnum.getInstruction ();
 
         } else {
             overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
+            instruction = overload.getInstruction ();
         }
     }
 

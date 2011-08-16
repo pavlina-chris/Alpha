@@ -17,8 +17,8 @@ import java.util.Collections;
  * AST extern declaration */
 public class Extern extends FunctionLike
 {
-    private Token token;
-    private List<AST> children;
+    Token token;
+    AST parent;
 
     /**
      * Parse and initialise. */
@@ -57,10 +57,11 @@ public class Extern extends FunctionLike
         // Do nothing
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         // Declaration at top of file
         FDeclare decl = new FDeclare
-            (this.getMangledName (), LLVMType.getLLVMNameV (this.getType ()));
+            ("@" + this.getMangledName (),
+             LLVMType.getLLVMNameV (this.getType ()));
         for (Type i: argtypes) {
             if (i.getEncoding () == Type.Encoding.OBJECT ||
                 i.getEncoding () == Type.Encoding.ARRAY) {

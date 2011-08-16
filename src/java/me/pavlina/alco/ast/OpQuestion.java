@@ -19,7 +19,7 @@ public class OpQuestion extends Expression.Operator {
     Token token;
     Expression[] children;
     Type type;
-    String valueString;
+    Instruction instruction;
     Cast cast;
     int coerceSide;
 
@@ -45,6 +45,8 @@ public class OpQuestion extends Expression.Operator {
 
     public void setOperands (Expression left, Expression right) {
         children = new Expression[] {left, right};
+        left.setParent (this);
+        right.setParent (this);
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -70,68 +72,61 @@ public class OpQuestion extends Expression.Operator {
         type = children[coerceSide == 1 ? 1 : 2].getType ().getNormalised ();
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function)
+    public void genLLVM (Env env, Emitter emitter, Function function)
     {
-        String LlhsEval = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String Llhs = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String LrhsEval = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String Lrhs = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String Lout = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
+        Block LlhsEval = new Block ();
+        Block Llhs = new Block ();
+        Block LrhsEval = new Block ();
+        Block Lrhs = new Block ();
+        Block Lout = new Block ();
 
         children[0].genLLVM (env, emitter, function);
-        cast.value (children[0].getValueString ());
+        cast.value (children[0].getInstruction ());
         cast.genLLVM (env, emitter, function);
-        String cond = cast.getValueString ();
+        Instruction cond = cast.getInstruction ();
 
-        new _switch (emitter, function).value ("i8", cond)
-            .dest ("%" + LlhsEval).addDest ("0", "%" + LrhsEval)
-            .build ();
+        function.add (new SWITCH ().value (cond).dest (LlhsEval)
+                  .addDest ("0", LrhsEval));
 
-        new label (emitter, function).name (LlhsEval).build ();
+        function.add (LlhsEval);
         children[1].genLLVM (env, emitter, function);
-        String lhs = children[1].getValueString ();
+        Instruction lhs = children[1].getInstruction ();
         if (coerceSide == -1) {
             Cast c = new Cast (token)
                 .value (lhs).type (children[1].getType ()).dest (type);
             c.genLLVM (env, emitter, function);
-            lhs = c.getValueString ();
+            lhs = c.getInstruction ();
         }
-        new branch (emitter, function).ifTrue ("%" + Llhs).build ();
+        function.add (new BRANCH ().dest (Llhs));
 
-        new label (emitter, function).name (Llhs).build ();
-        new branch (emitter, function).ifTrue ("%" + Lout).build ();
+        function.add (Llhs);
+        function.add (new BRANCH ().dest (Lout));
 
-        new label (emitter, function).name (LrhsEval).build ();
+        function.add (LrhsEval);
         children[2].genLLVM (env, emitter, function);
-        String rhs = children[2].getValueString ();
+        Instruction rhs = children[2].getInstruction ();
         if (coerceSide == 1) {
             Cast c = new Cast (token)
                 .value (rhs).type (children[2].getType ()).dest (type);
             c.genLLVM (env, emitter, function);
-            rhs = c.getValueString ();
+            rhs = c.getInstruction ();
         }
-        new branch (emitter, function).ifTrue ("%" + Lrhs).build ();
+        function.add (new BRANCH ().dest (Lrhs));
         
-        new label (emitter, function).name (Lrhs).build ();
-        new branch (emitter, function).ifTrue ("%" + Lout).build ();
+        function.add (Lrhs);
+        function.add (new BRANCH ().dest (Lout));
 
-        new label (emitter, function).name (Lout).build ();
-        valueString = new phi (emitter, function)
-            .type (LLVMType.getLLVMName (type))
-            .pairs (lhs, "%" + Llhs, rhs, "%" + Lrhs).build ();
+        function.add (Lout);
+        instruction = new PHI ().type (LLVMType.getLLVMName (type))
+            .pairs (lhs, Llhs, rhs, Lrhs);
     }
 
     @SuppressWarnings("unchecked")
@@ -159,7 +154,7 @@ public class OpQuestion extends Expression.Operator {
         throw CError.at ("cannot assign to conditional", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

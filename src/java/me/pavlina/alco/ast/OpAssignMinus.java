@@ -22,7 +22,7 @@ public class OpAssignMinus extends Expression.Operator {
     Type type;
     Expression[] children;
     Expression pointer, integer;
-    String valueString;
+    Instruction instruction;
     Overload overload;
     Cast cast;
     Sub1Ptr sub1ptr;
@@ -53,10 +53,12 @@ public class OpAssignMinus extends Expression.Operator {
     public void setOperands (Expression dest, Expression value) {
         children[0] = dest;
         children[1] = value;
+        dest.setParent (this);
+        value.setParent (this);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
@@ -117,40 +119,36 @@ public class OpAssignMinus extends Expression.Operator {
         type = children[0].getType ().getNormalised ();
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
-        String ptr = children[0].getPointer (env, emitter, function);
+        Instruction ptr = children[0].getPointer (env, emitter, function);
         
         if (sub1ptr != null) {
-            sub1ptr.pointerV (children[0].getValueString ());
-            sub1ptr.integerV (children[1].getValueString ());
+            sub1ptr.pointerV (children[0].getInstruction ());
+            sub1ptr.integerV (children[1].getInstruction ());
             sub1ptr.genLLVM (env, emitter, function);
-            valueString = sub1ptr.getValueString ();
-            new store (emitter, function)
-                .pointer (ptr)
-                .value (LLVMType.getLLVMName (children[0].getType ()),
-                        valueString)
-                ._volatile (children[0].getType ().isVolatile ())
-                .build ();
+            instruction = sub1ptr.getInstruction ();
+            function.add (new STORE ()
+                          .pointer (ptr)
+                          .value (instruction)
+                          ._volatile (children[0].getType ().isVolatile ()));
 
         } else if (subnum != null) {
-            cast.value (children[1].getValueString ());
+            cast.value (children[1].getInstruction ());
             cast.genLLVM (env, emitter, function);
-            subnum.lhs (children[0].getValueString ());
-            subnum.rhs (cast.getValueString ());
+            subnum.lhs (children[0].getInstruction ());
+            subnum.rhs (cast.getInstruction ());
             subnum.genLLVM (env, emitter, function);
-            valueString = subnum.getValueString ();
-            new store (emitter, function)
-                .pointer (ptr)
-                .value (LLVMType.getLLVMName (children[0].getType ()),
-                        valueString)
-                ._volatile (children[0].getType ().isVolatile ())
-                .build ();
+            instruction = subnum.getInstruction ();
+            function.add (new STORE ()
+                          .pointer (ptr)
+                          .value (instruction)
+                          ._volatile (children[0].getType ().isVolatile ()));
 
         } else {
             overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
+            instruction = overload.getInstruction ();
         }
     }
 
@@ -176,7 +174,7 @@ public class OpAssignMinus extends Expression.Operator {
         throw CError.at ("cannot assign to assignment", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

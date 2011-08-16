@@ -22,7 +22,7 @@ public class OpAssignPlus extends Expression.Operator {
     Type type;
     Expression[] children;
     Expression pointer, integer;
-    String valueString;
+    Instruction instruction;
     Overload overload;
     Cast cast;
     AddNum addnum;
@@ -53,10 +53,12 @@ public class OpAssignPlus extends Expression.Operator {
     public void setOperands (Expression dest, Expression value) {
         children[0] = dest;
         children[1] = value;
+        dest.setParent (this);
+        value.setParent (this);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
@@ -115,38 +117,34 @@ public class OpAssignPlus extends Expression.Operator {
         type = children[0].getType ().getNormalised ();
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
-        String ptr = children[0].getPointer (env, emitter, function);
+        Instruction ptr = children[0].getPointer (env, emitter, function);
         
         if (addptr != null) {
-            addptr.pointerV (children[0].getValueString ());
-            addptr.integerV (children[1].getValueString ());
+            addptr.pointerV (children[0].getInstruction ());
+            addptr.integerV (children[1].getInstruction ());
             addptr.genLLVM (env, emitter, function);
-            new store (emitter, function)
-                .pointer (ptr)
-                .value (LLVMType.getLLVMName (children[0].getType ()),
-                        valueString)
-                ._volatile (children[0].getType ().isVolatile ())
-                .build ();
-            valueString = addptr.getValueString ();
+            instruction = addptr.getInstruction ();
+            function.add (new STORE ()
+                          .pointer (ptr)
+                          .value (instruction)
+                          ._volatile (children[0].getType ().isVolatile ()));
         } else if (addnum != null) {
-            cast.value (children[1].getValueString ());
+            cast.value (children[1].getInstruction ());
             cast.genLLVM (env, emitter, function);
-            addnum.lhs (children[0].getValueString ());
-            addnum.rhs (cast.getValueString ());
+            addnum.lhs (children[0].getInstruction ());
+            addnum.rhs (cast.getInstruction ());
             addnum.genLLVM (env, emitter, function);
-            new store (emitter, function)
-                .pointer (ptr)
-                .value (LLVMType.getLLVMName (children[0].getType ()),
-                        valueString)
-                ._volatile (children[0].getType ().isVolatile ())
-                .build ();
-            valueString = addnum.getValueString ();
+            instruction = addnum.getInstruction ();
+            function.add (new STORE ()
+                          .pointer (ptr)
+                          .value (instruction)
+                          ._volatile (children[0].getType ().isVolatile ()));
         } else {
             overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
+            instruction = overload.getInstruction ();
         }
     }
 
@@ -172,7 +170,7 @@ public class OpAssignPlus extends Expression.Operator {
         throw CError.at ("cannot assign to assignment", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

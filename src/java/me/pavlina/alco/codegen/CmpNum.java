@@ -14,9 +14,9 @@ import me.pavlina.alco.lex.Token;
  * Numeric comparison. Compares two values of the SAME TYPE */
 public class CmpNum {
     Token token;
-    String lhsV, rhsV, valueString;
+    Instruction lhsV, rhsV, instruction;
     Type vtype, rtype;
-    Comparison cmp;
+    String cmp;
     
     public CmpNum (Token token) {
         this.token = token;
@@ -24,21 +24,21 @@ public class CmpNum {
 
     /**
      * Set the left-hand operand. */
-    public CmpNum lhs (String lhsV) {
+    public CmpNum lhs (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public CmpNum rhs (String rhsV) {
+    public CmpNum rhs (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
 
     /**
      * Set the comparison */
-    public CmpNum cmp (Comparison cmp) {
+    public CmpNum cmp (String cmp) {
         this.cmp = cmp;
         return this;
     }
@@ -59,13 +59,13 @@ public class CmpNum {
             throw CError.at ("invalid types for compare", token);
         }
         if (enc == Type.Encoding.BOOL &&
-            (this.cmp != Comparison.EQ && this.cmp != Comparison.NE)) {
+            (!cmp.equals ("eq") && !cmp.equals ("ne"))) {
             throw CError.at ("invalid comparison for type 'bool'", token);
         }
         rtype = new Type (env, "bool", null);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         if (vtype.getEncoding () == SINT || vtype.getEncoding () == UINT)
             genLLVM_int (env, emitter, function);
         else if (vtype.getEncoding () == BOOL)
@@ -74,117 +74,83 @@ public class CmpNum {
             genLLVM_flt (env, emitter, function);
     }
 
-    public void genLLVM_bool (Env env, LLVMEmitter emitter, Function function) {
-        icmp.Icmp cmp;
-        switch (this.cmp) {
-        case EQ:
-            cmp = icmp.Icmp.EQ;
-            break;
-        case NE:
-            cmp = icmp.Icmp.NE;
-            break;
-        default:
-            throw new RuntimeException ("Invalid compare");
-        }
+    public void genLLVM_bool (Env env, Emitter emitter, Function function) {
 
-        String lhsTrue = new icmp (emitter, function)
-            .comparison (icmp.Icmp.NE)
-            .type (LLVMType.getLLVMName (vtype))
-            .operands (lhsV, "0")
-            .build ();
-        String rhsTrue = new icmp (emitter, function)
-            .comparison (icmp.Icmp.NE)
-            .type (LLVMType.getLLVMName (vtype))
-            .operands (rhsV, "0")
-            .build ();
-        String cmpResult = new icmp (emitter, function)
-            .comparison (cmp)
-            .type ("i1")
-            .operands (lhsTrue, rhsTrue)
-            .build ();
-        valueString = new Conversion (emitter, function)
-            .operation (Conversion.ConvOp.SEXT)
-            .source ("i1", cmpResult)
-            .dest ("i8")
-            .build ();
+        Instruction lhsTrue = new BINARY ()
+            .op ("icmp ne").type (LLVMType.getLLVMName (vtype))
+            .lhs (lhsV).rhs ("0");
+        Instruction rhsTrue = new BINARY ()
+            .op ("icmp ne").type (LLVMType.getLLVMName (vtype))
+            .lhs (rhsV).rhs ("0");
+        Instruction cmpResult = new BINARY ()
+            .op ("icmp " + cmp).type ("i1")
+            .lhs (lhsTrue).rhs (rhsTrue);
+        instruction = new CONVERT ()
+            .op ("sext").stype ("i1").dtype ("i8").value (cmpResult);
+        function.add (lhsTrue);
+        function.add (rhsTrue);
+        function.add (cmpResult);
+        function.add (instruction);
     }
 
-    public void genLLVM_int (Env env, LLVMEmitter emitter, Function function) {
-        icmp.Icmp cmp;
+    public void genLLVM_int (Env env, Emitter emitter, Function function) {
+        String oper;
         switch (vtype.getEncoding ()) {
         case SINT:
-            switch (this.cmp) {
-            case LT: cmp = icmp.Icmp.SLT; break;
-            case GT: cmp = icmp.Icmp.SGT; break;
-            case LE: cmp = icmp.Icmp.SLE; break;
-            case GE: cmp = icmp.Icmp.SGE; break;
-            case EQ: cmp = icmp.Icmp.EQ; break;
-            case NE: cmp = icmp.Icmp.NE; break;
-            default:
-                throw new RuntimeException ("Invalid compare");
-            } break;
+            if (cmp.equals ("lt")) oper = "icmp slt";
+            else if (cmp.equals ("gt")) oper = "icmp sgt";
+            else if (cmp.equals ("le")) oper = "icmp sle";
+            else if (cmp.equals ("ge")) oper = "icmp sge";
+            else if (cmp.equals ("eq")) oper = "icmp eq";
+            else if (cmp.equals ("ne")) oper = "icmp ne";
+            else throw new RuntimeException ("Invalid compare");
+            break;
         case UINT:
-            switch (this.cmp) {
-            case LT: cmp = icmp.Icmp.ULT; break;
-            case GT: cmp = icmp.Icmp.UGT; break;
-            case LE: cmp = icmp.Icmp.ULE; break;
-            case GE: cmp = icmp.Icmp.UGE; break;
-            case EQ: cmp = icmp.Icmp.EQ; break;
-            case NE: cmp = icmp.Icmp.NE; break;
-            default:
-                throw new RuntimeException ("Invalid compare");
-            } break;
+            if (cmp.equals ("lt")) oper = "icmp ult";
+            else if (cmp.equals ("gt")) oper = "icmp ugt";
+            else if (cmp.equals ("le")) oper = "icmp ule";
+            else if (cmp.equals ("ge")) oper = "icmp uge";
+            else if (cmp.equals ("eq")) oper = "icmp eq";
+            else if (cmp.equals ("ne")) oper = "icmp ne";
+            else throw new RuntimeException ("Invalid compare");
+            break;
         default:
             throw new RuntimeException ("Invalid compare");
         }
 
-        String cmpResult = new icmp (emitter, function)
-            .comparison (cmp)
-            .type (LLVMType.getLLVMName (vtype))
-            .operands (lhsV, rhsV)
-            .build ();
-        valueString = new Conversion (emitter, function)
-            .operation (Conversion.ConvOp.SEXT)
-            .source ("i1", cmpResult)
-            .dest ("i8")
-            .build ();
+        Instruction cmpResult = new BINARY ()
+            .op (oper).type (LLVMType.getLLVMName (vtype))
+            .lhs (lhsV).rhs (rhsV);
+        instruction = new CONVERT ()
+            .op ("sext").stype ("i1").dtype ("i8").value (cmpResult);
+        function.add (cmpResult);
+        function.add (instruction);
     }
 
-    public void genLLVM_flt (Env env, LLVMEmitter emitter, Function function) {
-        fcmp.Fcmp cmp;
-        switch (this.cmp) {
-        case LT: cmp = fcmp.Fcmp.OLT; break;
-        case GT: cmp = fcmp.Fcmp.OGT; break;
-        case LE: cmp = fcmp.Fcmp.OLE; break;
-        case GE: cmp = fcmp.Fcmp.OGE; break;
-        case EQ: cmp = fcmp.Fcmp.OEQ; break;
-        case NE: cmp = fcmp.Fcmp.ONE; break;
-        default:
-            throw new RuntimeException ("Invalid compare");
-        }
+    public void genLLVM_flt (Env env, Emitter emitter, Function function) {
+        String oper;
+        if (cmp.equals ("lt")) oper = "fcmp olt";
+        else if (cmp.equals ("gt")) oper = "fcmp ogt";
+        else if (cmp.equals ("le")) oper = "fcmp ole";
+        else if (cmp.equals ("ge")) oper = "fcmp oge";
+        else if (cmp.equals ("eq")) oper = "fcmp oeq";
+        else if (cmp.equals ("ne")) oper = "fcmp one";
+        else throw new RuntimeException ("Invalid compare");
 
-        String cmpResult = new fcmp (emitter, function)
-            .comparison (cmp)
-            .type (LLVMType.getLLVMName (vtype))
-            .operands (lhsV, rhsV)
-            .build ();
-        valueString = new Conversion (emitter, function)
-            .operation (Conversion.ConvOp.SEXT)
-            .source ("i1", cmpResult)
-            .dest ("i8")
-            .build ();
+        Instruction cmpResult = new BINARY ()
+            .op (oper).type (LLVMType.getLLVMName (vtype))
+            .lhs (lhsV).rhs (rhsV);
+        instruction = new CONVERT ()
+            .op ("sext").stype ("i1").dtype ("i8").value (cmpResult);
+        function.add (instruction);
+        function.add (cmpResult);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
         return rtype;
-    }
-
-
-    public enum Comparison {
-        EQ, NE, LE, GE, LT, GT;
     }
 }

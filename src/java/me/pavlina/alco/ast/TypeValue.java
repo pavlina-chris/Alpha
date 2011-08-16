@@ -37,7 +37,7 @@ public class TypeValue extends Expression
 
     /**
      * @return null */
-    public String getValueString () {
+    public Instruction getInstruction () {
         return null;
     }
 
@@ -59,13 +59,13 @@ public class TypeValue extends Expression
 
     /**
      * no-op */
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {}
+    public void genLLVM (Env env, Emitter emitter, Function function) {}
 
     public void checkPointer (boolean write, Token token) throws CError {
         throw CError.at ("assigning to type", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

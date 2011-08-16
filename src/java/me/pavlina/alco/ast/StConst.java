@@ -79,6 +79,7 @@ public class StConst extends Statement
             realNames.add (null);
             types.add (type);
             expressions.add (value);
+            value.setParent (this);
 
             token = stream.next ();
             if (token.is (Token.OPER, ";"))
@@ -118,7 +119,7 @@ public class StConst extends Statement
             
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         for (int i = 0; i < names.size (); ++i) {
 
             // According to the standard, a constant must be globally
@@ -133,8 +134,9 @@ public class StConst extends Statement
                 emitter.add
                     (new Constant (realNames.get (i),
                                    LLVMType.getLLVMName (types.get (i)),
-                                   expressions.get (i).getValueString (),
-                                   FHead.Linkage.INTERNAL));
+                                   expressions.get (i).getInstruction ()
+                                   .getId (),
+                                   "internal"));
 
             } else if (NullValue.class.isInstance (expressions.get (i))) {
 
@@ -142,7 +144,7 @@ public class StConst extends Statement
                     (new Constant (realNames.get (i),
                                    LLVMType.getLLVMName (types.get (i)),
                                    "zeroinitializer",
-                                   FHead.Linkage.INTERNAL));
+                                   "internal"));
 
             } else {
 
@@ -150,31 +152,29 @@ public class StConst extends Statement
                     (new Global (realNames.get (i),
                                  LLVMType.getLLVMName (types.get (i)),
                                  "zeroinitializer",
-                                 FHead.Linkage.INTERNAL));
+                                 "internal"));
             
                 String initialisedVar =
                     "@.INITIALISED." + realNames.get (i).substring (1);
 
                 emitter.add
                     (new Global (initialisedVar,
-                                 "i32", "0", FHead.Linkage.INTERNAL));
+                                 "i32", "0", "internal"));
 
-                String Lassign = ".L" + Integer.toString
-                    (emitter.getTemporary ("%.L"));
-                String Lassigned = ".L" + Integer.toString
-                    (emitter.getTemporary ("%.L"));
+                Block Lassign = new Block ();
+                Block Lassigned = new Block ();
 
-                String assigned = new call (emitter, function)
-                    .type ("i32").pointer ("@llvm.atomic.swap.i32.p0i32")
+                Instruction assigned = new CALL ()
+                    .type ("i32").fun ("@llvm.atomic.swap.i32.p0i32")
                     .arg (LLVMType.getLLVMName (types.get (i)) + "*",
                           initialisedVar)
-                    .arg ("i32", "1").build ();
-                
-                new _switch (emitter, function)
-                    .value ("i32", assigned).dest ("%" + Lassigned)
-                    .addDest ("0", "%" + Lassign).build ();
+                    .arg ("i32", "1");
+                function.add (assigned);
 
-                new label (emitter, function).name (Lassign).build ();
+                function.add (new SWITCH ()
+                              .value (assigned).dest (Lassigned)
+                              .addDest ("0", Lassign));
+
                 expressions.get (i).genLLVM (env, emitter, function);
                 Type.Encoding enc = types.get (i).getEncoding ();
                 if (enc == Type.Encoding.UINT ||
@@ -183,43 +183,48 @@ public class StConst extends Statement
                     enc == Type.Encoding.BOOL ||
                     enc == Type.Encoding.POINTER) {
                     // Simple assign
-                    String val = expressions.get (i).getValueString ();
+                    Instruction val = expressions.get (i).getInstruction ();
                     Cast c = new Cast (token)
                         .value (val).type (expressions.get (i).getType ())
                         .dest (types.get (i));
                     c.genLLVM (env, emitter, function);
-                    val = c.getValueString ();
-                    new store (emitter, function)
-                        .pointer (realNames.get (i))
-                        .value (LLVMType.getLLVMName (types.get (i)), val)
-                        .build ();
+                    val = c.getInstruction ();
+                    function.add (new STORE ()
+                                  .pointer (realNames.get (i))
+                                  .value (val));
                 } else {
                     // Nonprimitive assign
-                    String valueString = expressions.get (i).getValueString ();
-                    String pdestElem1 = new getelementptr (emitter, function)
-                        .type ("%.nonprim").pointer (realNames.get (i))
-                        .inbounds (true).addIndex (0).addIndex (0).build ();
-                    String pdestElem2 = new getelementptr (emitter, function)
-                        .type ("%.nonprim").pointer (realNames.get (i))
-                        .inbounds (true).addIndex (0).addIndex (1).build ();
-                    String psrcElem1 = new getelementptr (emitter, function)
-                        .type ("%.nonprim").pointer (valueString)
-                        .inbounds (true).addIndex (0).addIndex (0).build ();
-                    String psrcElem2 = new getelementptr (emitter, function)
-                        .type ("%.nonprim").pointer (valueString)
-                        .inbounds (true).addIndex (0).addIndex (1).build ();
-                    String srcElem1 = new load (emitter, function)
-                        .pointer ("%.nonprim", psrcElem1).build ();
-                    String srcElem2 = new load (emitter, function)
-                        .pointer ("%.nonprim", psrcElem2).build ();
-                    new store (emitter, function)
-                        .pointer (pdestElem1).value ("i64", srcElem1).build ();
-                    new store (emitter, function)
-                        .pointer (pdestElem2).value ("i64", srcElem2).build ();
+                    Instruction val = expressions.get (i).getInstruction ();
+                    Instruction pdestElem1 = new GETELEMENTPTR ()
+                        .type ("%.nonprim").value (realNames.get (i))
+                        .inbounds (true).addIndex (0).addIndex (0);
+                    Instruction pdestElem2 = new GETELEMENTPTR ()
+                        .type ("%.nonprim").value (realNames.get (i))
+                        .inbounds (true).addIndex (0).addIndex (1);
+                    Instruction psrcElem1 = new GETELEMENTPTR ()
+                        .type ("%.nonprim").value (val)
+                        .inbounds (true).addIndex (0).addIndex (0);
+                    Instruction psrcElem2 = new GETELEMENTPTR ()
+                        .type ("%.nonprim").value (val)
+                        .inbounds (true).addIndex (0).addIndex (1);
+                    Instruction srcElem1 = new LOAD ()
+                        .type ("%.nonprim").pointer (psrcElem1);
+                    Instruction srcElem2 = new LOAD ()
+                        .type ("%.nonprim").pointer (psrcElem2);
+                    function.add (val);
+                    function.add (pdestElem1);
+                    function.add (pdestElem2);
+                    function.add (psrcElem1);
+                    function.add (psrcElem2);
+                    function.add (srcElem1);
+                    function.add (srcElem2);
+                    function.add (new STORE ()
+                                  .pointer (pdestElem1).value (srcElem1));
+                    function.add (new STORE ()
+                                  .pointer (pdestElem2).value (srcElem2));
                 }
-                new branch (emitter, function).ifTrue ("%" + Lassigned).build();
-
-                new label (emitter, function).name (Lassigned).build ();
+                function.add (new BRANCH ().dest (Lassigned));
+                function.add (Lassigned);
             }
         }
     }

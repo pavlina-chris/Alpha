@@ -14,7 +14,7 @@ import me.pavlina.alco.lex.Token;
  * Numeric division. Divides two values of the SAME TYPE */
 public class DivNum {
     Token token;
-    String lhsV, rhsV, valueString;
+    Instruction lhsV, rhsV, instruction;
     Type type;
     
     public DivNum (Token token) {
@@ -23,14 +23,14 @@ public class DivNum {
 
     /**
      * Set the left-hand operand. */
-    public DivNum lhs (String lhsV) {
+    public DivNum lhs (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public DivNum rhs (String rhsV) {
+    public DivNum rhs (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
@@ -51,32 +51,32 @@ public class DivNum {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        Binary.BinOp operation;
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        String op;
         Type.Encoding enc = type.getEncoding ();
         switch (enc) {
         case SINT:
-            operation = Binary.BinOp.SDIV;
+            op = "sdiv";
             break;
         case UINT:
-            operation = Binary.BinOp.UDIV;
+            op = "udiv";
             break;
         case FLOAT:
-            operation = Binary.BinOp.FDIV;
+            op = "fdiv";
             break;
         default:
             throw new RuntimeException ("Dividing unsupported items");
         }
 
-        valueString = new Binary (emitter, function)
-            .operation (operation)
+        instruction = new BINARY ()
+            .op (op)
             .type (LLVMType.getLLVMName (type))
-            .operands (lhsV, rhsV)
-            .build ();
+            .lhs (lhsV).rhs (rhsV);
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {

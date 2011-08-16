@@ -14,7 +14,7 @@ import me.pavlina.alco.lex.Token;
  * Numeric negation */
 public class NegNum {
     Token token;
-    String opndV, valueString;
+    Instruction opndV, instruction;
     Type type;
 
     public NegNum (Token token) {
@@ -23,7 +23,7 @@ public class NegNum {
 
     /**
      * Set the operand */
-    public NegNum operand (String opnd) {
+    public NegNum operand (Instruction opnd) {
         this.opndV = opnd;
         return this;
     }
@@ -45,24 +45,23 @@ public class NegNum {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         if (type.getEncoding () == Type.Encoding.FLOAT) {
-            valueString = new Binary (emitter, function)
-                .operation (Binary.BinOp.FSUB)
+            instruction = new BINARY ()
+                .op ("fsub")
                 .type (LLVMType.getLLVMName (getType ()))
-                .operands ("0.0", opndV)
-                .build ();
+                .lhs ("0.0").rhs (opndV);
         } else { // SINT
-            valueString = new Binary (emitter, function)
-                .operation (Binary.BinOp.SUB)
+            instruction = new BINARY ()
+                .op ("sub")
                 .type (LLVMType.getLLVMName (getType ()))
-                .operands ("0", opndV)
-                .build ();
+                .lhs ("0").rhs (opndV);
         }
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {

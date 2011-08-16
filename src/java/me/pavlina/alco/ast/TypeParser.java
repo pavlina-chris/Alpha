@@ -13,6 +13,8 @@ import java.util.ArrayList;
  * Type parser. */
 public class TypeParser {
 
+    private TypeParser () {}
+
     /**
      * Parse a type name and return a me.pavlina.alco.language.Type. */
     public static Type parse (TokenStream stream, Env env) throws CError {

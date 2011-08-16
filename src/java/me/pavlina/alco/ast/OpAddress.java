@@ -16,7 +16,7 @@ import java.util.Arrays;
 public class OpAddress extends Expression.Operator {
     Token token;
     Expression[] children;
-    String valueString;
+    Instruction instruction;
     Type type;
 
     public static final Expression.OperatorCreator CREATOR;
@@ -47,10 +47,11 @@ public class OpAddress extends Expression.Operator {
 
     public void setOperands (Expression op, Expression ignore) {
         children[0] = op;
+        op.setParent (this);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
@@ -67,7 +68,7 @@ public class OpAddress extends Expression.Operator {
         throw CError.at ("cannot assign to address-of", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 
@@ -77,8 +78,8 @@ public class OpAddress extends Expression.Operator {
         out.print (")");
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        valueString = children[0].getPointer (env, emitter, function);
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        instruction = children[0].getPointer (env, emitter, function);
     }
 
     @SuppressWarnings("unchecked")

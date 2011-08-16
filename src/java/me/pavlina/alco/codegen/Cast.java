@@ -13,7 +13,7 @@ import static me.pavlina.alco.language.IntLimits.*;
 public class Cast {
 
     Type srcT, dstT;
-    String valueString, val;
+    Instruction instruction, sval;
     Token token;
 
     public Cast (Token token) {
@@ -22,8 +22,8 @@ public class Cast {
 
     /**
      * Required: Set value to cast. This is an LLVM value string. */
-    public Cast value (String value) {
-        this.val = value;
+    public Cast value (Instruction value) {
+        this.sval = value;
         return this;
     }
 
@@ -251,7 +251,7 @@ public class Cast {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         String sty = LLVMType.getLLVMName (srcT);
         String dty = LLVMType.getLLVMName (dstT);
         Type.Encoding srcE = srcT.getEncoding ();
@@ -264,108 +264,118 @@ public class Cast {
             (dstE == Type.Encoding.SINT || dstE == Type.Encoding.UINT) &&
             srcT.getValue () != null) {
             BigInteger intVal = srcT.getValue ();
-            valueString = intVal.toString ();
+            instruction = new Placeholder (intVal.toString (), dty);
             return;
         }
 
         else if (srcT.equalsNoQual (dstT)) {
             // T to T
-            valueString = val;
+            instruction = sval;
    
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.UINT) {
             // SI to UI
-            valueString = val;
+            instruction = sval;
 
         } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.SINT) {
             // UI to SI
-            valueString = val;
+            instruction = sval;
 
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.SINT
                    && srcT.getSize () < dstT.getSize ()) {
             // SI to SI
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.SEXT)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("sext")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.SINT
                    && srcT.getSize () > dstT.getSize ()) {
             // SI to SI
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.TRUNC)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("trunc")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.UINT
                    && srcT.getSize () < dstT.getSize ()) {
             // UI to UI
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.ZEXT)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("zext")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.UINT
                    && srcT.getSize () > dstT.getSize ()) {
             // UI to UI
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.TRUNC)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("trunc")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if ((srcE == Type.Encoding.UINT || srcE == Type.Encoding.SINT) &&
                    dstE == Type.Encoding.BOOL) {
             // SI/UI to B
-            String isZero = new icmp (emitter, function)
-                .comparison (icmp.Icmp.EQ)
-                .type (sty).operands (val, "0").build ();
-            valueString = new select (emitter, function)
-                .cond (isZero)
-                .type (dty)
-                .values ("0", "-1")
-                .build ();
+            Instruction isZero = new BINARY ()
+                .op ("icmp eq")
+                .type (sty).lhs (sval).rhs ("0");
+            instruction = new SELECT ()
+                .cond (isZero).type (dty).T ("0").F ("-1");
+            function.add (isZero);
+            function.add (instruction);
 
         } else if ((dstE == Type.Encoding.UINT || dstE == Type.Encoding.SINT) &&
                    srcE == Type.Encoding.BOOL) {
             // B to SI/UI
             if (srcT.getSize () < dstT.getSize ()) {
-                valueString = new Conversion (emitter, function)
-                    .operation (Conversion.ConvOp.SEXT)
-                    .source (sty, val).dest (dty).build ();
+                instruction = new CONVERT ()
+                    .op ("sext")
+                    .stype (sty).dtype (dty).value (sval);
+                function.add (instruction);
             } else {
-                valueString = val;
+                instruction = sval;
             }
 
         } else if (srcE == Type.Encoding.SINT && dstE == Type.Encoding.FLOAT) {
             // SI to FP
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.SITOFP)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("sitofp")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.SINT) {
             // FP to SI
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.FPTOSI)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("fptosi")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
         
         } else if (srcE == Type.Encoding.UINT && dstE == Type.Encoding.FLOAT) {
             // UI to FP
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.UITOFP)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("uitofp")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.UINT) {
             // FP to UI
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.FPTOUI)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("fptoui")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
                    && srcT.getSize () < dstT.getSize ()) {
             // FP to FP
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.FPEXT)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("fpext")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.FLOAT && dstE == Type.Encoding.FLOAT
                    && srcT.getSize () > dstT.getSize ()) {
             // FP to FP
-            if (val.startsWith ("0x")) {
+            if (Placeholder.class.isInstance (sval) &&
+                sval.getId ().startsWith ("0x")) {
                 // Raw double value, casting to float. We can convert this here,
                 // rather than emitting an fptrunc. I checked, and no, LLVM does
                 // not optimise it out into the assembly. (I haven't checked
@@ -374,57 +384,64 @@ public class Cast {
 
                 // FUCK YOU JAVA
                 try {
-                    String half1 = val.substring (2, 10);
-                    String half2 = val.substring (10, 18);
+                    String half1 = sval.getId ().substring (2, 10);
+                    String half2 = sval.getId ().substring (10, 18);
                     long bits = (Long.parseLong (half1, 16) << 32) |
                         Long.parseLong (half2, 16);
                     double valD = Double.longBitsToDouble (bits);
                     bits = Double.doubleToRawLongBits ((float) valD);
-                    valueString = String.format ("0x%016x", bits);
+                    instruction = new Placeholder
+                        (String.format ("0x%016x", bits), dty);
                     return;
                 } catch (NumberFormatException e) {}
                 catch (IndexOutOfBoundsException e) {}
             }
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.FPTRUNC)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("fptrunc")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.POINTER &&
                    dstE == Type.Encoding.POINTER) {
             // T* to U*
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.BITCAST)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("bitcast")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.POINTER &&
                    dstE == Type.Encoding.BOOL) {
             // T* to B
             String intermedT = "i" + Integer.toString (env.getBits ());
-            String ptrAsInt = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.PTRTOINT)
-                .source (sty, val).dest (intermedT).build ();
-            String isZero = new icmp (emitter, function)
-                .comparison (icmp.Icmp.EQ)
-                .type (intermedT).operands (ptrAsInt, "0").build ();
-            valueString = new select (emitter, function)
-                .cond (isZero)
-                .type (dty).values ("0", "-1").build ();
+            Instruction ptrAsInt = new CONVERT ()
+                .op ("ptrtoint")
+                .stype (sty).dtype (intermedT).value (sval);
+            Instruction isZero = new BINARY ()
+                .op ("icmp eq")
+                .type (intermedT).lhs (ptrAsInt).rhs ("0");
+            instruction = new SELECT ()
+                .cond (isZero).type (dty).T ("0").F ("-1");
+            function.add (ptrAsInt);
+            function.add (isZero);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.POINTER &&
                    dstE == Type.Encoding.UINT &&
                    dstT.getSize () >= (env.getBits () / 8)) {
             // T* to UI
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.PTRTOINT)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("ptrtoint")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.UINT &&
                    dstE == Type.Encoding.POINTER &&
                    srcT.getSize () >= (env.getBits () / 8)) {
             // UI to T*
-            valueString = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.INTTOPTR)
-                .source (sty, val).dest (dty).build ();
+            instruction = new CONVERT ()
+                .op ("inttoptr")
+                .stype (sty).dtype (dty).value (sval);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.ARRAY &&
                    dstE == Type.Encoding.POINTER &&
@@ -435,38 +452,38 @@ public class Cast {
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.SINT) {
             // null to SI
-            valueString = "0";
+            instruction = new Placeholder ("0", dty);
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.UINT) {
             // null to UI
-            valueString = "0";
+            instruction = new Placeholder ("0", dty);
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.OBJECT) {
             // null to class
-            valueString = val;
+            instruction = sval;
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.ARRAY) {
             // null to T[]
-            valueString = val;
+            instruction = sval;
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.POINTER) {
             // null to T*
-            valueString = "null";
+            instruction = new Placeholder ("null", dty);
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.BOOL) {
-            valueString = "0";
+            instruction = new Placeholder ("0", dty);
 
         } else {
             throw new RuntimeException ("Invalid cast in genLLVM");
         }
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 }

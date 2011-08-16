@@ -14,9 +14,9 @@ import java.util.Arrays;
 /**
  * Dereference operator. */
 public class OpDeref extends Expression.Operator {
-    private Token token;
-    private Expression[] children;
-    private String valueString;
+    Token token;
+    Expression[] children;
+    Instruction instruction;
 
     public static final Expression.OperatorCreator CREATOR;
 
@@ -39,10 +39,11 @@ public class OpDeref extends Expression.Operator {
 
     public void setOperands (Expression op, Expression ignore) {
         children[0] = op;
+        op.setParent (this);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
@@ -59,9 +60,10 @@ public class OpDeref extends Expression.Operator {
     public void checkPointer (boolean write, Token token) throws CError {
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function)
+    {
         children[0].genLLVM (env, emitter, function);
-        return children[0].getValueString ();
+        return children[0].getInstruction ();
     }
 
     public void print (java.io.PrintStream out) {
@@ -70,13 +72,14 @@ public class OpDeref extends Expression.Operator {
         out.print (")");
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
-        String ptr = children[0].getValueString ();
-        valueString = new load (emitter, function)
-            .pointer (LLVMType.getLLVMName (getType ()), ptr)
-            ._volatile (getType ().isVolatile ())
-            .build ();
+        Instruction ptr = children[0].getInstruction ();
+        instruction = new LOAD ()
+            .type (LLVMType.getLLVMName (getType ()))
+            .pointer (ptr)
+            ._volatile (getType ().isVolatile ());
+        function.add (instruction);
     }
 
     @SuppressWarnings("unchecked")

@@ -21,7 +21,7 @@ public class OpAssignBOr extends Expression.Operator {
     Method method;
     Type type;
     Expression[] children;
-    String valueString;
+    Instruction instruction;
     Overload overload;
     Cast cast;
     BitOr bitor;
@@ -51,10 +51,12 @@ public class OpAssignBOr extends Expression.Operator {
     public void setOperands (Expression dest, Expression value) {
         children[0] = dest;
         children[1] = value;
+        dest.setParent (this);
+        value.setParent (this);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
@@ -91,29 +93,27 @@ public class OpAssignBOr extends Expression.Operator {
         bitor.checkTypes (env, resolver);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
 
         if (bitor != null) {
-            String ptr = children[0].getPointer (env, emitter, function);
+            Instruction ptr = children[0].getPointer (env, emitter, function);
         
-            cast.value (children[1].getValueString ());
+            cast.value (children[1].getInstruction ());
             cast.genLLVM (env, emitter, function);
-            bitor.lhs (children[0].getValueString ());
-            bitor.rhs (cast.getValueString ());
+            bitor.lhs (children[0].getInstruction ());
+            bitor.rhs (cast.getInstruction ());
             bitor.genLLVM (env, emitter, function);
-            valueString = bitor.getValueString ();
-            new store (emitter, function)
-                .pointer (ptr)
-                .value (LLVMType.getLLVMName (children[0].getType ()),
-                        valueString)
-                ._volatile (children[0].getType ().isVolatile ())
-                .build ();
+            instruction = bitor.getInstruction ();
+            function.add (new STORE ()
+                          .pointer (ptr)
+                          .value (instruction)
+                          ._volatile (children[0].getType ().isVolatile ()));
 
         } else {
             overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
+            instruction = overload.getInstruction ();
         }
     }
 
@@ -139,7 +139,7 @@ public class OpAssignBOr extends Expression.Operator {
         throw CError.at ("cannot assign to assignment", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

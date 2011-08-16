@@ -19,9 +19,10 @@ import java.util.Arrays;
  * While loop. Syntax:
  * while (expression) scope
  */
-public class StWhile extends Statement
+public class StWhile extends Loop
 {
     Token token;
+    Block condLabel, botLabel;
     AST[] values; // {condition, body}
 
     public StWhile (Env env, TokenStream stream, Method method) throws CError {
@@ -40,6 +41,7 @@ public class StWhile extends Statement
         values[0] = (AST) Expression.parse (env, stream, method, ")");
         if (values[0] == null)
             throw Unexpected.after ("expression", temp);
+        values[0].setParent (this);
         temp = stream.next ();
         if (temp.is (Token.NO_MORE))
             throw UnexpectedEOF.after (")", stream.last ());
@@ -51,6 +53,7 @@ public class StWhile extends Statement
             throw UnexpectedEOF.after ("body", stream.last ());
 
         values[1] = new Scope (env, stream, method);
+        values[1].setParent (this);
     }
 
     public Token getToken () {
@@ -68,7 +71,15 @@ public class StWhile extends Statement
                           new Type (env, "bool", null), token);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public Block getConditionLabel () {
+        return condLabel;
+    }
+
+    public Block getBottomLabel () {
+        return botLabel;
+    }
+
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         // br label %.Ltop
         // .Ltop:
         // %.cond = <cond>
@@ -79,38 +90,32 @@ public class StWhile extends Statement
         // br label %.Ltop
         // .Lbot:
 
-        String Ltop = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String Lbody = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String Lbot = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
+        Block Ltop = new Block ();
+        Block Lbody = new Block ();
+        Block Lbot = new Block ();
+        condLabel = Ltop;
+        botLabel = Lbot;
 
-        
-        new branch (emitter, function).ifTrue ("%" + Ltop).build ();
-        new label (emitter, function).name (Ltop).build ();
+        function.add (new BRANCH ().dest (Ltop));
+        function.add (Ltop);
         // Condition
         values[0].genLLVM (env, emitter, function);
-        String bCond = ((Expression) values[0]).getValueString ();
+        Instruction bCond = ((Expression) values[0]).getInstruction ();
         Cast c = new Cast (token)
             .value (bCond).type (((Expression) values[0]).getType ())
             .dest (new Type (env, "bool", null));
         c.genLLVM (env, emitter, function);
 
-
-        String cond = new icmp (emitter, function)
-            .comparison (icmp.Icmp.NE)
-            .type ("i8").operands (c.getValueString (), "0")
-            .build ();
-
-        new branch (emitter, function)
-            .ifTrue ("%" + Lbody).ifFalse ("%" + Lbot)
-            .cond (cond).build ();
-        new label (emitter, function).name (Lbody).build ();
+        Instruction cond = new BINARY ()
+            .op ("icmp ne").type ("i8").lhs (c.getInstruction ()).rhs ("0");
+        function.add (cond);
+        
+        function.add (new BRANCH ().cond (cond).T (Lbody).F (Lbot));
+        function.add (Lbody);
         values[1].genLLVM (env, emitter, function);
         
-        new branch (emitter, function).ifTrue ("%" + Ltop).build ();
-        new label (emitter, function).name (Lbot).build ();
+        function.add (new BRANCH ().dest (Ltop));
+        function.add (Lbot);
     }
 
     public void print (java.io.PrintStream out) {

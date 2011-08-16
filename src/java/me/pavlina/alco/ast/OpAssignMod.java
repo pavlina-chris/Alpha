@@ -21,7 +21,7 @@ public class OpAssignMod extends Expression.Operator {
     Method method;
     Type type;
     Expression[] children;
-    String valueString;
+    Instruction instruction;
     Overload overload;
     Cast cast;
     ModNum modnum;
@@ -51,10 +51,12 @@ public class OpAssignMod extends Expression.Operator {
     public void setOperands (Expression dest, Expression value) {
         children[0] = dest;
         children[1] = value;
+        dest.setParent (this);
+        value.setParent (this);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
@@ -94,28 +96,26 @@ public class OpAssignMod extends Expression.Operator {
         type = children[0].getType ().getNormalised ();
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
-        String ptr = children[0].getPointer (env, emitter, function);
+        Instruction ptr = children[0].getPointer (env, emitter, function);
         
         if (modnum != null) {
-            cast.value (children[1].getValueString ());
+            cast.value (children[1].getInstruction ());
             cast.genLLVM (env, emitter, function);
-            modnum.lhs (children[0].getValueString ());
-            modnum.rhs (cast.getValueString ());
+            modnum.lhs (children[0].getInstruction ());
+            modnum.rhs (cast.getInstruction ());
             modnum.genLLVM (env, emitter, function);
-            valueString = modnum.getValueString ();
-            new store (emitter, function)
-                .pointer (ptr)
-                .value (LLVMType.getLLVMName (children[0].getType ()),
-                        valueString)
-                ._volatile (children[0].getType ().isVolatile ())
-                .build ();
+            instruction = modnum.getInstruction ();
+            function.add (new STORE ()
+                          .pointer (ptr)
+                          .value (instruction)
+                          ._volatile (children[0].getType ().isVolatile ()));
 
         } else {
             overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
+            instruction = overload.getInstruction ();
         }
     }
 
@@ -141,7 +141,7 @@ public class OpAssignMod extends Expression.Operator {
         throw CError.at ("cannot assign to assignment", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

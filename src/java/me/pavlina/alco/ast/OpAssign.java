@@ -48,13 +48,15 @@ public class OpAssign extends Expression.Operator {
     public void setOperands (Expression left, Expression right) {
         children[0] = left;
         children[1] = right;
+        left.setParent (this);
+        right.setParent (this);
     }
 
-    public String getValueString () {
+    public Instruction getInstruction () {
         if (assign == null)
-            return assigncall.getValueString ();
+            return assigncall.getInstruction ();
         else
-            return assign.getValueString ();
+            return assign.getInstruction ();
     }
 
     public Type getType () {
@@ -85,7 +87,8 @@ public class OpAssign extends Expression.Operator {
         throw CError.at ("assignment has no address", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function)
+    {
         return null;
     }
 
@@ -97,7 +100,7 @@ public class OpAssign extends Expression.Operator {
         out.print (")");
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         if (OpCall.class.isInstance (children[1])) {
             assigncall.genLLVM (env, emitter, function);
         } else {

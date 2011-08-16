@@ -27,7 +27,7 @@ public class OpMinus extends Expression.Operator {
     Overload overload;
     Coerce coerce;
     Type type;
-    String valueString;
+    Instruction instruction;
 
     public static final Expression.OperatorCreator CREATOR;
 
@@ -52,6 +52,8 @@ public class OpMinus extends Expression.Operator {
     public void setOperands (Expression left, Expression right) {
         children[0] = left;
         children[1] = right;
+        left.setParent (this);
+        right.setParent (this);
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -115,42 +117,42 @@ public class OpMinus extends Expression.Operator {
         }
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
 
         if (sub2ptr != null) {
-            sub2ptr.lhs (children[0].getValueString ());
-            sub2ptr.rhs (children[1].getValueString ());
+            sub2ptr.lhs (children[0].getInstruction ());
+            sub2ptr.rhs (children[1].getInstruction ());
             sub2ptr.genLLVM (env, emitter, function);
-            valueString = sub2ptr.getValueString ();
+            instruction = sub2ptr.getInstruction ();
 
         } else if (sub1ptr != null) {
-            sub1ptr.pointerV (pointer.getValueString ());
-            sub1ptr.integerV (integer.getValueString ());
+            sub1ptr.pointerV (pointer.getInstruction ());
+            sub1ptr.integerV (integer.getInstruction ());
             sub1ptr.genLLVM (env, emitter, function);
-            valueString = sub1ptr.getValueString ();
+            instruction = sub1ptr.getInstruction ();
 
         } else if (subnum != null) {
-            coerce.lhsV (children[0].getValueString ());
-            coerce.rhsV (children[1].getValueString ());
+            coerce.lhsV (children[0].getInstruction ());
+            coerce.rhsV (children[1].getInstruction ());
             coerce.genLLVM (env, emitter, function);
-            subnum.lhs (coerce.getValueStringL ());
-            subnum.rhs (coerce.getValueStringR ());
+            subnum.lhs (coerce.getInstructionL ());
+            subnum.rhs (coerce.getInstructionR ());
             subnum.genLLVM (env, emitter, function);
-            valueString = subnum.getValueString ();
+            instruction = subnum.getInstruction ();
 
         } else {
             overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
+            instruction = overload.getInstruction ();
         }
     }
 
@@ -179,7 +181,7 @@ public class OpMinus extends Expression.Operator {
         throw CError.at ("cannot assign to subtraction", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * Do NOT use for call assignment. */
 public class Assign {
     Token token;
-    String valueString;
+    Instruction instruction;
     List<Expression> sources, dests;
 
     public Assign (Token token) {
@@ -83,42 +83,40 @@ public class Assign {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         int limit = (sources.size () < dests.size ())
             ? sources.size ()
             : dests.size ();
 
         // Generate all expressions
-        String[] values = new String[limit];
+        Instruction[] values = new Instruction[limit];
         for (int i = 0; i < limit; ++i) {
             sources.get (i).genLLVM (env, emitter, function);
             Cast c = new Cast (token)
-                .value (sources.get (i).getValueString ())
+                .value (sources.get (i).getInstruction ())
                 .type (sources.get (i).getType ())
                 .dest (dests.get (i).getType ());
             c.genLLVM (env, emitter, function);
-            values[i] = c.getValueString ();
+            values[i] = c.getInstruction ();
         }
-        valueString = values[0];
+        instruction = values[0];
 
         // Generate all destinations
-        String[] pointers = new String[limit];
+        Instruction[] pointers = new Instruction[limit];
         for (int i = 0; i < limit; ++i) {
             pointers[i] = dests.get (i).getPointer (env, emitter, function);
         }
 
         // Store all values
         for (int i = 0; i < limit; ++i) {
-            new store (emitter, function)
-                .pointer (pointers[i])
-                .value (LLVMType.getLLVMName (dests.get (i).getType ()),
-                        values[i])
-                ._volatile (dests.get (i).getType ().isVolatile ())
-                .build ();
+            function.add (new STORE ()
+                          .pointer (pointers[i])
+                          .value (values[i])
+                          ._volatile (dests.get (i).getType ().isVolatile ()));
         }
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 }

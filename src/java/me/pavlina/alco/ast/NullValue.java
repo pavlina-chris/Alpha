@@ -8,9 +8,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.IntLimits;
 import me.pavlina.alco.language.Type;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
-import me.pavlina.alco.llvm.load;
+import me.pavlina.alco.llvm.*;
 import java.util.List;
 import java.io.PrintStream;
 
@@ -18,9 +16,9 @@ import java.io.PrintStream;
  * Null */
 public class NullValue extends Expression
 {
-    private Token token;
-    private Type type;
-    private String valueString;
+    Token token;
+    Type type;
+    Instruction instruction;
 
     /**
      * Create a NullValue from the stream */
@@ -35,8 +33,8 @@ public class NullValue extends Expression
     public NullValue () {
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Token getToken () {
@@ -55,18 +53,19 @@ public class NullValue extends Expression
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        valueString = new
-            load (emitter, function)
-            .pointer ("%.nonprim", "@.null")
-            .build ();
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        instruction = new LOAD ()
+            .type ("%.nonprim")
+            .pointer ("@.null");
+        function.add (instruction);
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
         throw CError.at ("primitive literal has no address", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function)
+    {
         return null;
     }
     

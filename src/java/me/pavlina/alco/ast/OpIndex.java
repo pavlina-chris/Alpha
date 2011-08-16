@@ -4,8 +4,7 @@ package me.pavlina.alco.ast;
 import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.lex.Token;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
+import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.Resolver;
 import java.util.List;
@@ -15,12 +14,13 @@ import java.util.Arrays;
  * Index operator. This does not parse, as it is always explicitly created from
  * a known name. */
 public class OpIndex extends Expression.Operator {
-    private Token token;
-    private Expression[] children;
+    Token token;
+    Expression[] children;
 
     public OpIndex (Token token, Expression expr, Method method) {
         this.token = token;
         children = new Expression[] { expr, null };
+        expr.setParent (this);
     }
 
     public int getPrecedence () {
@@ -37,9 +37,10 @@ public class OpIndex extends Expression.Operator {
 
     public void setOperands (Expression op, Expression ignore) {
         children[1] = op;
+        op.setParent (this);
     }
 
-    public String getValueString () {
+    public Instruction getInstruction () {
         throw new RuntimeException ("indices not implemented yet");
     }
 
@@ -47,7 +48,7 @@ public class OpIndex extends Expression.Operator {
         throw new RuntimeException ("indices not implemented yet");
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         throw new RuntimeException ("indices not implemented yet");
     }
 
@@ -59,7 +60,7 @@ public class OpIndex extends Expression.Operator {
         throw new RuntimeException ("indices not implemented yet");
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         throw new RuntimeException ("indices not implemented yet");
     }
 

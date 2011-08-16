@@ -14,7 +14,7 @@ import me.pavlina.alco.lex.Token;
  * Bitwise complement */
 public class CompNum {
     Token token;
-    String opndV, valueString;
+    Instruction opndV, instruction;
     Type type;
 
     public CompNum (Token token) {
@@ -23,7 +23,7 @@ public class CompNum {
 
     /**
      * Set the operand */
-    public CompNum operand (String opnd) {
+    public CompNum operand (Instruction opnd) {
         this.opndV = opnd;
         return this;
     }
@@ -43,16 +43,16 @@ public class CompNum {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        valueString = new Binary (emitter, function)
-            .operation (Binary.BinOp.XOR)
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        instruction = new BINARY ()
+            .op ("xor")
             .type (LLVMType.getLLVMName (getType ()))
-            .operands (opndV, "-1")
-            .build ();
+            .lhs (opndV).rhs ("-1");
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {

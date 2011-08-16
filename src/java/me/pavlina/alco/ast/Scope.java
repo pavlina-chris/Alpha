@@ -6,7 +6,7 @@ import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
-import me.pavlina.alco.llvm.LLVMEmitter;
+import me.pavlina.alco.llvm.Emitter;
 import me.pavlina.alco.llvm.Function;
 import java.io.PrintStream;
 import java.util.List;
@@ -43,6 +43,7 @@ public class Scope extends AST
                     // Nested scope
                     Scope scope = new Scope (env, stream, method);
                     children.add (scope);
+                    scope.setParent (this);
                     continue;
                 }
 
@@ -50,6 +51,7 @@ public class Scope extends AST
                 Statement statement = Statement.parse (env, stream, method);
                 if (statement != null) {
                     children.add (statement);
+                    statement.setParent (this);
                     continue;
                 }
 
@@ -63,6 +65,7 @@ public class Scope extends AST
                     else if (!token.is (Token.OPER, ";"))
                         throw Unexpected.after (";", stream.last ());
                     children.add (expression);
+                    expression.setParent (this);
                     continue;
                 }
 
@@ -74,6 +77,7 @@ public class Scope extends AST
             Statement statement = Statement.parse (env, stream, method);
             if (statement != null) {
                 children.add (statement);
+                statement.setParent (this);
                 return;
             }
 
@@ -86,6 +90,7 @@ public class Scope extends AST
                 else if (!token.is (Token.OPER, ";"))
                     throw Unexpected.after (";", stream.last ());
                 children.add (expression);
+                expression.setParent (this);
                 return;
             }
 
@@ -112,7 +117,7 @@ public class Scope extends AST
             i.checkTypes (env, newResolver);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         for (AST i: children)
             i.genLLVM (env, emitter, function);
     }

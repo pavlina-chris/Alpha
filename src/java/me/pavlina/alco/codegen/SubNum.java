@@ -14,7 +14,7 @@ import me.pavlina.alco.lex.Token;
  * Numeric subtraction. Subtracts two values of the SAME TYPE */
 public class SubNum {
     Token token;
-    String lhsV, rhsV, valueString;
+    Instruction lhsV, rhsV, instruction;
     Type type;
     
     public SubNum (Token token) {
@@ -23,14 +23,14 @@ public class SubNum {
 
     /**
      * Set the left-hand operand. */
-    public SubNum lhs (String lhsV) {
+    public SubNum lhs (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public SubNum rhs (String rhsV) {
+    public SubNum rhs (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
@@ -51,30 +51,29 @@ public class SubNum {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        Binary.BinOp operation;
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        String op;
         Type.Encoding enc = type.getEncoding ();
         switch (enc) {
         case SINT:
         case UINT:
-            operation = Binary.BinOp.SUB;
+            op = "sub";
             break;
         case FLOAT:
-            operation = Binary.BinOp.FSUB;
+            op = "fsub";
             break;
         default:
             throw new RuntimeException ("Subtracting unsupported items");
         }
 
-        valueString = new Binary (emitter, function)
-            .operation (operation)
-            .type (LLVMType.getLLVMName (type))
-            .operands (lhsV, rhsV)
-            .build ();
+        instruction = new BINARY ()
+            .op (op).type (LLVMType.getLLVMName (type))
+            .lhs (lhsV).rhs (rhsV);
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {

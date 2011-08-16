@@ -23,7 +23,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.lex.Lexer;
 import me.pavlina.alco.language.Resolver;
-import me.pavlina.alco.llvm.LLVMEmitter;
+import me.pavlina.alco.llvm.Emitter;
 import me.pavlina.alco.passes.ConstantFold;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
@@ -397,7 +397,7 @@ public class Compiler
     private int genLLVM ()
     {
         // Generate LLVM code
-        LLVMEmitter emitter = new LLVMEmitter ();
+        Emitter emitter = new Emitter ();
         ast.genLLVM (env, emitter, null);
 
         // Emit it to a temporary file
@@ -410,7 +410,7 @@ public class Compiler
             System.err.println (e);
             return 1;
         }
-        emitter.emit (llStream);
+        llStream.print (emitter);
         llStream.flush ();
 
         // Inspect?

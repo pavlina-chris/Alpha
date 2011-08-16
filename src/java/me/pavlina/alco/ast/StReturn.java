@@ -22,10 +22,10 @@ import java.util.Arrays;
  */
 public class StReturn extends Statement
 {
-    private Token token;
-    private Expression[] value;
+    Token token;
+    Expression[] value;
     List<Expression> values;
-    private Method method;
+    Method method;
 
     public StReturn (Env env, TokenStream stream, Method method) throws CError {
         this.method = method;
@@ -69,8 +69,10 @@ public class StReturn extends Statement
             values.add (value[0]);
         }
 
-        for (Expression i: values)
+        for (Expression i: values) {
+            i.setParent (this);
             i.checkTypes (env, resolver);
+        }
 
         List<Type> methodTypes = method.getTypes ();
 
@@ -83,42 +85,33 @@ public class StReturn extends Statement
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         if (value[0] == null) {
-            // Starting a new block. Increment temp counter to avoid
-            // "instruction expected to be numbered '%blah'" errors from LLC
-            emitter.getTemporary ("%");
-            new ret (emitter, function).build ();
+            function.add (new RET ());
         } else {
             List<Type> methodTypes = method.getTypes ();
             for (int i = 1; i < values.size (); ++i) {
                 values.get (i).genLLVM (env, emitter, function);
-                String valueString = values.get (i).getValueString ();
+                Instruction val = values.get (i).getInstruction ();
                 Cast c = new Cast (token)
-                    .value (valueString).type (values.get (i).getType ())
+                    .value (val).type (values.get (i).getType ())
                     .dest (methodTypes.get (i));
                 c.genLLVM (env, emitter, function);
 
-                new store (emitter, function)
-                    .pointer ("%.R" + Integer.toString (i))
-                    .value (LLVMType.getLLVMName (methodTypes.get (i)),
-                            c.getValueString ())
-                    .build ();
+                function.add (new STORE ()
+                              .pointer ("%.R" + Integer.toString (i))
+                              .type (LLVMType.getLLVMName (methodTypes.get (i)))
+                              .value (c.getInstruction ()));
             }
             values.get (0).genLLVM (env, emitter, function);
-            String valueString = values.get (0).getValueString ();
+            Instruction val = values.get (0).getInstruction ();
             Cast c = new Cast (token)
-                .value (valueString).type (values.get (0).getType ())
+                .value (val).type (values.get (0).getType ())
                 .dest (methodTypes.get (0));
             c.genLLVM (env, emitter, function);
 
-            // Starting a new block. Increment temp counter to avoid
-            // "instruction expected to be numbered '%blah'" errors from LLC
-            emitter.getTemporary ("%");
-            new ret (emitter, function)
-                .value (LLVMType.getLLVMName (methodTypes.get (0)),
-                        c.getValueString ())
-                .build ();
+            function.add (new RET ()
+                          .value (c.getInstruction ()));
         }
     }
 

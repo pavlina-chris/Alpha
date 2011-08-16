@@ -20,7 +20,7 @@ public class OpLAnd extends Expression.Operator {
     Token token;
     Expression[] children;
     Type type;
-    String valueString;
+    Instruction instruction;
     Cast castL, castR;
 
     public static final Expression.OperatorCreator CREATOR;
@@ -45,6 +45,8 @@ public class OpLAnd extends Expression.Operator {
     public void setOperands (Expression left, Expression right) {
         children[0] = left;
         children[1] = right;
+        left.setParent (this);
+        right.setParent (this);
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -60,15 +62,15 @@ public class OpLAnd extends Expression.Operator {
         castR.checkTypes (env, resolver);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         // %L = <lhs as i8>
         // br %.Lbegin
         // .Lbegin:
@@ -81,39 +83,34 @@ public class OpLAnd extends Expression.Operator {
         // .Lout:
         // %result = phi i8 [ 0, %.Lbegin ], [ %R, %.Lrhs ]
 
-        String Lbegin = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String LrhsEval = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String Lrhs = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
-        String Lout = ".L" + Integer.toString
-            (emitter.getTemporary ("%.L"));
+        Block Lbegin = new Block ();
+        Block LrhsEval = new Block ();
+        Block Lrhs = new Block ();
+        Block Lout = new Block ();
 
         children[0].genLLVM (env, emitter, function);
-        castL.value (children[0].getValueString ());
+        castL.value (children[0].getInstruction ());
         castL.genLLVM (env, emitter, function);
-        String L = castL.getValueString ();
+        Instruction L = castL.getInstruction ();
 
-        new branch (emitter, function).ifTrue ("%" + Lbegin).build ();
-        new label (emitter, function).name (Lbegin).build ();
-        new _switch (emitter, function)
-            .value ("i8", L).dest ("%" + LrhsEval)
-            .addDest ("0", "%" + Lout).build ();
-        new label (emitter, function).name (LrhsEval).build ();
+        function.add (new BRANCH ().dest (Lbegin));
+        function.add (Lbegin);
+        function.add (new SWITCH ().value (L).dest (LrhsEval)
+                      .addDest ("0", Lout));
+        function.add (LrhsEval);
         
         children[1].genLLVM (env, emitter, function);
-        castR.value (children[1].getValueString ());
+        castR.value (children[1].getInstruction ());
         castR.genLLVM (env, emitter, function);
-        String R = castR.getValueString ();
+        Instruction R = castR.getInstruction ();
 
-        new branch (emitter, function).ifTrue ("%" + Lrhs).build ();
-        new label (emitter, function).name (Lrhs).build ();
-        new branch (emitter, function).ifTrue ("%" + Lout).build ();
-        new label (emitter, function).name (Lout).build ();
-        valueString = new phi (emitter, function)
-            .type ("i8").pairs ("0", "%" + Lbegin,
-                                R, "%" + Lrhs).build ();
+        function.add (new BRANCH ().dest (Lrhs));
+        function.add (Lrhs);
+        function.add (new BRANCH ().dest (Lout));
+        function.add (Lout);
+        instruction = new PHI ().type ("i8")
+            .pairs ("0", Lbegin, R, Lrhs);
+        function.add (instruction);
     }
 
     @SuppressWarnings("unchecked")
@@ -141,7 +138,7 @@ public class OpLAnd extends Expression.Operator {
         throw CError.at ("cannot assign to logical operation", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

@@ -9,8 +9,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.IntLimits;
 import me.pavlina.alco.language.Type;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
+import me.pavlina.alco.llvm.*;
 import java.util.List;
 import java.math.BigInteger;
 import java.io.PrintStream;
@@ -19,9 +18,9 @@ import java.io.PrintStream;
  * Integers */
 public class IntValue extends Expression
 {
-    private BigInteger value;
-    private Token token;
-    private Type type;
+    BigInteger value;
+    Token token;
+    Type type;
 
     /**
      * Create an IntValue from the stream */
@@ -82,8 +81,9 @@ public class IntValue extends Expression
         return this.value;
     }
 
-    public String getValueString () {
-        return this.value.toString ();
+    public Instruction getInstruction () {
+        return new Placeholder (this.value.toString (),
+                                LLVMType.getLLVMName (type));
     }
 
     public Token getToken () {
@@ -117,7 +117,7 @@ public class IntValue extends Expression
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         // Generate nothing. We instead emit a constant from getValueString()
     }
     
@@ -125,7 +125,8 @@ public class IntValue extends Expression
         throw CError.at ("primitive literal has no address", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function)
+    {
         return null;
     }
 

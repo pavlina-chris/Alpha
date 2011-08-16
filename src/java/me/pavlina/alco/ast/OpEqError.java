@@ -47,7 +47,7 @@ public class OpEqError extends Expression.Operator {
         throw Unexpected.at (":= or ==", token);
     }
 
-    public String getValueString () {
+    public Instruction getInstruction () {
         return null;
     }
 
@@ -55,7 +55,7 @@ public class OpEqError extends Expression.Operator {
         return null;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function)
+    public void genLLVM (Env env, Emitter emitter, Function function)
     {
     }
 
@@ -76,7 +76,7 @@ public class OpEqError extends Expression.Operator {
         throw new RuntimeException ("OpEqError.checkPointer()");
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

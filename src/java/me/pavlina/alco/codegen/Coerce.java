@@ -14,7 +14,7 @@ import me.pavlina.alco.llvm.*;
  * check for it first */
 public class Coerce {
     Token token;
-    String lhsV, rhsV;
+    Instruction lhsV, rhsV;
     Type lhsT, rhsT, type;
     int castSide; // -1 L, 0 None, 1 R
 
@@ -41,7 +41,7 @@ public class Coerce {
     /**
      * Set the left-hand value.
      */
-    public Coerce lhsV (String lhsV) {
+    public Coerce lhsV (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
@@ -49,7 +49,7 @@ public class Coerce {
     /**
      * Set the right-hand value.
      */
-    public Coerce rhsV (String rhsV) {
+    public Coerce rhsV (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
@@ -59,17 +59,17 @@ public class Coerce {
         type = (castSide == 1 ? lhsT : rhsT).getNormalised ();
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         if (castSide == 1) {
             Cast c = new Cast (token)
                 .value (rhsV).type (rhsT).dest (type);
             c.genLLVM (env, emitter, function);
-            rhsV = c.getValueString ();
+            rhsV = c.getInstruction ();
         } else if (castSide == -1) {
             Cast c = new Cast (token)
                 .value (lhsV).type (lhsT).dest (type);
             c.genLLVM (env, emitter, function);
-            lhsV = c.getValueString ();
+            lhsV = c.getInstruction ();
         }
     }
 
@@ -77,11 +77,11 @@ public class Coerce {
         return type;
     }
 
-    public String getValueStringL () {
+    public Instruction getInstructionL () {
         return lhsV;
     }
 
-    public String getValueStringR () {
+    public Instruction getInstructionR () {
         return rhsV;
     }
 }

@@ -13,7 +13,7 @@ import me.pavlina.alco.llvm.*;
  * Pointer/int subtraction. Evaluates (T* - integer). */
 public class Sub1Ptr {
     Token token;
-    String ptrV, intV, valueString;
+    Instruction ptrV, intV, instruction;
     Type ptrT, intT, type;
 
     public Sub1Ptr (Token token) {
@@ -37,14 +37,14 @@ public class Sub1Ptr {
 
     /**
      * Set the pointer value */
-    public Sub1Ptr pointerV (String ptrV) {
+    public Sub1Ptr pointerV (Instruction ptrV) {
         this.ptrV = ptrV;
         return this;
     }
 
     /**
      * Set the integer value */
-    public Sub1Ptr integerV (String intV) {
+    public Sub1Ptr integerV (Instruction intV) {
         this.intV = intV;
         return this;
     }
@@ -67,22 +67,22 @@ public class Sub1Ptr {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         Type.Encoding ptrE = ptrT.getEncoding ();
         Type.Encoding intE = intT.getEncoding ();
-        String neg = new Binary (emitter, function)
-            .operation (Binary.BinOp.SUB)
+        Instruction neg = new BINARY ()
+            .op ("sub")
             .type (LLVMType.getLLVMName (intT))
-            .operands ("0", intV)
-            .build ();
-        valueString = new getelementptr (emitter, function)
+            .lhs ("0").rhs (intV);
+        instruction = new GETELEMENTPTR ()
             .type (LLVMType.getLLVMName (ptrT))
-            .pointer (ptrV)
-            .addIndex (LLVMType.getLLVMName (intT), neg)
-            .build ();
+            .value (ptrV)
+            .addIndex (neg);
+        function.add (neg);
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 }

@@ -9,10 +9,7 @@ import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.IntLimits;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.Keywords;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
-import me.pavlina.alco.llvm.load;
-import me.pavlina.alco.llvm.LLVMType;
+import me.pavlina.alco.llvm.*;
 import java.util.List;
 import java.io.PrintStream;
 
@@ -20,11 +17,10 @@ import java.io.PrintStream;
  * Variable */
 public class NameValue extends Expression
 {
-    private Token token;
-    private Type type;
-    private String name;
-    private String realName;
-    private String valueString;
+    Token token;
+    Type type;
+    String name, realName;
+    Instruction instruction;
 
     /**
      * Create a NameValue from the stream */
@@ -52,8 +48,8 @@ public class NameValue extends Expression
         this.name = name;
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Token getToken () {
@@ -74,12 +70,12 @@ public class NameValue extends Expression
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        valueString = new
-            load (emitter, function)
-            .pointer (LLVMType.getLLVMName (type), realName)
-            ._volatile (type.isVolatile ())
-            .build ();
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        instruction = new LOAD ()
+            .type (LLVMType.getLLVMName (type))
+            .pointer (realName)
+            ._volatile (type.isVolatile ());
+        function.add (instruction);
     }
     
     public void print (PrintStream out) {
@@ -99,7 +95,8 @@ public class NameValue extends Expression
             throw CError.at ("cannot assign to constant", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
-        return realName;
+    public Instruction getPointer (Env env, Emitter emitter, Function function)
+    {
+        return new Placeholder (realName, LLVMType.getLLVMName (type) + "*");
     }
 }

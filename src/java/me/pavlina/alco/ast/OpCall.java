@@ -17,16 +17,17 @@ import java.util.Arrays;
  * Call operator. This does not parse, as it is always explicitly created from
  * a known name. */
 public class OpCall extends Expression.Operator {
-    private Token token;
-    private String valueString;
-    private AST[] children;
-    private List<Expression> args;
-    private FunctionLike function;
+    Token token;
+    Instruction instruction;
+    AST[] children;
+    List<Expression> args;
+    FunctionLike function;
     Method method;
 
     public OpCall (Token token, Expression expr, Method method) {
         this.token = token;
         this.method = method;
+        expr.setParent (this);
         children = new AST[] { expr, null };
     }
 
@@ -48,6 +49,7 @@ public class OpCall extends Expression.Operator {
 
     public void setOperands (Expression op, Expression ignore) {
         children[1] = op;
+        op.setParent (this);
     }
 
     /**
@@ -63,8 +65,10 @@ public class OpCall extends Expression.Operator {
         } else {
             args.add ((Expression) children[1]);
         }
-        for (Expression i: args)
+        for (Expression i: args) {
+            i.setParent (this);
             i.checkTypes (env, resolver);
+        }
         function = resolver.getFunction
             (((NameValue) children[0]).getName (), args,
              children[0].getToken ());
@@ -87,52 +91,48 @@ public class OpCall extends Expression.Operator {
             method.requireTemps (1);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        List<String> valueStrings = new ArrayList<String> ();
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        List<Instruction> instructions = new ArrayList<Instruction> ();
         List<Type> destTypes = this.function.getArgTypes ();
         for (int i = 0; i < args.size (); ++i) {
             args.get (i).genLLVM (env, emitter, function);
-            String val = args.get (i).getValueString ();
+            Instruction val = args.get (i).getInstruction ();
             Cast c = new Cast (token)
                 .value (val)
                 .type (args.get (i).getType ()).dest (destTypes.get (i));
             c.genLLVM (env, emitter, function);
-            valueStrings.add (c.getValueString ());
+            instructions.add (c.getInstruction ());
         }
 
         // Bitcast the temporary %.T0 (i128*) into the proper pointer types
-        List<String> temps = new ArrayList<String> ();
+        List<Instruction> temps = new ArrayList<Instruction> ();
         List<Type> returns = this.function.getTypes ();
         // Make temps[i] equiv. returns[i]
-        temps.add ("");
+        temps.add (null);
         for (int i = 1; i < returns.size (); ++i) {
-            String temp = new Conversion (emitter, function)
-                .operation (Conversion.ConvOp.BITCAST)
-                .source ("i128*", "%.T0")
-                .dest (LLVMType.getLLVMName (returns.get (i)) + "*")
-                .build ();
-            temps.add (temp);
+            Instruction conv = new CONVERT ()
+                .stype ("i128*")
+                .dtype (LLVMType.getLLVMName (returns.get (i)) + "*")
+                .op ("bitcast").value ("%.T0");
+            function.add (conv);
+            temps.add (conv);
         }
 
-        call callbuilder = new call
-            (emitter, function)
+        CALL callbuilder = new CALL ()
             .type (LLVMType.getLLVMNameV (this.getType ()))
-            .pointer ("@" + this.function.getMangledName ());
+            .fun ("@" + this.function.getMangledName ());
         for (int i = 1; i < returns.size (); ++i) {
-            callbuilder.arg (LLVMType.getLLVMName (returns.get (i)) + "*",
-                             temps.get (i));
+            callbuilder.arg (temps.get (i));
         }
         for (int i = 0; i < args.size (); ++i) {
-            callbuilder.arg (LLVMType.getLLVMName
-                             (destTypes.get (i).getType ()),
-                             valueStrings.get (i));
+            callbuilder.arg (instructions.get (i));
         }
-        valueString = callbuilder.build ();
-        if (valueString == null) {
-            valueString = new load (emitter, function)
-                .pointer ("%.nonprim", "@.null")
-                .build ();
-        }
+        if (getType ().getEncoding () == Type.Encoding.NULL) {
+            instruction = new LOAD ()
+                .type ("%.nonprim")
+                .pointer ("@.null");
+            function.add (instruction);
+        } else instruction = callbuilder;
     }
 
     /**
@@ -154,8 +154,8 @@ public class OpCall extends Expression.Operator {
         return args;
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public void print (java.io.PrintStream out) {
@@ -179,7 +179,7 @@ public class OpCall extends Expression.Operator {
         throw CError.at ("function call has no address", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

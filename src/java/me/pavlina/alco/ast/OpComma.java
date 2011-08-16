@@ -7,8 +7,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.Type;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
+import me.pavlina.alco.llvm.*;
 import java.util.List;
 import java.util.Arrays;
 
@@ -17,8 +16,8 @@ import java.util.Arrays;
  * assigns. It should never be left at the genLLVM() stage.
  */
 public class OpComma extends Expression.Operator {
-    private Token token;
-    private Expression[] children;
+    Token token;
+    Expression[] children;
 
     public static final Expression.OperatorCreator CREATOR;
 
@@ -50,13 +49,15 @@ public class OpComma extends Expression.Operator {
         if (children == null) return;
         children[0] = left;
         children[1] = right;
+        left.setParent (this);
+        right.setParent (this);
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
         throw CError.at ("performing operation on a tuple", token);
     }
 
-    public String getValueString () {
+    public Instruction getInstruction () {
         throw new RuntimeException ("OpComma still exists at codegen");
     }
 
@@ -64,7 +65,7 @@ public class OpComma extends Expression.Operator {
         throw new RuntimeException ("OpComma still exists at codegen");
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         throw new RuntimeException ("OpComma still exists at codegen");
     }
 
@@ -113,7 +114,7 @@ public class OpComma extends Expression.Operator {
         throw new RuntimeException ("OpComma still exists at codegen");
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

@@ -15,7 +15,7 @@ import me.pavlina.alco.lex.Token;
  */
 public class RemNum {
     Token token;
-    String lhsV, rhsV, valueString;
+    Instruction lhsV, rhsV, instruction;
     Type type;
     
     public RemNum (Token token) {
@@ -24,14 +24,14 @@ public class RemNum {
 
     /**
      * Set the left-hand operand. */
-    public RemNum lhs (String lhsV) {
+    public RemNum lhs (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public RemNum rhs (String rhsV) {
+    public RemNum rhs (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
@@ -52,32 +52,32 @@ public class RemNum {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        Binary.BinOp remop;
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        String remop;
         Type.Encoding enc = type.getEncoding ();
         switch (enc) {
         case SINT:
-            remop = Binary.BinOp.SREM;
+            remop = "srem";
             break;
         case UINT:
-            remop = Binary.BinOp.UREM;
+            remop = "urem";
             break;
         case FLOAT:
-            remop = Binary.BinOp.FREM;
+            remop = "frem";
             break;
         default:
             throw new RuntimeException ("Remainder of unsupported items");
         }
 
-        valueString = new Binary (emitter, function)
-            .operation (remop)
+        instruction = new BINARY ()
+            .op (remop)
             .type (LLVMType.getLLVMName (type))
-            .operands (lhsV, rhsV)
-            .build ();
+            .lhs (lhsV).rhs (rhsV);
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {

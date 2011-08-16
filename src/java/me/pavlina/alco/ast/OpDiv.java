@@ -21,7 +21,7 @@ public class OpDiv extends Expression.Operator {
     Method method;
     Expression[] children;
     Type type;
-    String valueString;
+    Instruction instruction;
     Overload overload;
     Coerce coerce;
     DivNum divnum;
@@ -50,6 +50,8 @@ public class OpDiv extends Expression.Operator {
     public void setOperands (Expression left, Expression right) {
         children[0] = left;
         children[1] = right;
+        left.setParent (this);
+        right.setParent (this);
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -78,31 +80,31 @@ public class OpDiv extends Expression.Operator {
         divnum.checkTypes (env, resolver);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function)
+    public void genLLVM (Env env, Emitter emitter, Function function)
     {
         children[0].genLLVM (env, emitter, function);
         children[1].genLLVM (env, emitter, function);
 
         if (divnum != null) {
-            coerce.lhsV (children[0].getValueString ());
-            coerce.rhsV (children[1].getValueString ());
+            coerce.lhsV (children[0].getInstruction ());
+            coerce.rhsV (children[1].getInstruction ());
             coerce.genLLVM (env, emitter, function);
-            divnum.lhs (coerce.getValueStringL ());
-            divnum.rhs (coerce.getValueStringR ());
+            divnum.lhs (coerce.getInstructionL ());
+            divnum.rhs (coerce.getInstructionR ());
             divnum.genLLVM (env, emitter, function);
-            valueString = divnum.getValueString ();
+            instruction = divnum.getInstruction ();
 
         } else {
             overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
+            instruction = overload.getInstruction ();
         }
     }
 
@@ -130,7 +132,8 @@ public class OpDiv extends Expression.Operator {
         throw CError.at ("cannot assign to division", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function)
+    {
         return null;
     }
 

@@ -15,7 +15,7 @@ import me.pavlina.alco.lex.Token;
  * -1). */
 public class ModNum {
     Token token;
-    String lhsV, rhsV, valueString;
+    Instruction lhsV, rhsV, instruction;
     Type type;
     
     public ModNum (Token token) {
@@ -24,14 +24,14 @@ public class ModNum {
 
     /**
      * Set the left-hand operand. */
-    public ModNum lhs (String lhsV) {
+    public ModNum lhs (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public ModNum rhs (String rhsV) {
+    public ModNum rhs (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
@@ -52,21 +52,21 @@ public class ModNum {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        Binary.BinOp remop, addop;
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        String remop, addop;
         Type.Encoding enc = type.getEncoding ();
         switch (enc) {
         case SINT:
-            remop = Binary.BinOp.SREM;
-            addop = Binary.BinOp.ADD;
+            remop = "srem";
+            addop = "add";
             break;
         case UINT:
-            remop = Binary.BinOp.UREM;
-            addop = Binary.BinOp.ADD;
+            remop = "urem";
+            addop = "add";
             break;
         case FLOAT:
-            remop = Binary.BinOp.FREM;
-            addop = Binary.BinOp.FADD;
+            remop = "frem";
+            addop = "fadd";
             break;
         default:
             throw new RuntimeException ("Modulo of unsupported items");
@@ -74,27 +74,28 @@ public class ModNum {
 
         // ((x REM y) + y) REM y
 
-        String xREMy = new Binary (emitter, function)
-            .operation (remop)
+        Instruction xREMy = new BINARY ()
+            .op (remop)
             .type (LLVMType.getLLVMName (type))
-            .operands (lhsV, rhsV)
-            .build ();
+            .lhs (lhsV).rhs (rhsV);
 
-        String pPLUSy = new Binary (emitter, function)
-            .operation (addop)
+        Instruction pPLUSy = new BINARY ()
+            .op (addop)
             .type (LLVMType.getLLVMName (type))
-            .operands (xREMy, rhsV)
-            .build ();
+            .lhs (xREMy).rhs (rhsV);
 
-        valueString = new Binary (emitter, function)
-            .operation (remop)
+        instruction = new BINARY ()
+            .op (remop)
             .type (LLVMType.getLLVMName (type))
-            .operands (pPLUSy, rhsV)
-            .build ();
+            .lhs (pPLUSy).rhs (rhsV);
+
+        function.add (xREMy);
+        function.add (pPLUSy);
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {

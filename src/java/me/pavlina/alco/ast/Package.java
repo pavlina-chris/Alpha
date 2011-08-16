@@ -16,10 +16,10 @@ import java.util.ArrayList;
  * AST package. This represents (and parses) an entire file. */
 public class Package extends AST
 {
-    private String name;
-    private boolean executable;
-    private List<AST> children;
-    private Token token;
+    String name;
+    boolean executable;
+    List<AST> children;
+    Token token;
 
     /**
      * Read a package from the token stream. */
@@ -38,6 +38,7 @@ public class Package extends AST
             AST child = readChild (stream, env);
             if (child == null) break;
             children.add (child);
+            child.setParent (this);
         }
     }
 
@@ -141,18 +142,17 @@ public class Package extends AST
         children.addAll (other.children);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         StringConstant pkgname = StringConstant.getPointerConst
             ("@AL_PKG_NAME", name);
         emitter.add (pkgname);
         Typedef nonprim = new Typedef ("%.nonprim", "{i64, i64}");
         emitter.add (nonprim);
         Constant nullconst = new Constant
-            ("@.null", "%.nonprim", "{i64 0, i64 0}",
-             FHead.Linkage.EXTERNALLY_VISIBLE);
+            ("@.null", "%.nonprim", "{i64 0, i64 0}", "");
         emitter.add (nullconst);
         FDeclare atomicswapi32 = new FDeclare
-            ("llvm.atomic.swap.i32.p0i32", "i32");
+            ("@llvm.atomic.swap.i32.p0i32", "i32");
         atomicswapi32.addParameter ("i32*");
         atomicswapi32.addParameter ("i32");
         emitter.add (atomicswapi32);

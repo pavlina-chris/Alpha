@@ -13,7 +13,7 @@ import me.pavlina.alco.llvm.*;
  * Pointer addition. Adds (T* + integer). */
 public class AddPtr {
     Token token;
-    String ptrV, intV, valueString;
+    Instruction ptrV, intV, value;
     Type ptrT, intT, type;
 
     public AddPtr (Token token) {
@@ -37,14 +37,14 @@ public class AddPtr {
 
     /**
      * Set the pointer value */
-    public AddPtr pointerV (String ptrV) {
+    public AddPtr pointerV (Instruction ptrV) {
         this.ptrV = ptrV;
         return this;
     }
 
     /**
      * Set the integer value */
-    public AddPtr integerV (String intV) {
+    public AddPtr integerV (Instruction intV) {
         this.intV = intV;
         return this;
     }
@@ -67,17 +67,17 @@ public class AddPtr {
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         Type.Encoding ptrE = ptrT.getEncoding ();
         Type.Encoding intE = intT.getEncoding ();
-        valueString = new getelementptr (emitter, function)
+        value = new GETELEMENTPTR ()
             .type (LLVMType.getLLVMName (ptrT))
-            .pointer (ptrV)
-            .addIndex (LLVMType.getLLVMName (intT), intV)
-            .build ();
+            .value (ptrV)
+            .addIndex (intV);
+        function.add (value);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return value;
     }
 }

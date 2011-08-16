@@ -1,15 +1,12 @@
 // Copyright (c) 2011, Christopher Pavlina. All rights reserved.
 
 package me.pavlina.alco.llvm;
-import java.io.PrintStream;
 
 /**
  * Global string constants. Two formats: LLVM array and C-style pointer to
- * char. */
-public class StringConstant extends RootCodeObj
-{
-
-    String name;
+ * char */
+public class StringConstant extends RootObject implements Instruction {
+    String id;
     byte[] value;
     boolean pointer;
 
@@ -32,13 +29,12 @@ public class StringConstant extends RootCodeObj
     /**
      * Get an array-type string constant with a sequential name.
      * @param value String value. Will be encoded in UTF-8.
-     * @param counter Counter object (LLVMEmitter) to get the name from */
-    public static StringConstant getArrayConst (String value, Counter counter) {
-        int n = counter.getTemporary ("@$");
+     */
+    public static StringConstant getArrayConst (String value) {
         StringConstant sc;
         try {
             sc = new StringConstant
-                ("@$" + Integer.toString (n), value.getBytes ("UTF-8"), false);
+                (null, value.getBytes ("UTF-8"), false);
         } catch (java.io.UnsupportedEncodingException e) {
             // Everything is valid in UTF-8
             throw new RuntimeException ("UnsupportedEncodingException in UTF8");
@@ -61,18 +57,16 @@ public class StringConstant extends RootCodeObj
         }
         return sc;
     }
-
     /**
      * Get a pointer-type string constant with a sequential name.
      * @param value String value. Will be encoded in UTF-8.
-     * @param counter Counter object (LLVMEmitter) to get the name from */
-    public static StringConstant getPointerConst (String value, Counter counter)
+     */
+    public static StringConstant getPointerConst (String value)
     {
-        int n = counter.getTemporary ("@$");
         StringConstant sc;
         try {
             sc = new StringConstant
-                ("@$" + Integer.toString (n), value.getBytes ("UTF-8"), true);
+                (null, value.getBytes ("UTF-8"), true);
         } catch (java.io.UnsupportedEncodingException e) {
             // Everything is valid in UTF-8
             throw new RuntimeException ("UnsupportedEncodingException in UTF8");
@@ -80,49 +74,54 @@ public class StringConstant extends RootCodeObj
         return sc;
     }
 
-    private StringConstant (String name, byte[] value, boolean pointer) {
-        this.name = name;
+    private StringConstant (String id, byte[] value, boolean pointer) {
+        this.id = id;
         this.value = value;
         this.pointer = pointer;
     }
 
     public int getLevel () {
-        return RootCodeObj.LEVEL_GLOBAL;
+        return RootObject.LEVEL_GLOBAL;
     }
 
-    public void write (PrintStream out) {
+    public String toString () {
+        StringBuilder sb = new StringBuilder ();
         String arrname;
 
         if (pointer) {
             // Insert a dot after the @
-            arrname = "@." + name.substring (1);
-        } else {
-            arrname = name;
-        }
+            arrname = "@." + id.substring (1);
+        } else
+            arrname = id;
 
-        out.printf ("%s = internal constant [ %d x i8 ] c\"",
-                    arrname, value.length + 1);
+        sb.append (arrname).append (" = internal constant [ ")
+            .append (value.length + 1).append (" x i8 ] c\"");
         for (byte i: value) {
-            // Printable ASCII characters:
-            //       space          ~            "            \ 
-            if (i >= 0x20 && i <= 0x7e && i != 0x22 && i != 0x5c)
-                out.write (i);
+            // Printable ASCII
+            if (i >= ' ' && i <= '~' && i != '"' && i != '\\')
+                sb.append ((char) i);
             else
-                out.printf ("\\%02x", i);
+                sb.append (String.format ("\\%02x", i));
         }
-        out.print ("\\00\"\n");
+        sb.append ("\\00\"\n");
 
         if (pointer) {
-            out.printf ("%s = linkonce global i8* getelementptr inbounds " +
-                        "([ %d x i8 ] * %s, i64 0, i64 0)\n",
-                        name, value.length + 1, arrname);
+            sb.append (id).append
+                (" = linkonce global i8* getelementptr inbounds ").append
+                ("([ ").append (value.length + 1).append
+                (" x i8 ] * ").append (arrname).append
+                (", i64 0, i64 0)\n");
         }
+        return sb.toString ();
     }
 
-    /**
-     * Get the globally accessible name of the constant */
-    public String getName () {
-        return name;
+    public boolean needsId () { return id == null; }
+    public void setId (String id) { if (this.id == null) this.id = id; }
+    public String getId () { return id; }
+    public String getType () {
+        return pointer
+            ? "i8*"
+            : String.format ("[ %d x i8 ]", value.length + 1);
     }
 
 }

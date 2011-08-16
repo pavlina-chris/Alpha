@@ -14,7 +14,7 @@ import me.pavlina.alco.lex.Token;
  * Bitwise OR. */
 public class BitOr {
     Token token;
-    String lhsV, rhsV, valueString;
+    Instruction lhsV, rhsV, instruction;
     Type type;
     
     public BitOr (Token token) {
@@ -23,14 +23,14 @@ public class BitOr {
 
     /**
      * Set the left-hand operand. */
-    public BitOr lhs (String lhsV) {
+    public BitOr lhs (Instruction lhsV) {
         this.lhsV = lhsV;
         return this;
     }
 
     /**
      * Set the right-hand operand. */
-    public BitOr rhs (String rhsV) {
+    public BitOr rhs (Instruction rhsV) {
         this.rhsV = rhsV;
         return this;
     }
@@ -46,20 +46,20 @@ public class BitOr {
         Type.Encoding enc = type.getEncoding ();
         if (enc != Type.Encoding.SINT &&
             enc != Type.Encoding.UINT) {
-            throw CError.at ("invalid types for bitwise operation", token);
+            throw CError.at ("invalid types for bitwise op", token);
         }
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
-        valueString = new Binary (emitter, function)
-            .operation (Binary.BinOp.OR)
+    public void genLLVM (Env env, Emitter emitter, Function function) {
+        instruction = new BINARY ()
+            .op ("or")
             .type (LLVMType.getLLVMName (type))
-            .operands (lhsV, rhsV)
-            .build ();
+            .lhs (lhsV).rhs (rhsV);
+        function.add (instruction);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {

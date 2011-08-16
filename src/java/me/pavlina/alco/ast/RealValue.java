@@ -8,8 +8,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.IntLimits;
 import me.pavlina.alco.language.Type;
-import me.pavlina.alco.llvm.LLVMEmitter;
-import me.pavlina.alco.llvm.Function;
+import me.pavlina.alco.llvm.*;
 import java.util.List;
 import java.io.PrintStream;
 
@@ -17,9 +16,9 @@ import java.io.PrintStream;
  * Floats */
 public class RealValue extends Expression
 {
-    private double value;
-    private Token token;
-    private Type type;
+    double value;
+    Token token;
+    Type type;
 
     /**
      * Create a RealValue from the stream */
@@ -49,8 +48,10 @@ public class RealValue extends Expression
         return this.value;
     }
 
-    public String getValueString () {
-        return String.format("0x%016x", Double.doubleToRawLongBits (value));
+    public Instruction getInstruction () {
+        return new Placeholder
+            (String.format ("0x%016x", Double.doubleToRawLongBits (value)),
+             "double");
     }
 
     public Token getToken () {
@@ -69,7 +70,7 @@ public class RealValue extends Expression
         return type;
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         // Generate nothing. We instead emit a constant from getValueString()
     }
 
@@ -77,7 +78,7 @@ public class RealValue extends Expression
         throw CError.at ("primitive literal has no address", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
     

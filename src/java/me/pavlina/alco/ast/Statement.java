@@ -55,6 +55,7 @@ public abstract class Statement extends AST
         STATEMENTS.put ("return", StReturn.CREATOR);
         STATEMENTS.put ("if", StIf.CREATOR);
         STATEMENTS.put ("while", StWhile.CREATOR);
+        STATEMENTS.put ("break", StBreak.CREATOR);
     }
 
 }

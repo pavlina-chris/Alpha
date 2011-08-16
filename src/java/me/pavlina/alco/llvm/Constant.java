@@ -1,25 +1,21 @@
 // Copyright (c) 2011, Christopher Pavlina. All rights reserved.
 
 package me.pavlina.alco.llvm;
-import java.io.PrintStream;
-import me.pavlina.alco.llvm.FHead.*;
 
 /**
- * Global constant. */
-public class Constant extends RootCodeObj
-{
-    String name;
-    String type;
-    String value;
-    Linkage linkage;
+ * Global constant. Note that Instruction is implemented to allow using this
+ * as a value. */
+public class Constant extends RootObject implements Instruction {
+
+    String name, type, value, linkage;
 
     /**
-     * Create a constant.
+     * Create a named constant.
      * @param name Constant name. Should start with @.
      * @param type Constant type.
      * @param value Constant value.
      * @param linkage Linkage type. */
-    public Constant (String name, String type, String value, Linkage linkage) {
+    public Constant (String name, String type, String value, String linkage) {
         this.name = name;
         this.type = type;
         this.value = value;
@@ -28,28 +24,29 @@ public class Constant extends RootCodeObj
 
     /**
      * Create an unnamed constant.
-     * @param counter Counter to get number from
      * @param type Constant type.
      * @param value Constant value.
      * @param linkage Linkage type. */
-    public Constant (Counter counter, String type, String value,
-                     Linkage linkage)
-    {
-        this.name = "@" + Integer.toString (counter.getTemporary ("@"));
+    public Constant (String type, String value, String linkage) {
         this.type = type;
         this.value = value;
         this.linkage = linkage;
     }
 
-    public String getName () {
-        return name;
+
+    public int getLevel () { return RootObject.LEVEL_GLOBAL; }
+
+    public boolean needsId () { return name == null; }
+
+    public void setId (String id) { name = id; }
+    
+    public String getId () { return name; }
+
+    public String getType () { return type; }
+
+    public String toString () {
+        return String.format ("%s = %s constant %s %s\n",
+                              name, linkage, type, value);
     }
 
-    public int getLevel () {
-        return RootCodeObj.LEVEL_GLOBAL;
-    }
-
-    public void write (PrintStream out) {
-        out.printf ("%s = %s constant %s %s\n", name, linkage, type, value);
-    }
 }

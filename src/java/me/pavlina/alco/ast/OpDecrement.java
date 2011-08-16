@@ -21,7 +21,7 @@ public class OpDecrement extends Expression.Operator {
     Method method;
     Type type;
     Expression[] children;
-    String valueString;
+    Instruction instruction;
     Overload overload;
     boolean ptrSub;
 
@@ -48,10 +48,11 @@ public class OpDecrement extends Expression.Operator {
 
     public void setOperands (Expression op, Expression ignore) {
         children = new Expression[] {op};
+        op.setParent (this);
     }
 
-    public String getValueString () {
-        return valueString;
+    public Instruction getInstruction () {
+        return instruction;
     }
 
     public Type getType () {
@@ -88,37 +89,34 @@ public class OpDecrement extends Expression.Operator {
         type = children[0].getType ().getNormalised ();
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
-        String ptr = children[0].getPointer (env, emitter, function);
+        Instruction ptr = children[0].getPointer (env, emitter, function);
 
         if ((overload == null) && ptrSub) {
-            valueString = new getelementptr (emitter, function)
+            instruction = new GETELEMENTPTR ()
                 .type (LLVMType.getLLVMName (children[0].getType ()))
-                .pointer (children[0].getValueString ())
-                .addIndex (-1)
-                .build ();
-            new store (emitter, function)
-                .pointer (ptr)
-                .value (LLVMType.getLLVMName (children[0].getType ()),
-                        valueString)
-                ._volatile (children[0].getType ().isVolatile ())
-                .build ();
+                .value (children[0].getInstruction ())
+                .addIndex (-1);
+            function.add (instruction);
+            function.add (new STORE ()
+                          .pointer (ptr)
+                          .value (instruction)
+                          ._volatile (children[0].getType ().isVolatile ()));
         } else if ((overload == null) && !ptrSub) {
-            valueString = new Binary (emitter, function)
-                .operation (Binary.BinOp.SUB)
+            instruction = new BINARY ()
+                .op ("sub")
                 .type (LLVMType.getLLVMName (type))
-                .operands (children[0].getValueString (), "1")
-                .build ();
-            new store (emitter, function)
-                .pointer (ptr)
-                .value (LLVMType.getLLVMName (children[0].getType ()),
-                        valueString)
-                ._volatile (children[0].getType ().isVolatile ())
-                .build ();
+                .lhs (children[0].getInstruction ())
+                .rhs ("1");
+            function.add (instruction);
+            function.add (new STORE ()
+                          .pointer (ptr)
+                          .value (instruction)
+                          ._volatile (children[0].getType ().isVolatile ()));
         } else {
             overload.genLLVM (env, emitter, function);
-            valueString = overload.getValueString ();
+            instruction = overload.getInstruction ();
         }
     }
 
@@ -144,7 +142,7 @@ public class OpDecrement extends Expression.Operator {
         throw CError.at ("cannot assign to increment", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
         return null;
     }
 

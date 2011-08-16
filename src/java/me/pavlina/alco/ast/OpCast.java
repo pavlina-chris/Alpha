@@ -17,9 +17,9 @@ import java.math.BigInteger;
 /**
  * Cast operator. */
 public class OpCast extends Expression.Operator {
-    private Token token;
-    private Expression[] children;
-    private String valueString;
+    Token token;
+    Expression[] children;
+    Instruction instruction;
     Cast cast;
 
     public static final Expression.OperatorCreator CREATOR;
@@ -48,6 +48,8 @@ public class OpCast extends Expression.Operator {
     public void setOperands (Expression value, Expression type) {
         children[0] = value;
         children[1] = type;
+        value.setParent (this);
+        type.setParent (this);
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -61,37 +63,22 @@ public class OpCast extends Expression.Operator {
         cast.checkTypes (env, resolver);
     }
 
-    public void genLLVM (Env env, LLVMEmitter emitter, Function function) {
+    public void genLLVM (Env env, Emitter emitter, Function function) {
         children[0].genLLVM (env, emitter, function);
-        cast.value (children[0].getValueString ());
+        cast.value (children[0].getInstruction ());
         cast.genLLVM (env, emitter, function);
     }
 
-    public String getValueString () {
-        return cast.getValueString ();
+    public Instruction getInstruction () {
+        return cast.getInstruction ();
     }
 
     public void checkPointer (boolean write, Token token) throws CError {
-        // If we are casting off const, lie to checkPointer about intent to
-        // read
-        if (!children[1].getType ().isConst () &&
-            children[0].getType ().isConst ()) {
-            children[0].checkPointer (false, token);
-        } else {
-            children[0].checkPointer (write, token);
-        }
+        throw CError.at ("cannot assign to cast", token);
     }
 
-    public String getPointer (Env env, LLVMEmitter emitter, Function function) {
-        // Casting a pointer is just a bit-cast.
-        String chPtr = children[0].getPointer (env, emitter, function);
-        String ptr = new Conversion (emitter, function)
-            .operation (Conversion.ConvOp.BITCAST)
-            .source (LLVMType.getLLVMName (children[0].getType ()) + "*",
-                     chPtr)
-            .dest (LLVMType.getLLVMName (children[1].getType ()) + "*")
-            .build ();
-        return ptr;
+    public Instruction getPointer (Env env, Emitter emitter, Function function) {
+        return null;
     }
 
     public void print (java.io.PrintStream out) {
