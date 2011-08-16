@@ -52,6 +52,7 @@ public class BRANCH implements Terminator {
             ifTrue = bIfTrue.getId ();
         if (bIfFalse != null)
             ifFalse = bIfFalse.getId ();
+        if (iCond != null) cond = iCond.getId ();
         if (cond == null) {
             return String.format ("br label %s\n", ifTrue);
         } else {

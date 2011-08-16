@@ -44,7 +44,7 @@ public class Block {
     /**
      * Number all instructions in this block, and the block itself, from the
      * starting point. Return the next number after the end. Note that for the
-     * first block, if unlabeled, use -1 for a start, because the block will
+     * first block, if unlabeled, use 0 for a start, because the block will
      * number itself. */
     public int number (int start) {
         if (id == null) {
@@ -61,9 +61,11 @@ public class Block {
     public String toString () {
         StringBuilder sb = new StringBuilder ();
         char ch = id.charAt (1);
-        if (ch >= '0' && ch <= '9') {
+        if (id.equals ("%0")) {
+            // -1 first block - no comment
+        } else if (ch >= '0' && ch <= '9') {
             // Numbered block - comment it
-            sb.append ("; ").append (id).append ('\n');
+            sb.append ("; ").append (id).append (":\n");
         } else {
             // Label
             sb.append (id.substring (1)).append (":\n");

@@ -15,7 +15,7 @@ public class COMMENT implements Instruction {
     public COMMENT text (String t) { text = t; return this; }
 
     public String toString () {
-        return text + "\n";
+        return ";### " + text + "\n";
     }
 
     public boolean needsId () { return false; }

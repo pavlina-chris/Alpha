@@ -53,6 +53,11 @@ public class BINARY implements Instruction {
     public boolean needsId () { return true; }
     public void setId (String id) { this.id = id; }
     public String getId () { return id; }
-    public String getType () { return type; }
+    public String getType () {
+        if (op.startsWith ("icmp") || op.startsWith ("fcmp"))
+            return "i1";
+        else
+            return type;
+    }
 
 }

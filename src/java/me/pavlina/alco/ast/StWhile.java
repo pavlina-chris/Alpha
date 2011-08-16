@@ -96,6 +96,8 @@ public class StWhile extends Loop
         condLabel = Ltop;
         botLabel = Lbot;
 
+        function.add (new COMMENT ().text ("WHILE, line " + (1+token.line)));
+
         function.add (new BRANCH ().dest (Ltop));
         function.add (Ltop);
         // Condition

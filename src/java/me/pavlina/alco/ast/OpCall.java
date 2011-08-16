@@ -133,6 +133,7 @@ public class OpCall extends Expression.Operator {
                 .pointer ("@.null");
             function.add (instruction);
         } else instruction = callbuilder;
+        function.add (callbuilder);
     }
 
     /**

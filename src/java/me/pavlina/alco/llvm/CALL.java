@@ -92,6 +92,8 @@ public class CALL implements Instruction {
         for (String i: retattrs)
             sb.append (' ').append (i);
 
+        sb.append (' ').append (type);
+
         if (ftype != null)
             sb.append (' ').append (ftype);
 

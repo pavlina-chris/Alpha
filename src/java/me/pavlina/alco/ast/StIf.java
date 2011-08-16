@@ -95,6 +95,8 @@ public class StIf extends Statement
         else
             labelEnd = new Block ();
         
+        function.add (new COMMENT ().text ("IF, line " + (1+token.line)));
+
         // Condition
         values[0].genLLVM (env, emitter, function);
         Instruction boolCond = ((Expression) values[0]).getInstruction ();
@@ -105,6 +107,7 @@ public class StIf extends Statement
 
         Instruction cond = new BINARY ()
             .op ("icmp ne").type ("i8").lhs (c.getInstruction ()).rhs ("0");
+        function.add (cond);
         
         // Branch
         function.add (new BRANCH ().cond (cond).T (labelIfTrue)

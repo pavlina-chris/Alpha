@@ -42,6 +42,9 @@ public class StBreak extends Statement
                 throw Unexpected.at ("valid loop count", temp);
             }
             tNum = temp;
+            temp = stream.next ();
+            if (!temp.is (Token.OPER, ";"))
+                throw Unexpected.after (";", tNum);
         } else {
             throw Unexpected.after ("; or number", token);
         }

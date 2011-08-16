@@ -14,7 +14,7 @@ public class Function extends RootObject {
 
     List<String[]> paramAttrs;
     List<String> paramTypes, paramNames;
-    List<Block> code;
+    LinkedList<Block> code;
 
     /**
      * Create a function. Parameters must be added with addParamenter().
@@ -61,7 +61,7 @@ public class Function extends RootObject {
         paramAttrs = new ArrayList<String[]> ();
         paramTypes = new ArrayList<String> ();
         paramNames = new ArrayList<String> ();
-        code = new ArrayList<Block> ();
+        code = new LinkedList<Block> ();
         code.add (new Block ());
     }
 
@@ -79,9 +79,9 @@ public class Function extends RootObject {
     /**
      * Add code intelligently, creating a new block if necessary. */
     public void add (Instruction i) {
-        if (!code.get (code.size () - 1).add (i)) {
+        if (!code.getLast ().add (i)) {
             code.add (new Block ());
-            code.get (code.size () - 1).add (i);
+            code.getLast ().add (i);
         }
     }
 
@@ -123,8 +123,22 @@ public class Function extends RootObject {
                 sb.append (' ').append (attr);
         sb.append (" {\n");
         
+        // Add a default return if the final block has no terminator
+        if (!code.getLast ().isTerminated ()) {
+            if (type.equals ("void"))
+                add (new RET ());
+            else if (type.endsWith ("*"))
+                add (new RET ().type (type).value ("null"));
+            else if (type.startsWith ("i"))
+                add (new RET ().type (type).value ("0"));
+            else if (type.equals ("float") || type.equals ("double"))
+                add (new RET ().type (type).value ("0.0"));
+            else
+                throw new RuntimeException ();
+        }
+
         // Number all instructions and blocks
-        int n = -1;
+        int n = 0;
         for (Block b: code)
             n = b.number (n);
 
