@@ -413,12 +413,12 @@ public abstract class Expression extends AST implements HasType
     /**
      * Map of all binary operators. This maps the operator text to an
      * OperatorCreator. */
-    protected static Map<String, OperatorCreator> BINOPS;
+    protected static final Map<String, OperatorCreator> BINOPS;
 
     /**
      * Map of all unary operators. This maps the operator text to an
      * OperatorCreator. */
-    protected static Map<String, OperatorCreator> UNOPS;
+    protected static final Map<String, OperatorCreator> UNOPS;
 
     /**
      * Operator-loading static initialiser. This loads all operators into the

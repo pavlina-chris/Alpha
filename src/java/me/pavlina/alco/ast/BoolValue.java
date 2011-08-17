@@ -29,7 +29,6 @@ public class BoolValue extends Expression
             value = false;
         else
             throw new RuntimeException ("BoolValue created for non-bool");
-        this.parent = parent;
     }
 
     public boolean getValue () {

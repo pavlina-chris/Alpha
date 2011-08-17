@@ -13,7 +13,7 @@ public class IntLimits
 {
     private IntLimits () {}
 
-    public static BigInteger I8_MIN, I8_MAX, I16_MIN, I16_MAX, I32_MIN,
+    public static final BigInteger I8_MIN, I8_MAX, I16_MIN, I16_MAX, I32_MIN,
         I32_MAX, INT_MIN, INT_MAX, I64_MIN, I64_MAX, U8_MIN, U8_MAX,
         U16_MIN, U16_MAX, U32_MIN, U32_MAX, UNSIGNED_MIN, UNSIGNED_MAX,
         U64_MIN, U64_MAX;

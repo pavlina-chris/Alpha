@@ -17,6 +17,7 @@ public class IndentOutputStream extends java.io.OutputStream
      * @param out PrintStream to direct all output to
      * @param indent Number of spaces to indent by */
     public IndentOutputStream (PrintStream out, int indent) {
+        super ();
         this.out = out;
         this.indent = indent;
         indent_next = true;

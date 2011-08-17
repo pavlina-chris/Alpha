@@ -604,7 +604,9 @@ public class Type implements HasType {
      * Therefore: i32 == int, i32* == int*, list&lt;i32&gt; == list&lt;int&gt;
      *  i32 const != i32
      */
-    public boolean equals (Type type) {
+    public boolean equals (Object other) {
+        if (!Type.class.isInstance (other)) return false;
+        Type type = (Type) other;
         if (type.encoding != encoding) return false;
         if (encoding == Encoding.UINT ||
             encoding == Encoding.SINT ||

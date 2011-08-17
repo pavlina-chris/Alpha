@@ -337,10 +337,13 @@ public abstract class FunctionLike extends AST
      * Return whether the declaration is equivalent to another, for purposes
      * of resolution. That is, if it has the same name, mangle status, and
      * argument types. Return type and static/instance are not considered. */
-    public boolean equals (FunctionLike other) {
-        return (name.equals (other.name) &&
-                nomangle == other.nomangle &&
-                argtypes.equals (other.argtypes));
+    public boolean equals (Object other) {
+        if (!FunctionLike.class.isInstance (other))
+            return false;
+        FunctionLike fl = (FunctionLike) other;
+        return (name.equals (fl.name) &&
+                nomangle == fl.nomangle &&
+                argtypes.equals (fl.argtypes));
     }
 
     /**

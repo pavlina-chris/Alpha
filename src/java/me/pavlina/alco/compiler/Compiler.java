@@ -421,6 +421,7 @@ public class Compiler
             while (!sc.nextLine ().equals (""));
         }
 
+        llStream.close ();
         return 0;
     }
 
