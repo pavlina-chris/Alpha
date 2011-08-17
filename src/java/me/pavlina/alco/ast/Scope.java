@@ -9,6 +9,7 @@ import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.llvm.Emitter;
 import me.pavlina.alco.llvm.Function;
 import me.pavlina.alco.parse.ExpressionParser;
+import me.pavlina.alco.parse.StatementParser;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
@@ -49,7 +50,8 @@ public class Scope extends AST
                 }
 
                 // Try a statement
-                Statement statement = Statement.parse (env, stream, method);
+                Statement statement = StatementParser.parse
+                    (env, stream, method);
                 if (statement != null) {
                     children.add (statement);
                     statement.setParent (this);
@@ -75,7 +77,7 @@ public class Scope extends AST
             }
         } else {
             // Try a statement
-            Statement statement = Statement.parse (env, stream, method);
+            Statement statement = StatementParser.parse (env, stream, method);
             if (statement != null) {
                 children.add (statement);
                 statement.setParent (this);
