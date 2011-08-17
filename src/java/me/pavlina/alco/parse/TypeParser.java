@@ -1,6 +1,6 @@
 // Copyright (c) 2011, Chris Pavlina. All rights reserved.
 
-package me.pavlina.alco.ast;
+package me.pavlina.alco.parse;
 import me.pavlina.alco.compiler.errors.*;
 import me.pavlina.alco.compiler.Env;
 import me.pavlina.alco.lex.TokenStream;
@@ -17,6 +17,9 @@ public class TypeParser {
 
     /**
      * Parse a type name and return a me.pavlina.alco.language.Type. */
+
+    // NOTE: This method isn't TOO big for a little parser, but if it gets
+    // any bigger, REFACTOR. Don't add a single line without refactoring.
     public static Type parse (TokenStream stream, Env env) throws CError {
 
         Token token, argsToken;

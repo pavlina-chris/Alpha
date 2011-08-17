@@ -10,6 +10,7 @@ import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.parse.ExpressionParser;
+import me.pavlina.alco.parse.TypeParser;
 import static me.pavlina.alco.language.IntLimits.*;
 import me.pavlina.alco.llvm.*;
 import java.util.List;

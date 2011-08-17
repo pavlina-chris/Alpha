@@ -8,6 +8,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.IntLimits;
 import me.pavlina.alco.language.Type;
+import me.pavlina.alco.parse.TypeParser;
 import me.pavlina.alco.llvm.*;
 import java.util.List;
 import java.io.PrintStream;
