@@ -28,7 +28,7 @@ public class RET implements Terminator {
             type = iValue.getType ();
             value = iValue.getId ();
         }
-        if (iValue == null)
+        if (value == null)
             return "ret void\n";
         else
             return "ret " + type + " " + value + "\n";
