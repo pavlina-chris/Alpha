@@ -72,7 +72,7 @@ public class StWhile extends Loop
                           new Type (env, "bool", null), token);
     }
 
-    public Block getConditionLabel () {
+    public Block getContinueLabel () {
         return condLabel;
     }
 

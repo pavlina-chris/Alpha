@@ -62,7 +62,7 @@ def run_alpha_test (filename):
     pexit = 0
     with open (filename) as f:
         for line in f:
-            line = line.strip ()
+            line = line.strip ("\n")
             if not line.startswith ("// "): break
             line = line[3:]
             tag, sep, rest = line.partition (" ")

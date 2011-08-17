@@ -1174,6 +1174,19 @@ if (evaluatesFalse)
 % FOR
 \subsection{Value-based iteration (\texttt{for})}
 \label{sub:statements:for}
+This is the basic \texttt{for} loop. This loop executes an initialiser once,
+then tests a condition, running the loop if true, then executes an iterator,
+then repeats. The syntax is:
+
+\begin{verbatim}
+ForLoop = "for", "(", (VarDecl | Expression), ";", Expression,
+          ";", Expression, ")", Scope ;
+\end{verbatim}
+
+The variable declaration or first expression is the initialiser. If a variable
+declaration, any variables declared must be in the loop's scope (the one
+mentioned above, not the one which contains the loop). The second expression
+is the condition, and the third is the iterator.
 
 %%%%%%%%%
 % FOREACH

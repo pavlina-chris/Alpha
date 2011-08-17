@@ -20,21 +20,39 @@ public class Scope extends AST
 {
     Token token;
     List<AST> children;
+    List<Boolean> gencode;
 
     /**
-     * Parse and initialise the scope. Because resolution is done with the help
-     * of a special Resolver, the scope does not need to know its parent. */
+     * Initialise the scope without parsing */
+    public Scope (Token token) {
+        this.token = token;
+        children = new ArrayList<AST> ();
+        gencode = new ArrayList<Boolean> ();
+    }
+
+    /**
+     * Parse and initialise the scope.
+     */
     public Scope (Env env, TokenStream stream, Method method)
         throws CError
     {
         this.token = stream.peek ();
         children = new ArrayList<AST> ();
+        gencode = new ArrayList<Boolean> ();
+        parse (env, stream, method);
+    }
 
-        if (this.token.is (Token.OPER, "{")) {
+    /**
+     * Parse the scope */
+    public void parse (Env env, TokenStream stream, Method method)
+        throws CError
+    {
+        Token token = stream.peek ();
+        if (token.is (Token.OPER, "{")) {
             // Block scope
             stream.next ();
             while (true) {
-                Token token = stream.next ();
+                token = stream.next ();
                 if (token.is (Token.OPER, "}"))
                     break;
                 else if (token.is (Token.NO_MORE))
@@ -45,6 +63,7 @@ public class Scope extends AST
                     // Nested scope
                     Scope scope = new Scope (env, stream, method);
                     children.add (scope);
+                    gencode.add (true);
                     scope.setParent (this);
                     continue;
                 }
@@ -54,6 +73,7 @@ public class Scope extends AST
                     (env, stream, method);
                 if (statement != null) {
                     children.add (statement);
+                    gencode.add (true);
                     statement.setParent (this);
                     continue;
                 }
@@ -68,6 +88,7 @@ public class Scope extends AST
                     else if (!token.is (Token.OPER, ";"))
                         throw Unexpected.after (";", stream.last ());
                     children.add (expression);
+                    gencode.add (true);
                     expression.setParent (this);
                     continue;
                 }
@@ -80,6 +101,7 @@ public class Scope extends AST
             Statement statement = StatementParser.parse (env, stream, method);
             if (statement != null) {
                 children.add (statement);
+                gencode.add (true);
                 statement.setParent (this);
                 return;
             }
@@ -88,12 +110,13 @@ public class Scope extends AST
             Expression expression = ExpressionParser.parse
                 (env, stream, method, ";");
             if (expression != null) {
-                Token token = stream.next ();
+                token = stream.next ();
                 if (token.is (Token.NO_MORE))
                     throw UnexpectedEOF.after (";", stream.last ());
                 else if (!token.is (Token.OPER, ";"))
                     throw Unexpected.after (";", stream.last ());
                 children.add (expression);
+                gencode.add (true);
                 expression.setParent (this);
                 return;
             }
@@ -101,6 +124,15 @@ public class Scope extends AST
             // Nothing good
             throw Unexpected.at ("statement or expression", token);
         }
+    }
+
+    /**
+     * Add an item to the scope.
+     * @param item Item to add
+     * @param gencode Whether code should be generated for this item */
+    public void add (AST item, boolean gencode) {
+        children.add (item);
+        this.gencode.add (gencode);
     }
 
     public Token getToken ()
@@ -122,8 +154,10 @@ public class Scope extends AST
     }
 
     public void genLLVM (Env env, Emitter emitter, Function function) {
-        for (AST i: children)
-            i.genLLVM (env, emitter, function);
+        for (int i = 0; i < children.size (); ++i) {
+            if (gencode.get (i).booleanValue ())
+                children.get (i).genLLVM (env, emitter, function);
+        }
     }
 
     public void print (PrintStream out)
