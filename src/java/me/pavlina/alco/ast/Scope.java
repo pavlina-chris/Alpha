@@ -8,6 +8,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.llvm.Emitter;
 import me.pavlina.alco.llvm.Function;
+import me.pavlina.alco.parse.ExpressionParser;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
@@ -56,8 +57,8 @@ public class Scope extends AST
                 }
 
                 // Try an expression
-                Expression expression = Expression.parse (env, stream, method,
-                                                          ";");
+                Expression expression = ExpressionParser.parse
+                    (env, stream, method, ";");
                 if (expression != null) {
                     token = stream.next ();
                     if (token.is (Token.NO_MORE))
@@ -82,7 +83,8 @@ public class Scope extends AST
             }
 
             // Try an expression
-            Expression expression = Expression.parse (env, stream, method, ";");
+            Expression expression = ExpressionParser.parse
+                (env, stream, method, ";");
             if (expression != null) {
                 Token token = stream.next ();
                 if (token.is (Token.NO_MORE))

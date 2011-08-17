@@ -9,6 +9,7 @@ import me.pavlina.alco.language.Keywords;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
+import me.pavlina.alco.parse.ExpressionParser;
 import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.codegen.Cast;
 import java.util.List;
@@ -71,7 +72,7 @@ public class StConst extends Statement
             }
 
             // Value
-            value = Expression.parse (env, stream, method, ";,");
+            value = ExpressionParser.parse (env, stream, method, ";,");
             if (value == null)
                 throw Unexpected.after ("expression", token);
 

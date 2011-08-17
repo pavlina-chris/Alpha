@@ -9,6 +9,7 @@ import me.pavlina.alco.language.Keywords;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
+import me.pavlina.alco.parse.ExpressionParser;
 import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.codegen.Cast;
 import java.util.List;
@@ -34,7 +35,7 @@ public class StReturn extends Statement
             throw new RuntimeException ("StReturn instantiated without kwd");
 
         value = new Expression[]
-            {Expression.parse (env, stream, method, ";")}; // Allow null
+            {ExpressionParser.parse (env, stream, method, ";")}; // Allow null
 
         Token temp = stream.next ();
         if (temp.is (Token.NO_MORE))

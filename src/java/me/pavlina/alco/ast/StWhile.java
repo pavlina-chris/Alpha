@@ -11,6 +11,7 @@ import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.codegen.Cast;
+import me.pavlina.alco.parse.ExpressionParser;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +39,7 @@ public class StWhile extends Loop
             throw UnexpectedEOF.after ("(", stream.last ());
         else if (!temp.is (Token.OPER, "("))
             throw Unexpected.after ("(", stream.last ());
-        values[0] = (AST) Expression.parse (env, stream, method, ")");
+        values[0] = (AST) ExpressionParser.parse (env, stream, method, ")");
         if (values[0] == null)
             throw Unexpected.after ("expression", temp);
         values[0].setParent (this);

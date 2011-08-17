@@ -9,6 +9,7 @@ import me.pavlina.alco.language.Keywords;
 import me.pavlina.alco.language.Type;
 import me.pavlina.alco.language.HasType;
 import me.pavlina.alco.language.Resolver;
+import me.pavlina.alco.parse.ExpressionParser;
 import static me.pavlina.alco.language.IntLimits.*;
 import me.pavlina.alco.llvm.*;
 import java.util.List;
@@ -86,7 +87,7 @@ public class StStatic extends Statement
             }
 
             // Value
-            value = Expression.parse (env, stream, method, ";,");
+            value = ExpressionParser.parse (env, stream, method, ";,");
             if (value == null)
                 throw Unexpected.after ("expression", token);
 
