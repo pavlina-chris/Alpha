@@ -1,2 +1,2 @@
-Break/continue
+Bug - cannot declare two variables of same name in different scopes
 Replace RuntimeExceptions by asserts

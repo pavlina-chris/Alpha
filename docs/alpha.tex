@@ -1220,6 +1220,20 @@ WhileLoop = "while", "(", Expresion, ")", Scope ;
 The condition, which is implicitly casted to $\R{B}$, shall be evaluated at the
 top of the loop.
 
+%%%%%%%%%%%%%%%%%%%%
+% BREAK AND CONTINUE
+\subsection{Loop control (\texttt{break} and \texttt{continue})}
+\label{sub:statements:breakcontinue}
+\begin{verbatim}
+Break    = "break", [Integer], ";" ;
+Continue = "continue", [Integer], ";" ;
+\end{verbatim}
+The \texttt{break} and \texttt{continue} statements are used for controlling
+loops. The \texttt{break} statement skips to the bottom outside of the loop,
+and the \texttt{continue} statement skips to the bottom inside. If a number is
+given, the statements skip that many nested loops; it is a compile error to
+use these outside the correct number of loops.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SCOPE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

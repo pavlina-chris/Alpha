@@ -50,5 +50,6 @@ public class StatementParser {
         STATEMENTS.put ("do", StDoWhile.CREATOR);
         STATEMENTS.put ("for", StFor.CREATOR);
         STATEMENTS.put ("break", StBreak.CREATOR);
+        STATEMENTS.put ("continue", StContinue.CREATOR);
     }
 }
