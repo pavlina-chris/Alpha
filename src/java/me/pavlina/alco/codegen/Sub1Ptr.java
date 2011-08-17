@@ -68,8 +68,6 @@ public class Sub1Ptr {
     }
 
     public void genLLVM (Env env, Emitter emitter, Function function) {
-        Type.Encoding ptrE = ptrT.getEncoding ();
-        Type.Encoding intE = intT.getEncoding ();
         Instruction neg = new BINARY ()
             .op ("sub")
             .type (LLVMType.getLLVMName (intT))

@@ -68,8 +68,6 @@ public class AddPtr {
     }
 
     public void genLLVM (Env env, Emitter emitter, Function function) {
-        Type.Encoding ptrE = ptrT.getEncoding ();
-        Type.Encoding intE = intT.getEncoding ();
         value = new GETELEMENTPTR ()
             .type (LLVMType.getLLVMName (ptrT))
             .value (ptrV)

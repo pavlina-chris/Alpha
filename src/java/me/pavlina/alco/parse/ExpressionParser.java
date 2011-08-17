@@ -28,7 +28,6 @@ public class ExpressionParser {
     
     Stack<Operator> stack;
     Stack<Expression> output;
-    Token firstToken; // Used for errors with unknown source
     int nest;
     boolean callPossible, unaryPossible;
     Env env;

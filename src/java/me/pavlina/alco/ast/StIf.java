@@ -88,7 +88,6 @@ public class StIf extends Statement
 
     public void genLLVM (Env env, Emitter emitter, Function function) {
         Block labelIfTrue = new Block ();
-        Block labelAfterTrue = new Block ();
         Block labelIfFalse = new Block ();
         Block labelEnd = null;
         if (values[2] == null)

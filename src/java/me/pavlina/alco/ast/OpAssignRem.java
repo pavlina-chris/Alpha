@@ -83,9 +83,6 @@ public class OpAssignRem extends Expression.Operator {
     }
 
     private void checkTypes_ (Env env, Resolver resolver) throws CError {
-        Type.Encoding lhsE = children[0].getType ().getEncoding ();
-        Type.Encoding rhsE = children[1].getType ().getEncoding ();
-
         Type.checkCoerce (children[1], children[0], token);
         cast = new Cast (token)
             .type (children[1].getType ())
