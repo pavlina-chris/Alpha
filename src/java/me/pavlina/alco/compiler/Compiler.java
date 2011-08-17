@@ -573,6 +573,8 @@ public class Compiler
 
         pkgName = ((Package) ast).getName ();
         if (args.output != null) {
+            if (!args.objfile && !args.emit_llvm && !args.assembly)
+                executable = true;
             fileName = args.output;
         } else {
             if (!args.objfile && !args.emit_llvm && !args.assembly) {

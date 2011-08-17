@@ -8,6 +8,9 @@ jars/jcommander.jar:
 	make -C jcommander
 	mv jcommander/jcommander.jar jars/
 
+check:
+	${PYTHON} ./test.py
+
 doc:
 	cd docs; \
 	pdflatex alpha.tex; \
@@ -18,6 +21,7 @@ alcodoc:
 
 clean:
 	find src/java -name '*.class' -delete
+	rm -f test/*.class test/*.o
 	rm -f src/c/alco
 	find jars -name '*.d' | xargs rm -rf
 	rm -rf build alcodoc

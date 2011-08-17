@@ -70,6 +70,7 @@ public class AddNum {
             .op (op)
             .type (LLVMType.getLLVMName (type))
             .lhs (lhsV).rhs (rhsV);
+        function.add (value);
     }
 
     public Instruction getInstruction () {

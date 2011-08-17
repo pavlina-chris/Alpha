@@ -151,6 +151,7 @@ public class AssignCall {
         for (int i = 0; i < args.size (); ++i) {
             callbuilder.arg (values.get (i));
         }
+        function.add (callbuilder);
 
         // Cast and assign the first return value
         if (!types.get (0).equals (nullType) && returns.size () > 0) {
@@ -174,7 +175,7 @@ public class AssignCall {
         // Cast and assign the subsequent return values
         for (int i = 1; i < returns.size (); ++i) {
             if (i == types.size ()) break;
-            if (!temps.get (i).equals ("") &&
+            if (temps.get (i) != null &&
                 !types.get (i).equals (nullType)) {
                 Instruction tempVal = new LOAD ()
                     .type (LLVMType.getLLVMName (returns.get (i)))

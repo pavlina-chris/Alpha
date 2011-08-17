@@ -567,7 +567,7 @@ public class Lexer implements ErrorAnnotator
         if (lines.get (line).regionMatches (col, "//", 0, 2)) {
             // Line comment - just skip the rest of the line
             ++line;
-            col = 0;
+            col = -1;
         } else if (lines.get (line).regionMatches (col, "/*", 0, 2)) {
             // Block comment
             col += 2;

@@ -1,4 +1,4 @@
-Rewrite LLVM output
+Default return for int() is "ret void"
 Do/while loop
 For loop
 Break/continue

@@ -57,6 +57,7 @@ public class CError extends Exception
      */
     protected CError ()
     {
+        note = "";
     }
 
     /**
