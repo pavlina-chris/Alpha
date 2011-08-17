@@ -158,6 +158,9 @@ def main ():
     compile_helpers ()
     for fn in sorted (os.listdir ("test")):
         if fn.endswith (".al"):
+            if "TESTS" in os.environ:
+                if fn.partition("_")[0] not in os.environ["TESTS"].split (":"):
+                    continue
             run_alpha_test ("./test/" + fn)
 
 if __name__ == '__main__':

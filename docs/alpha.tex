@@ -1184,6 +1184,14 @@ if (evaluatesFalse)
 % DO
 \subsection{Post-conditional loop (\texttt{do}---\texttt{while})}
 \label{sub:statements:do}
+The post-conditional loop executes its contents while a given condition is
+true, but unlike the pre-conditional loop, the condition is evaluated at the
+bottom of the loop. Therefore, the loop will always run at least once. The
+condition is implicitly casted to $\R{B}$.
+
+\begin{verbatim}
+DoWhileLoop = "do", Scope, "while", "(", Expression, ")", ";" ;
+\end{verbatim}
 
 %%%%%%%
 % WHILE

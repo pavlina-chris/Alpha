@@ -47,6 +47,7 @@ public class StatementParser {
         STATEMENTS.put ("return", StReturn.CREATOR);
         STATEMENTS.put ("if", StIf.CREATOR);
         STATEMENTS.put ("while", StWhile.CREATOR);
+        STATEMENTS.put ("do", StDoWhile.CREATOR);
         STATEMENTS.put ("break", StBreak.CREATOR);
     }
 }
