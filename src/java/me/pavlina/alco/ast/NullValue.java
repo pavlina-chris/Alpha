@@ -24,8 +24,7 @@ public class NullValue extends Expression
      * Create a NullValue from the stream */
     public NullValue (Env env, TokenStream stream) throws CError {
         token = stream.next ();
-        if (!token.is (Token.WORD, "null"))
-            throw new RuntimeException ("NullValue created for non-null");
+        assert token.is (Token.WORD, "null");
     }
 
     /**

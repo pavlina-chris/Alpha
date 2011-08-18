@@ -33,9 +33,7 @@ public class StConst extends Statement
         Token token;
 
         this.token = stream.next ();
-        if (!this.token.is (Token.WORD, "const")) {
-            throw new RuntimeException ("StConst instantiated without kwd");
-        }
+        assert this.token.is (Token.WORD, "const");
 
         names = new ArrayList<String> ();
         realNames = new ArrayList<String> ();

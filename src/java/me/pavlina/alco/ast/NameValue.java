@@ -34,8 +34,7 @@ public class NameValue extends Expression
             name = nextToken.value;
 
         } else {
-            if (!token.is (Token.WORD))
-                throw new RuntimeException ("NameValue created for non-name");
+            assert token.is (Token.WORD);
             if (Keywords.isKeyword (token.value, true))
                 throw Unexpected.at ("name", token);
             name = token.value;

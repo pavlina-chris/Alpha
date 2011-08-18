@@ -30,8 +30,7 @@ public class StFor extends Loop
     public StFor (Env env, TokenStream stream, Method method) throws CError
     {
         token = stream.next ();
-        if (!token.is (Token.WORD, "for"))
-            throw new RuntimeException ("StFor instantiated without kwd");
+        assert token.is (Token.WORD, "for");
         
         values = new AST[4];
         

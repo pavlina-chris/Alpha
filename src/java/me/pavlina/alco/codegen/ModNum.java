@@ -69,7 +69,8 @@ public class ModNum {
             addop = "fadd";
             break;
         default:
-            throw new RuntimeException ("Modulo of unsupported items");
+            assert false : enc;
+            return;
         }
 
         // ((x REM y) + y) REM y

@@ -31,8 +31,7 @@ public class StReturn extends Statement
     public StReturn (Env env, TokenStream stream, Method method) throws CError {
         this.method = method;
         token = stream.next ();
-        if (!token.is (Token.WORD, "return"))
-            throw new RuntimeException ("StReturn instantiated without kwd");
+        assert token.is (Token.WORD, "return");
 
         value = new Expression[]
             {ExpressionParser.parse (env, stream, method, ";")}; // Allow null

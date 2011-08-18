@@ -28,8 +28,7 @@ public class StWhile extends Loop
 
     public StWhile (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
-        if (!token.is (Token.WORD, "while"))
-            throw new RuntimeException ("StWhile instantiated without kwd");
+        assert token.is (Token.WORD, "while");
 
         values = new AST[2];
 

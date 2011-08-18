@@ -123,7 +123,7 @@ public class Token
     @Override
         public String toString ()
     {
-        String t;
+        String t = null; // Yes, javac, it's always initialised.
         switch (type) {
         case STRING:  t = "STRING";  break;
         case WORD:    t = "WORD";    break;
@@ -133,7 +133,7 @@ public class Token
         case EXTRA:   t = "EXTRA";   break;
         case NO_MORE: t = "NO_MORE"; break;
         default:
-            throw new RuntimeException ("invalid token type");
+            assert false: type;
         }
         return String.format ("%-7s %3dx%3d %s", t, line + 1, col + 1, value);
     }

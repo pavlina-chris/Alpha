@@ -28,7 +28,7 @@ public class BoolValue extends Expression
         else if (token.is (Token.WORD, "false"))
             value = false;
         else
-            throw new RuntimeException ("BoolValue created for non-bool");
+            assert false: token;
     }
 
     public boolean getValue () {

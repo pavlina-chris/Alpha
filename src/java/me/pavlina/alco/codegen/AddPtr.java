@@ -56,12 +56,8 @@ public class AddPtr {
     public void checkTypes (Env env, Resolver resolver) throws CError {
         Type.Encoding ptrE = ptrT.getEncoding ();
         Type.Encoding intE = intT.getEncoding ();
-        if (ptrE != Type.Encoding.POINTER) {
-            throw new RuntimeException ("Passed non-pointer to AddPtr.pointer");
-        }
-        if (intE != Type.Encoding.SINT && intE != Type.Encoding.UINT) {
-            throw new RuntimeException ("Passed non-integer to AddPtr.integer");
-        }
+        assert ptrE == Type.Encoding.POINTER : ptrE;
+        assert intE == Type.Encoding.SINT || intE == Type.Encoding.UINT : intE;
         if (intT.getSize () > (env.getBits () / 8)) {
             throw CError.at ("cannot add pointer to wider integer", token);
         }

@@ -36,10 +36,7 @@ public class StStatic extends Statement
         Token token;
 
         this.token = stream.next ();
-        if (!this.token.is (Token.WORD, "static")) {
-            throw new RuntimeException
-                ("StStatic instantiated without let kwd");
-        }
+        assert this.token.is (Token.WORD, "static");
 
         while (true) {
             if (stream.peek ().is (Token.WORD, "threadlocal")) {

@@ -29,8 +29,7 @@ public class StDoWhile extends Loop
     public StDoWhile (Env env, TokenStream stream, Method method) throws CError
     {
         token = stream.next ();
-        if (!token.is (Token.WORD, "do"))
-            throw new RuntimeException ("StDoWhile instantiated without kwd");
+        assert token.is (Token.WORD, "do");
         
         values = new AST[2];
         

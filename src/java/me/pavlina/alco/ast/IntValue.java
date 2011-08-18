@@ -26,8 +26,7 @@ public class IntValue extends Expression
      * Create an IntValue from the stream */
     public IntValue (Env env, TokenStream stream) throws CError {
         token = stream.next ();
-        if (!token.is (Token.INT))
-            throw new RuntimeException ("IntValue created for non-int");
+        assert token.is (Token.INT);
 
         String number;
         int radix;

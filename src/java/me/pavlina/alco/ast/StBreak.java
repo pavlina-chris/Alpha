@@ -28,8 +28,7 @@ public class StBreak extends Statement
 
     public StBreak (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
-        if (!token.is (Token.WORD, "break"))
-            throw new RuntimeException ("StBreak instantiated without kwd");
+        assert token.is (Token.WORD, "break");
 
         Token temp = stream.next ();
         if (temp.is (Token.OPER, ";")) {

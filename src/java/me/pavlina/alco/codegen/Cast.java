@@ -479,7 +479,7 @@ public class Cast {
             instruction = new Placeholder ("0", dty);
 
         } else {
-            throw new RuntimeException ("Invalid cast in genLLVM");
+            assert false : "src: " + srcE + ", dst: " + dstE;
         }
     }
 

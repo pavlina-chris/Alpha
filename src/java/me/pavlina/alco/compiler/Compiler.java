@@ -62,6 +62,12 @@ public class Compiler
         }
         CmdlineHelpers.handle_dump_options (args);
 
+        // Detect -ea and mention it
+        boolean haveAssert = false;
+        assert haveAssert = true;
+        if (haveAssert)
+            System.err.println ("Note: Assertions enabled");
+
         // Setup
         int rc;
         if ((rc = this.detect_machine ()) != 0) return rc;
@@ -454,16 +460,18 @@ public class Compiler
             march = "x86";
         else if (bits == 64)
             march = "x86-64";
-        else
-            throw new RuntimeException
-                ("Don't know -march argument for architecture");
+        else {
+            assert false: bits;
+            return 1;
+        }
         switch (args.optlevel) {
         case 0: optlevel = "-O=0"; break;
         case 1: optlevel = "-O=1"; break;
         case 2: optlevel = "-O=2"; break;
         case 3: optlevel = "-O=3"; break;
         default:
-            throw new RuntimeException ("Invalid optimisation level");
+            assert false: args.optlevel;
+            return 1;
         }
 
         try {
@@ -495,9 +503,10 @@ public class Compiler
             wordSzArg = "--32";
         else if (bits == 64)
             wordSzArg = "--64";
-        else
-            throw new RuntimeException
-                ("Don't know word size argument for architecture");
+        else {
+            assert false: bits;
+            return 1;
+        }
 
         try {
             lastFile = oFile = File.createTempFile ("alco", ".o");
@@ -522,9 +531,10 @@ public class Compiler
             emul = "elf_i386";
         else if (bits == 64)
             emul = "elf_x86_64";
-        else
-            throw new RuntimeException
-                ("Don't know linker emulation mode for architecture");
+        else {
+            assert false: bits;
+            return 1;
+        }
 
         List<String> ldArgs = new ArrayList<String> ();
 
@@ -593,7 +603,8 @@ public class Compiler
             } else if (args.emit_llvm && args.assembly) {
                 fileName = pkgName + ".ll";
             } else {
-                throw new RuntimeException ("Missed a case");
+                assert false;
+                return 1;
             }
         }
 

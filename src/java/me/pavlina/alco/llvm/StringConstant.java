@@ -21,7 +21,8 @@ public class StringConstant extends RootObject implements Instruction {
                 (name, value.getBytes ("UTF-8"), false);
         } catch (java.io.UnsupportedEncodingException e) {
             // Everything is valid in UTF-8
-            throw new RuntimeException ("UnsupportedEncodingException in UTF8");
+            assert false: value;
+            return null;
         }
         return sc;
     }
@@ -37,7 +38,8 @@ public class StringConstant extends RootObject implements Instruction {
                 (null, value.getBytes ("UTF-8"), false);
         } catch (java.io.UnsupportedEncodingException e) {
             // Everything is valid in UTF-8
-            throw new RuntimeException ("UnsupportedEncodingException in UTF8");
+            assert false: value;
+            return null;
         }
         return sc;
     }
@@ -53,7 +55,8 @@ public class StringConstant extends RootObject implements Instruction {
                 (name, value.getBytes ("UTF-8"), true);
         } catch (java.io.UnsupportedEncodingException e) {
             // Everything is valid in UTF-8
-            throw new RuntimeException ("UnsupportedEncodingException in UTF8");
+            assert false: value;
+            return null;
         }
         return sc;
     }
@@ -69,7 +72,8 @@ public class StringConstant extends RootObject implements Instruction {
                 (null, value.getBytes ("UTF-8"), true);
         } catch (java.io.UnsupportedEncodingException e) {
             // Everything is valid in UTF-8
-            throw new RuntimeException ("UnsupportedEncodingException in UTF8");
+            assert false: value;
+            return null;
         }
         return sc;
     }

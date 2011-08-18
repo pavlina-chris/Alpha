@@ -65,7 +65,8 @@ public class DivNum {
             op = "fdiv";
             break;
         default:
-            throw new RuntimeException ("Dividing unsupported items");
+            assert false: enc;
+            return;
         }
 
         instruction = new BINARY ()

@@ -327,7 +327,9 @@ public class Type implements HasType {
         } else if (encoding == Encoding.OBJECT) {
             return prefix + "M" + Integer.toString (name.length ()) + name;
         }
-        throw new RuntimeException ("getEncodedName() on invalid type");
+        assert false: encoding;
+        return ""; // Missing return my ass. Why doesn't javac know what
+                   // "assert false" means?
     }
 
     /**
@@ -525,8 +527,10 @@ public class Type implements HasType {
                 max = U32_MAX;
             else if (dtype.size == 8)
                 max = U64_MAX;
-            else
-                throw new RuntimeException ("Bad type size");
+            else {
+                assert false: dtype.size;
+                return false; // Dammit, Java
+            }
             if (min.compareTo (val) <= 0
                 && max.compareTo (val) >= 0) {
                 return true;
@@ -555,8 +559,10 @@ public class Type implements HasType {
             } else if (dtype.size == 8) {
                 min = I64_MIN;
                 max = I64_MAX;
-            } else
-                throw new RuntimeException ("Bad type size");
+            } else {
+                assert false: dtype.size;
+                return false;
+            }
             if (min.compareTo (val) <= 0
                 && max.compareTo (val) >= 0) {
                 return true;
@@ -714,8 +720,10 @@ public class Type implements HasType {
             sb.append ('>');
             sb.append (suffix);
             return sb.toString ();
+        } else {
+            assert false: encoding;
+            return "";
         }
-        throw new RuntimeException ("Invalid type");
     }
 
     /**

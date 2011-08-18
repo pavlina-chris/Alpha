@@ -280,8 +280,7 @@ public class ExpressionParser {
                 if (OpIndex.class.isInstance (stack.peek ())) {
                     moveOper (stack.pop ());
                 } else
-                    throw new RuntimeException ("allowed opening bracket " +
-                                                "without indexable");
+                    assert false: stack.peek ();
             } else
                 throw CError.at ("mismatched brackets", token);
             callPossible = true;

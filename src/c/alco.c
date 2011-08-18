@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <alloca.h>
+#include <stdlib.h>
 
 #define JAVA "java"
 #define ALCOJAR_INSTALLED "/usr/lib/alco.jar"
@@ -15,21 +16,24 @@ int main (int argc, char **argv) {
     struct stat sbuf;
     char const *alco;
     char **new_argv;
-    size_t i;
+    size_t i, j;
 
     /* Find alco */
     alco = stat (ALCOJAR_LOCAL, &sbuf) ? ALCOJAR_INSTALLED : ALCOJAR_LOCAL;
 
-    /* Make a new argv. We need to add two arguments plus a NULL, so make it
-     * argc+3 */
-    new_argv = alloca ((argc + 3) * sizeof (*new_argv));
-    new_argv[0] = JAVA;
-    new_argv[1] = "-jar";
-    new_argv[2] = (char *) alco;
-    for (i = 1; i < argc; ++i) {
-        new_argv[2 + i] = argv[i];
+    /* Make a new argv. We need to add two arguments, plus maybe '-ea',
+     * plus a NULL, so make it argc+4 */
+    new_argv = alloca ((argc + 4) * sizeof (*new_argv));
+    i = 0;
+    new_argv[i++] = JAVA;
+    if (getenv ("ASSERT"))
+      new_argv[i++] = "-ea";
+    new_argv[i++] = "-jar";
+    new_argv[i++] = (char *) alco;
+    for (j = 1; j < argc; ++j) {
+        new_argv[j + i - 1] = argv[j];
     }
-    new_argv[argc + 2] = NULL;
+    new_argv[j + i - 1] = NULL;
 
     /* Execute alco */
     execvp (JAVA, new_argv);

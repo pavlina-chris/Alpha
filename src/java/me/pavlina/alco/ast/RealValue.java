@@ -24,8 +24,7 @@ public class RealValue extends Expression
      * Create a RealValue from the stream */
     public RealValue (Env env, TokenStream stream) throws CError {
         token = stream.next ();
-        if (!token.is (Token.REAL))
-            throw new RuntimeException ("RealValue created for non-real");
+        assert token.is (Token.REAL);
 
         try {
             value = Double.parseDouble (token.value);

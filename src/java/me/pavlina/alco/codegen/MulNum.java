@@ -63,7 +63,8 @@ public class MulNum {
             op = "fmul";
             break;
         default:
-            throw new RuntimeException ("Multiplying unsupported items");
+            assert false : enc;
+            return;
         }
 
         instruction = new BINARY ()

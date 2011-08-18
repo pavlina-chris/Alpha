@@ -63,7 +63,8 @@ public class AddNum {
             op = "fadd";
             break;
         default:
-            throw new RuntimeException ("Adding unsupported items");
+            assert false: enc;
+            return;
         }
 
         value = new BINARY ()

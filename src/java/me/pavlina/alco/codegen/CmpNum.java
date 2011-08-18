@@ -103,7 +103,7 @@ public class CmpNum {
             else if (cmp.equals ("ge")) oper = "icmp sge";
             else if (cmp.equals ("eq")) oper = "icmp eq";
             else if (cmp.equals ("ne")) oper = "icmp ne";
-            else throw new RuntimeException ("Invalid compare");
+            else {assert false: cmp; return;}
             break;
         case UINT:
             if (cmp.equals ("lt")) oper = "icmp ult";
@@ -112,10 +112,11 @@ public class CmpNum {
             else if (cmp.equals ("ge")) oper = "icmp uge";
             else if (cmp.equals ("eq")) oper = "icmp eq";
             else if (cmp.equals ("ne")) oper = "icmp ne";
-            else throw new RuntimeException ("Invalid compare");
+            else {assert false: cmp; return;}
             break;
         default:
-            throw new RuntimeException ("Invalid compare");
+            assert false: vtype.getEncoding ();
+            return;
         }
 
         Instruction cmpResult = new BINARY ()
@@ -135,7 +136,10 @@ public class CmpNum {
         else if (cmp.equals ("ge")) oper = "fcmp oge";
         else if (cmp.equals ("eq")) oper = "fcmp oeq";
         else if (cmp.equals ("ne")) oper = "fcmp one";
-        else throw new RuntimeException ("Invalid compare");
+        else {
+            assert false: cmp;
+            return;
+        }
 
         Instruction cmpResult = new BINARY ()
             .op (oper).type (LLVMType.getLLVMName (vtype))

@@ -26,8 +26,7 @@ public class Extern extends FunctionLike
     {
         super ();
         token = stream.next ();
-        if (!token.is (Token.WORD, "extern"))
-            throw new RuntimeException ("Extern instantiated with no kwd");
+        assert token.is (Token.WORD, "extern");
 
         this.parse (stream, env, /* allowStatic*/ false,
                     /* allowNomangle */ true, /* allowAllowconflict */ false,

@@ -36,9 +36,7 @@ public class StLet extends Statement
         Token token;
 
         this.token = stream.next ();
-        if (!this.token.is (Token.WORD, "let")) {
-            throw new RuntimeException ("StLet instantiated without let kwd");
-        }
+        assert this.token.is (Token.WORD, "let");
 
         if (stream.peek ().is (Token.WORD, "volatile")) {
             stream.next ();

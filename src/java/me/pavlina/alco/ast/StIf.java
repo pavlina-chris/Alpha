@@ -28,8 +28,7 @@ public class StIf extends Statement
 
     public StIf (Env env, TokenStream stream, Method method) throws CError {
         token = stream.next ();
-        if (!token.is (Token.WORD, "if"))
-            throw new RuntimeException ("StIf instantiated without kwd");
+        assert token.is (Token.WORD, "if");
 
         values = new AST[3];
 

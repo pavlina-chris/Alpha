@@ -29,8 +29,7 @@ public class StContinue extends Statement
     public StContinue (Env env, TokenStream stream, Method method) throws CError
     {
         token = stream.next ();
-        if (!token.is (Token.WORD, "continue"))
-            throw new RuntimeException ("StContinue instantiated without kwd");
+        assert token.is (Token.WORD, "continue");
 
         Token temp = stream.next ();
         if (temp.is (Token.OPER, ";")) {

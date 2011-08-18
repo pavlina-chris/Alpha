@@ -66,7 +66,8 @@ public class RemNum {
             remop = "frem";
             break;
         default:
-            throw new RuntimeException ("Remainder of unsupported items");
+            assert false : enc;
+            return;
         }
 
         instruction = new BINARY ()

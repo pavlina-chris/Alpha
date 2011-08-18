@@ -63,7 +63,8 @@ public class SubNum {
             op = "fsub";
             break;
         default:
-            throw new RuntimeException ("Subtracting unsupported items");
+            assert false : enc;
+            return;
         }
 
         instruction = new BINARY ()
