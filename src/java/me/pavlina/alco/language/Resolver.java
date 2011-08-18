@@ -19,14 +19,18 @@ import java.util.ArrayList;
  */
 public class Resolver
 {
-    private Map<String, Variable> variables;
-    private List<FunctionLike> functions;
-    private int[] globalCounter;
+    Map<String, Integer> variableCounts;
+    Map<String, Token> declared;
+    Map<String, Variable> variables;
+    List<FunctionLike> functions;
+    int[] globalCounter;
 
     /**
      * Create a brand new resolver, with no names at all */
     public Resolver () {
+        declared = new HashMap<String, Token> ();
         variables = new HashMap<String, Variable> ();
+        variableCounts = new HashMap<String, Integer> ();
         functions = new ArrayList<FunctionLike> ();
         globalCounter = new int[] {0};
     }
@@ -36,23 +40,46 @@ public class Resolver
      * in the given resolver, but changes to it will not affect the given
      * resolver. This is used for descending into scopes. */
     public Resolver (Resolver other) {
+        variableCounts = other.variableCounts;
+        declared = new HashMap<String, Token> ();
         variables = new HashMap<String, Variable> (other.variables);
         functions = new ArrayList<FunctionLike> (other.functions);
         globalCounter = other.globalCounter;
     }
 
     /**
+     * Clear the resolver's list of visible functions. This is done before
+     * running on a method. */
+    public void clear () {
+        variableCounts.clear ();
+    }
+
+    /**
      * Add the variable to the resolver. */
-    public Variable addVariable (String name, Type type) {
-        Variable variable = variables.get (name);
-        Variable newvar;
-        if (variable == null) {
-            newvar = new Variable (name, 0, type);
+    public Variable addVariable (String name, Type type, Token token)
+        throws CError
+    {
+        Token lastDeclare = declared.get (name);
+        if (lastDeclare != null) {
+            throw CError.at
+                (String.format ("variable '%s' already declared at %d:%d",
+                                name, lastDeclare.line+1, lastDeclare.col+1),
+                 token);
         } else {
-            newvar = new Variable (name, variable.getCount (), type);
+            declared.put (name, token);
+            Integer count = variableCounts.get (name);
+            Variable var;
+            if (count == null) {
+                var = new Variable (name, 0, type);
+                variableCounts.put (name, 1);
+                variables.put (name, var);
+            } else {
+                var = new Variable (name, count.intValue (), type);
+                variableCounts.put (name, count.intValue () + 1);
+                variables.put (name, var);
+            }
+            return var;
         }
-        variables.put (name, newvar);
-        return newvar;
     }
 
     /**
@@ -60,11 +87,22 @@ public class Resolver
      * variable whose name is only resolvable locally, but whose pointer can
      * be accessed globally. It is technically a global with a numeric name.
      */
-    public Variable addGlobalLocal (String name, Type type) {
+    public Variable addGlobalLocal (String name, Type type, Token token)
+        throws CError
+    {
         int num = globalCounter[0]++;
-        Variable var = new Variable (Integer.toString (num), 0, type, "@");
-        variables.put (name, var);
-        return var;
+        Token lastDeclare = declared.get (name);
+        if (lastDeclare != null) {
+            throw CError.at
+                (String.format ("variable '%s' already declared at %d:%d",
+                                name, lastDeclare.line+1, lastDeclare.col+1),
+                 token);
+        } else {
+            declared.put (name, token);
+            Variable var = new Variable (Integer.toString (num), 0, type, "@");
+            variables.put (name, var);
+            return var;
+        }
     }
 
     /**

@@ -11,6 +11,8 @@ import me.pavlina.alco.language.Type;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Collections;
 
 /**
@@ -85,7 +87,8 @@ public class Method extends FunctionLike
     public void checkTypes (Env env, Resolver resolver) throws CError {
         Resolver newResolver = new Resolver (resolver);
         for (int i = 0; i < argtypes.size (); ++i)
-            newResolver.addVariable (argnames.get (i), argtypes.get (i));
+            newResolver.addVariable (argnames.get (i), argtypes.get (i),
+                                     token);
         for (AST i: children)
             i.checkTypes (env, newResolver);
     }

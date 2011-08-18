@@ -33,11 +33,11 @@ int main (int argc, u8** argv) nomangle {
         putint (i);
     }
 
-    let j = -1;
-    while (j < 6) {
-        ++j;
-        if (j == 3) continue;
-        putint (j);
+    let i = -1;
+    while (i < 6) {
+        ++i;
+        if (i == 3) continue;
+        putint (i);
     }
 
     let k = -1;

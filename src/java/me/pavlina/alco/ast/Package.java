@@ -125,6 +125,7 @@ public class Package extends AST
             }
         }
         for (AST i: children) {
+            resolver.clear ();
             i.checkTypes (env, resolver);
         }
     }

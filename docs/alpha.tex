@@ -1245,7 +1245,7 @@ Scope = ("{", [{(Scope}], "}") |
 \end{verbatim}
 A scope is a block of code and all associated variables and constants. When a
 variable or constant is declared, it is valid in the scope in which it is declared,
-and in all child scopes. A variable may be redeclared in a scope, which overrides
+and in all child scopes. A variable may be redeclared in a child scope, which overrides
 the declaration for that scope and its children. For example:
 \begin{verbatim}
 {
@@ -1259,8 +1259,13 @@ the declaration for that scope and its children. For example:
 }
 \end{verbatim}
 
-\subsection{Name resolution}
-\label{sub:scope:resolution}
+It is invalid to redeclare a variable within the same scope:
+\begin{verbatim}
+{
+    let x = 2;
+    let x = 3; // Error here
+}
+\end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % GLOBALS

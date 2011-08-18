@@ -116,7 +116,7 @@ public class StConst extends Statement
             }
             realNames.set
                 (i, resolver.addGlobalLocal
-                 (names.get (i), types.get (i)).getName ());
+                 (names.get (i), types.get (i), token).getName ());
         }
             
     }

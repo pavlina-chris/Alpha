@@ -124,7 +124,7 @@ public class StLet extends Statement
                 types.set (i, types.get (i).getVolatile ());
             realNames.set
                 (i, resolver.addVariable
-                 (names.get (i), types.get (i)).getName ());
+                 (names.get (i), types.get (i), token).getName ());
             casts.add (new Cast (token)
                        .type (expressions.get (i).getType ())
                        .dest (types.get (i)));

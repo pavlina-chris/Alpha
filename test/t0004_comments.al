@@ -4,7 +4,7 @@
 // COUT INT      23x  6 6
 // COUT INT      24x  1 7
 // COUT INT      24x 34 13
-// COUT INT      25x  1 14 
+// COUT INT      25x  1 14
 // COUT INT      26x  1 15
 
 
