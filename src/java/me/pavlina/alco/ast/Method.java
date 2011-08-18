@@ -146,30 +146,10 @@ public class Method extends FunctionLike
             alloca.setId ("%" + argnames.get (i));
             func.add (alloca);
 
-            if (enc == Type.Encoding.OBJECT ||
-                enc == Type.Encoding.ARRAY) {
-                Instruction pdest1 = new GETELEMENTPTR ()
-                    .type ("%.nonprim").value ("%" + argnames.get (i))
-                    .inbounds (true).addIndex (0).addIndex (0);
-                Instruction pdest2 = new GETELEMENTPTR ()
-                    .type ("%.nonprim").value ("%" + argnames.get (i))
-                    .inbounds (true).addIndex (0).addIndex (1);
-                Instruction s1 = new STORE ()
-                    .pointer (pdest1).type ("i64")
-                    .value ("%." + Integer.toString (i) + ".T");
-                Instruction s2 = new STORE ()
-                    .pointer (pdest2).type ("i64")
-                    .value ("%." + Integer.toString (i) + ".V");
-                func.add (pdest1);
-                func.add (pdest2);
-                func.add (s1);
-                func.add (s2);
-            } else {
-                func.add (new STORE ()
-                          .pointer ("%" + argnames.get (i))
-                          .type (LLVMType.getLLVMName (argtypes.get (i)))
-                          .value ("%." + Integer.toString (i)));
-            }
+            func.add (new STORE ()
+                      .pointer ("%" + argnames.get (i))
+                      .type (LLVMType.getLLVMName (argtypes.get (i)))
+                      .value ("%." + Integer.toString (i)));
         }
 
         // Create the temps

@@ -13,3 +13,6 @@ void putdbl (double d) {
   printf ("%f\n", d);
 }
 
+void putptr (void *p) {
+  printf ("%p\n", p);
+}

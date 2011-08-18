@@ -12,9 +12,10 @@ import me.pavlina.alco.lex.Token;
 public class Env
 {
     @SuppressWarnings("unused")
-        private PrintStream out, err;
-    private int         bits;
-    private boolean     debug;
+    PrintStream out, err;
+    int         bits;
+    boolean     debug;
+    String      malloc_fn, free_fn;
 
     /**
      * Initialise the compilation environment.
@@ -29,6 +30,9 @@ public class Env
         this.err = err;
         this.bits = bits;
         this.debug = debug;
+        // TODO: Custom malloc
+        malloc_fn = "GC_malloc";
+        free_fn = "GC_free";
     }
 
     /**
@@ -38,6 +42,18 @@ public class Env
     public int getBits ()
     {
         return bits;
+    }
+
+    /**
+     * Return the malloc function */
+    public String getMalloc () {
+        return malloc_fn;
+    }
+
+    /**
+     * Return the free function. */
+    public String getFree () {
+        return free_fn;
     }
 
     /**

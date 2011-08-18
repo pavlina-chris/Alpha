@@ -158,6 +158,11 @@ public class ExpressionParser {
             output.push (new NullValue (env, stream));
             callPossible = unaryPossible = false;
 
+        } else if (token.is (Token.WORD, "new")) {
+            output.push (new NewValue (env, stream));
+            callPossible = true;
+            unaryPossible = false;
+
         } else if (token.is (Token.EXTRA, "$$name")) {
             output.push (new NameValue (env, stream));
             callPossible = true;
@@ -203,6 +208,7 @@ public class ExpressionParser {
                 stack.push (new OpeningParen (token));
                 stream.next ();
             }
+            ++nest;
             callPossible = false;
             unaryPossible = true;
             return true;
@@ -233,6 +239,7 @@ public class ExpressionParser {
                 }
             } else
                 throw CError.at ("mismatched parentheses", token);
+            --nest;
             callPossible = true;
             unaryPossible = false;
             stream.next ();
@@ -257,6 +264,7 @@ public class ExpressionParser {
             callPossible = false;
             unaryPossible = true;
             stream.next ();
+            ++nest;
             return true;
         } else
             return false;
@@ -286,6 +294,7 @@ public class ExpressionParser {
             callPossible = true;
             unaryPossible = false;
             stream.next ();
+            --nest;
             return true;
         } else
             return false;

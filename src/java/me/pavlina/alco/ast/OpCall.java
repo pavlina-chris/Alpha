@@ -128,10 +128,7 @@ public class OpCall extends Expression.Operator {
             callbuilder.arg (instructions.get (i));
         }
         if (getType ().getEncoding () == Type.Encoding.NULL) {
-            instruction = new LOAD ()
-                .type ("%.nonprim")
-                .pointer ("@.null");
-            function.add (instruction);
+            instruction = new Placeholder ("null", "%.nonprim");
         } else instruction = callbuilder;
         function.add (callbuilder);
     }

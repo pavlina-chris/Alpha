@@ -53,10 +53,7 @@ public class NullValue extends Expression
     }
 
     public void genLLVM (Env env, Emitter emitter, Function function) {
-        instruction = new LOAD ()
-            .type ("%.nonprim")
-            .pointer ("@.null");
-        function.add (instruction);
+        instruction = new Placeholder ("null", "%.nonprim");
     }
 
     public void checkPointer (boolean write, Token token) throws CError {

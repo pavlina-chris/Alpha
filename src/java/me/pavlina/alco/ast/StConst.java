@@ -195,33 +195,9 @@ public class StConst extends Statement
                 } else {
                     // Nonprimitive assign
                     Instruction val = expressions.get (i).getInstruction ();
-                    Instruction pdestElem1 = new GETELEMENTPTR ()
-                        .type ("%.nonprim").value (realNames.get (i))
-                        .inbounds (true).addIndex (0).addIndex (0);
-                    Instruction pdestElem2 = new GETELEMENTPTR ()
-                        .type ("%.nonprim").value (realNames.get (i))
-                        .inbounds (true).addIndex (0).addIndex (1);
-                    Instruction psrcElem1 = new GETELEMENTPTR ()
-                        .type ("%.nonprim").value (val)
-                        .inbounds (true).addIndex (0).addIndex (0);
-                    Instruction psrcElem2 = new GETELEMENTPTR ()
-                        .type ("%.nonprim").value (val)
-                        .inbounds (true).addIndex (0).addIndex (1);
-                    Instruction srcElem1 = new LOAD ()
-                        .type ("%.nonprim").pointer (psrcElem1);
-                    Instruction srcElem2 = new LOAD ()
-                        .type ("%.nonprim").pointer (psrcElem2);
-                    function.add (val);
-                    function.add (pdestElem1);
-                    function.add (pdestElem2);
-                    function.add (psrcElem1);
-                    function.add (psrcElem2);
-                    function.add (srcElem1);
-                    function.add (srcElem2);
                     function.add (new STORE ()
-                                  .pointer (pdestElem1).value (srcElem1));
-                    function.add (new STORE ()
-                                  .pointer (pdestElem2).value (srcElem2));
+                                  .pointer (realNames.get (i))
+                                  .value (val));
                 }
                 function.add (new BRANCH ().dest (Lassigned));
                 function.add (Lassigned);

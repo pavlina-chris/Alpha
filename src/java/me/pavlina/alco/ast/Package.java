@@ -147,16 +147,24 @@ public class Package extends AST
         StringConstant pkgname = StringConstant.getPointerConst
             ("@AL_PKG_NAME", name);
         emitter.add (pkgname);
-        Typedef nonprim = new Typedef ("%.nonprim", "{i64, i64}");
+        Typedef nonprim = new Typedef ("%.nonprim", "i8*");
         emitter.add (nonprim);
         Constant nullconst = new Constant
-            ("@.null", "%.nonprim", "{i64 0, i64 0}", "");
+            ("@.null", "%.nonprim", "null", "");
         emitter.add (nullconst);
         FDeclare atomicswapi32 = new FDeclare
             ("@llvm.atomic.swap.i32.p0i32", "i32");
         atomicswapi32.addParameter ("i32*");
         atomicswapi32.addParameter ("i32");
         emitter.add (atomicswapi32);
+        FDeclare malloc = new FDeclare
+            ("@" + env.getMalloc (), "i8*");
+        malloc.addParameter ("i" + env.getBits ());
+        emitter.add (malloc);
+        FDeclare free = new FDeclare
+            ("@" + env.getFree (), "void");
+        free.addParameter ("i8*");
+        emitter.add (free);
         for (AST i: children) {
             i.genLLVM (env, emitter, function);
         }

@@ -158,23 +158,9 @@ public class StLet extends Statement
 
             // Null assign
             else if (NullValue.class.isInstance (expressions.get (i))) {
-                Instruction elem1 = new GETELEMENTPTR ()
-                    .type ("%.nonprim").value (realNames.get (i))
-                    .inbounds (true).addIndex (0).addIndex (0).rtype ("i64*");
-
-                Instruction elem2 = new GETELEMENTPTR ()
-                    .type ("%.nonprim").value (realNames.get (i))
-                    .inbounds (true).addIndex (0).addIndex (1).rtype ("i64*");
-
-                function.add (elem1);
-                function.add (elem2);
                 function.add
                     (new STORE ()
-                     .pointer (elem1).type ("i64").value ("0")
-                     ._volatile (_volatile || types.get (i).isVolatile ()));
-                function.add
-                    (new STORE ()
-                     .pointer (elem2).type ("i64").value ("0")
+                     .type ("i8*").value ("null").pointer (realNames.get (i))
                      ._volatile (_volatile || types.get (i).isVolatile ()));
             }
 
@@ -182,38 +168,10 @@ public class StLet extends Statement
             else if (enc == Type.Encoding.ARRAY ||
                      enc == Type.Encoding.OBJECT) {
                 Instruction val = expressions.get (i).getInstruction ();
-                Instruction pdestElem1 = new GETELEMENTPTR ()
-                    .type ("%.nonprim").value (realNames.get (i))
-                    .inbounds (true).addIndex (0).addIndex (0)
-                    .rtype ("i64*");
-                Instruction pdestElem2 = new GETELEMENTPTR ()
-                    .type ("%.nonprim").value (realNames.get (i))
-                    .inbounds (true).addIndex (0).addIndex (1)
-                    .rtype ("i64*");
-                Instruction psrcElem1 = new GETELEMENTPTR ()
-                    .type ("%.nonprim").value (val)
-                    .inbounds (true).addIndex (0).addIndex (0)
-                    .rtype ("i64*");
-                Instruction psrcElem2 = new GETELEMENTPTR ()
-                    .type ("%.nonprim").value (val)
-                    .inbounds (true).addIndex (0).addIndex (1)
-                    .rtype ("i64*");
-                Instruction srcElem1 = new LOAD ()
-                    .type ("i64").pointer (psrcElem1);
-                Instruction srcElem2 = new LOAD ()
-                    .type ("i64").pointer (psrcElem2);
-                function.add (pdestElem1);
-                function.add (pdestElem2);
-                function.add (psrcElem1);
-                function.add (psrcElem2);
-                function.add (srcElem1);
-                function.add (srcElem2);
-                function.add (new STORE ()
-                              .pointer (pdestElem1).value (srcElem1)
-                              ._volatile (_volatile));
-                function.add (new STORE ()
-                              .pointer (pdestElem2).value (srcElem2)
-                              ._volatile (_volatile));
+                function.add
+                    (new STORE ()
+                     .type ("i8*").value (val).pointer (realNames.get (i))
+                     ._volatile (_volatile || types.get (i).isVolatile ()));
             }
         }
     }
