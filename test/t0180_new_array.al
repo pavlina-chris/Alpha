@@ -10,13 +10,20 @@
 // POUT 1
 // POUT 2
 // POUT 3
+// POUT 2
+// POUT 2
 
 executable testout;
 extern int puts (u8*);
 extern int putint (int);
+extern int putssize (ssize);
 
 void put (u8 c) {
     putint (c as unsigned as int);
+}
+
+void put (size s) {
+    putssize (s as ssize);
 }
 
 int main (int argc, u8** argv) nomangle {
@@ -37,6 +44,9 @@ int main (int argc, u8** argv) nomangle {
     put (*(test2_backing));
     put (*(test2_backing + 1));
     put (*(test2_backing + 2));
+
+    put (test1.length);
+    put (test2.length);
 
     return 0;
 }

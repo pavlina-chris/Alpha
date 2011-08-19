@@ -46,8 +46,9 @@ public class NewValue extends Expression
         return token;
     }
 
+    @SuppressWarnings("unchecked")
     public List<AST> getChildren () {
-        return null;
+        return (List) arguments;
     }
 
     /**
@@ -55,6 +56,8 @@ public class NewValue extends Expression
      * modification pass. */
     public void setArguments (List<Expression> args) {
         arguments = args;
+        for (Expression i: args)
+            i.setParent (this);
     }
     
     public void checkTypes (Env env, Resolver resolver) throws CError {
@@ -172,14 +175,6 @@ public class NewValue extends Expression
                 .value (call);
             function.add (bc);
             instruction = bc;
-        } break;
-        case ARRAY: {
-            assert arguments.size () == 1 || arguments.size () == 2;
-            if (arguments.size () == 1) {
-                genLLVM_array1 (env, emitter, function);
-            } else if (arguments.size () == 2) {
-                genLLVM_array2 (env, emitter, function);
-            }
         } break;
         default:
             assert false: enc;

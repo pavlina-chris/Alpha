@@ -23,6 +23,7 @@ clean:
 	find src/java -name '*.class' -delete
 	rm -f test/*.class test/*.o
 	rm -f src/c/alco
+	rm -f docs/alpha.{aux,log,out,pdf,toc}
 	find jars -name '*.d' | xargs rm -rf
 	rm -rf build alcodoc
 	rm -rf alco.jar alco

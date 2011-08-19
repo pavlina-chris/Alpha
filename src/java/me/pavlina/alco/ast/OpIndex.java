@@ -41,6 +41,7 @@ public class OpIndex extends Expression.Operator {
     public void setOperands (Expression op, Expression ignore) {
         children[1] = op;
         op.setParent (this);
+        children[0].setParent (this);
     }
 
     public Instruction getInstruction () {

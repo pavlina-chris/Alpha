@@ -400,7 +400,7 @@ public class ExpressionParser {
         BINOPS.put ("=", OpEqError.CREATOR);
         BINOPS.put (",", OpComma.CREATOR);
         BINOPS.put ("as", OpCast.CREATOR);
-        //BINOPS.put (".", OpMember.CREATOR);
+        BINOPS.put (".", OpMember.CREATOR);
         BINOPS.put ("+", OpPlus.CREATOR);
         BINOPS.put ("-", OpMinus.CREATOR);
         BINOPS.put ("*", OpMul.CREATOR);
