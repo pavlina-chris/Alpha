@@ -268,6 +268,8 @@ public abstract class FunctionLike extends AST
             return name;
         if (operator)
             return getMangledOperator ();
+        if (name.equals ("@oom"))
+            return "$$oom";
         StringBuilder sb = new StringBuilder ();
         if (global) {
             sb.append ("$G");

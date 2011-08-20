@@ -56,9 +56,10 @@ public class FDeclare extends RootObject {
      * Add a function parameter.
      * @param type Parameter type.
      * @param attrs All parameter attributes */
-    public void addParameter (String type, String... attrs) {
+    public FDeclare addParameter (String type, String... attrs) {
         paramattrs.add (attrs);
         paramtypes.add (type);
+        return this;
     }
 
     public int getLevel () { return RootObject.LEVEL_GLOBAL; }

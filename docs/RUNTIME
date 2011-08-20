@@ -1,0 +1,22 @@
+Crude temporary documentation!
+
+The Alpha runtime library provides the following functions, given with both
+C and Alpha declarations. A description, a reference implementation, or both
+is provided to describe.
+
+void * $$new (size_t n, uint32_t line, uint32_t col,
+              int8_t (*oom) (size_t, uint32_t, uint32_t),
+              void *(*alloc) (size_t));
+
+u8* $$name "$$new" (size n, unsigned line, unsigned col,
+                    function (bool)(size, unsigned, unsigned) oom,
+                    function (u8*)(size) alloc);
+
+{ void *p = alloc (n);
+  if (!p)
+    if (oom ? oom (n, line, col) : 1) {
+      fputs ("Error: Out of memory.\n", stderr);
+      abort ();
+    }
+  return p;
+}

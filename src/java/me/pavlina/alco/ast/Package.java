@@ -8,6 +8,7 @@ import me.pavlina.alco.lex.Token;
 import me.pavlina.alco.llvm.*;
 import me.pavlina.alco.language.Resolver;
 import me.pavlina.alco.language.Keywords;
+import me.pavlina.alco.language.Type;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
@@ -118,7 +119,28 @@ public class Package extends AST
     public void checkTypes (Env env, Resolver resolver) throws CError {
         for (AST i: children) {
             if (Method.class.isInstance (i)) {
-                resolver.addFunction ((Method) i, i.getToken ());
+                Method m = (Method) i;
+                if (m.getName ().equals ("@oom")) {
+                    // OOM handler
+                    List<Type> mTypes = m.getTypes ();
+                    if (mTypes.size () != 1 ||
+                        !mTypes.get (0).equals (new Type (env, "bool", null)))
+                        throw CError.at
+                            ("out-of-memory handler must return bool",
+                             m.getToken ());
+                    List<Type> aTypes = m.getArgTypes ();
+                    Type size_t = new Type (env, "size", null);
+                    Type unsigned_t = new Type (env, "unsigned", null);
+                    if (aTypes.size () != 3 ||
+                        !aTypes.get (0).equals (size_t) ||
+                        !aTypes.get (1).equals (unsigned_t) ||
+                        !aTypes.get (2).equals (unsigned_t))
+                        throw CError.at
+                            ("out-of-memory handler must take (size, unsigned,"
+                             + " unsigned)", m.getToken ());
+                    resolver.setHandleOOM (true);
+                } else
+                    resolver.addFunction ((Method) i, i.getToken ());
             }
             else if (Extern.class.isInstance (i)) {
                 resolver.addFunction ((Extern) i, i.getToken ());
@@ -147,24 +169,28 @@ public class Package extends AST
         StringConstant pkgname = StringConstant.getPointerConst
             ("@AL_PKG_NAME", name);
         emitter.add (pkgname);
+
+        // Define types
         Typedef nonprim = new Typedef ("%.nonprim", "i8*");
         emitter.add (nonprim);
-        Constant nullconst = new Constant
-            ("@.null", "%.nonprim", "null", "");
-        emitter.add (nullconst);
-        FDeclare atomicswapi32 = new FDeclare
-            ("@llvm.atomic.swap.i32.p0i32", "i32");
-        atomicswapi32.addParameter ("i32*");
-        atomicswapi32.addParameter ("i32");
-        emitter.add (atomicswapi32);
-        FDeclare malloc = new FDeclare
-            ("@" + env.getMalloc (), "i8*");
-        malloc.addParameter ("i" + env.getBits ());
-        emitter.add (malloc);
-        FDeclare free = new FDeclare
-            ("@" + env.getFree (), "void");
-        free.addParameter ("i8*");
-        emitter.add (free);
+
+        // Define functions
+        emitter.add (new FDeclare ("@llvm.atomic.swap.i32.p0i32", "i32")
+                     .addParameter ("i32*").addParameter ("i32"));
+        emitter.add (new FDeclare ("@" + env.getMalloc (), "i8*")
+                     .addParameter ("i" + env.getBits ()));
+        emitter.add (new FDeclare ("@" + env.getFree (), "void")
+                     .addParameter ("i8*"));
+        emitter.add (new FDeclare ("@puts", "i32").addParameter ("i8*"));
+        emitter.add (new FDeclare ("@fputs", "i32").addParameter ("i8*")
+                     .addParameter ("i8*"));
+        emitter.add (new FDeclare ("@abort", "void"));
+        emitter.add (new FDeclare ("@$$new", "i8*")
+                     .addParameter ("i" + env.getBits ())
+                     .addParameter ("i32").addParameter ("i32")
+                     .addParameter ("i8(i" + env.getBits () + ",i32,i32)*")
+                     .addParameter ("i8*(i" + env.getBits () + ")*"));
+
         for (AST i: children) {
             i.genLLVM (env, emitter, function);
         }

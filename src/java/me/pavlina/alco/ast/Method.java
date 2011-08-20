@@ -85,6 +85,13 @@ public class Method extends FunctionLike
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
+        if (name.startsWith ("@")) {
+            if (!name.equals ("@oom")) {
+                throw CError.at
+                    ("only special functions (@oom) may start with @",
+                     token);
+            }
+        }
         Resolver newResolver = new Resolver (resolver);
         for (int i = 0; i < argtypes.size (); ++i)
             newResolver.addVariable (argnames.get (i), argtypes.get (i),

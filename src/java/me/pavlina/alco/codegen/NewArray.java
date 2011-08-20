@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Christopher Pavlina. All rights reserved.
+// Copyright (c) 2011, Christopher Pavlina. All rights reserved.6
 
 package me.pavlina.alco.codegen;
 import me.pavlina.alco.ast.Expression;
@@ -15,6 +15,7 @@ public class NewArray {
     Instruction instruction;
     Instruction length;
     Type type, lenty, size_t;
+    boolean handleOOM;
     Cast szCast;
 
     public NewArray (Token token) {
@@ -47,6 +48,7 @@ public class NewArray {
         Type.checkCoerce (lenty, size_t, token);
         szCast = new Cast (token).type (lenty).dest (size_t);
         szCast.checkTypes (env, resolver);
+        handleOOM = resolver.getHandleOOM ();
     }
 
     public void genLLVM (Env env, Emitter emitter, Function function) {
@@ -74,12 +76,32 @@ public class NewArray {
         function.add (totalSize);
 
         // Allocate memory
-        instruction = new CALL ()
-            .type ("i8*").fun ("@" + env.getMalloc ()).arg (totalSize);
+        if (env.getNullOOM ()) {
+            instruction = new CALL ()
+                .type ("i8*").fun ("@" + env.getMalloc ()).arg (totalSize);
+        } else {
+            instruction = new CALL ()
+                .type ("i8*").fun ("@$$new").arg (totalSize)
+                .arg ("i32", Integer.toString (token.line + 1))
+                .arg ("i32", Integer.toString (token.col + 1))
+                .arg ("i8(i" + env.getBits () + ",i32,i32)*",
+                      handleOOM ? "@$$oom" : "null")
+                .arg ("i8*(i" + env.getBits () + ")*",
+                      "@" + env.getMalloc ());
+        }
+        Block memGood = new Block ();
+        Block bottom = new Block ();
+        Instruction isNull = new BINARY ()
+            .op ("icmp eq").type ("i8*").lhs (instruction).rhs ("null");
+        Instruction branch = new BRANCH ()
+            .cond (isNull).T (bottom).F (memGood);
+        function.add (instruction);
+        function.add (isNull);
+        function.add (branch);
+        function.add (memGood);
         Instruction alloc = new CONVERT ()
             .op ("bitcast").stype ("i8*").dtype (Lsize_t + "*")
             .value (instruction);
-        function.add (instruction);
         function.add (alloc);
 
         // Store the array length
@@ -99,6 +121,8 @@ public class NewArray {
         function.add (_arrBegin);
         function.add (arrBegin);
         function.add (new STORE ().pointer (ptrField).value (arrBegin));
+        function.add (new BRANCH ().dest (bottom));
+        function.add (bottom);
     }
 
     public Instruction getInstruction () {

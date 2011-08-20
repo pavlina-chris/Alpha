@@ -309,6 +309,22 @@ public class Compiler
     private void create_env ()
     {
         env = new Env (System.out, System.err, bits, args.debug);
+        if (args.nogc) {
+            env.setMalloc ("malloc");
+            env.setFree ("free");
+        }
+        if (args.sm) {
+            env.setMalloc ("malloc");
+            env.setFree ("free");
+            env.setBoundCheck (false);
+            env.setNullOOM (true);
+        }
+        if (args.noboundck)
+            env.setBoundCheck (false);
+        if (!args.malloc.equals (""))
+            env.setMalloc (args.malloc);
+        if (!args.free.equals (""))
+            env.setFree (args.free);
     }
 
     /**

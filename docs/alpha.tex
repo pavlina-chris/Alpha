@@ -193,7 +193,9 @@ names.
 \texttt{foreach} (\ref{sub:statements:foreach}),
 \texttt{do} (\ref{sub:statements:do}),
 \texttt{while} (\ref{sub:statements:while}, \ref{sub:statements:do}),
-\texttt{as} (\ref{sub:operators:cast})
+\texttt{as} (\ref{sub:operators:cast}),
+\texttt{new} (\ref{sub:operators:new}),
+\texttt{delete} (\ref{sub:statements:delete})
 
 \ \\
 
@@ -288,7 +290,7 @@ charLit   = Character ;
 intLit    = Integer ;
 boolLit   = "true" | "false" ;
 floatLit  = Real ;
-arrayLit  = "c{", [Literal, [{",", Literal}]], "}" ;
+arrayLit  = "{", [Literal, [{",", Literal}]], "}" ;
 stringLit = String ;
 Literal   = nullLit | intLit | floatLit | arrayLit | stringLit ;
 \end{verbatim}
@@ -310,6 +312,48 @@ Literal   = nullLit | intLit | floatLit | arrayLit | stringLit ;
     values of type $\R{B}$.}
   \item{Float literals are always of type $\R{FP}_{64}$, never $\R{FP}_{32}$.}
 \end{itemize}
+
+%%%%%%%%%%%%%%%%
+% ARRAY LITERALS
+\subsubsection{Array literals}
+There are two types of array literals: full and partial. Full literals are
+composed of literal components, and can be directly compiled into the
+program. An example would be: \texttt{\{1,~2,~3,~4,~5\}}. Partial literals
+have nonliteral components, and must be generated at runtime:
+\texttt{\{1,~x,~(1000~*~sin~(3.14))~as~int\}}. Both kinds should be considered
+to be fully constant; it is an error to assign to them. It is suggested that
+partial literals be implemented as a static thread-local array pre-populated
+with the literal values, and then the nonliterals are filled in at the point
+in the code at which the array literal occurs.
+
+Array literals, like any arrays, may only contain elements of the same type.
+In most cases, they must all be the exact same type, however, the following
+combinations are allowed:
+
+\begin{itemize}
+\item{Homogeneous pointer values with \texttt{null} --- \texttt{null} is
+  implicitly casted to the pointer type}
+\item{Homogeneous array values with \texttt{null} --- \texttt{null} is
+  implicitly casted to the array type}
+\item{Homogeneous object values with \texttt{null} --- \texttt{null} is
+  implicitly casted to the object type}
+\item{Integer literals of multiple minimum types --- all are casted to the
+  least upper bound type, except in cases where this is impossible
+  ({\it e.g.} $-1$ and $\mathrm{FFFFFFFFFFFFFFFF}_{16}$, which are mutually
+  exclusive values)}
+\end{itemize}
+
+An array literal is a full array value, and can be directly assigned to a
+variable, passed as an argument, {\it etc.}, but using it upstack of or
+adjacent to the function in which it occurs is undefined. It must be valid
+downstack. It is suggested that a warning be issued if an array literal is
+returned.
+
+The following optimisation must be supported: if a partial array literal occurs
+as an argument to \texttt{new}, signifying a copy, the assignment of values
+must occur only once. That is, the generated code is not to actually fill in
+the partial literal, which is only a temporary value, but to directly place
+values into the allocated array.
 
 %%%%%%%%%
 % CASTING
@@ -520,6 +564,25 @@ A suggested implementation of a Boolean type is an integer of shortest width.
 Note that it is not possible to special-case $\R{B}^{[]}$ as a bitfield, because
 the cast $T^{[]} \to T^*$ must be both reversible and useful.
 
+%%%%%%%
+% ARRAY
+\subsection{The array type}
+\label{sub:types:array}
+The type denoted in this document as $T^{[]}$ is the array type. This is a
+collection of multiple values of the same type. There are only two requirements
+as to the actual method of storage:
+\begin{enumerate}
+\item{Items must be stored contiguously. Hence, \texttt{*(\&a[0] + 1)} is
+equivalent to \texttt{a[1]}.}
+\item{The array reference must be stored in its variable as a pointer, and the
+very first thing at this location must be the length of the array, of type
+\texttt{size}. This requirement is used by the string functions, which must
+return an array with a hidden member, to rewrite the length. By taking the
+address of the variable, type-punning it to \texttt{size**}, then dereferencing
+it twice, the length can be accessed as a variable, circumventing the rule that
+length is not writable: \texttt{**(\&a as size**)}}.
+\end{enumerate}
+
 %%%%%%%%%
 % RECORDS
 \subsection{Records}
@@ -622,6 +685,9 @@ Type IDs are:
     \caption{Operator precedence, high to low}
     \begin{tabular}{|c|c|c|l|}
       \hline
+      \texttt{()} & Binary$^*$ & L$\to$R & Function call \\
+      \texttt{[]} & Binary$^*$ & L$\to$R & Array, pointer, and collection index \\
+      \texttt{.} & Binary & L$\to$R & Member access \\ \hline
       \texttt{*} & Unary & R$\to$L & Dereference \\
       \texttt{\&} & Unary & R$\to$L & Address of \\
       \texttt{-} & Unary & R$\to$L & Negation \\
@@ -656,6 +722,8 @@ Type IDs are:
       \texttt{,} & Binary & L$\to$R & Comma (function arguments, assignment tuples) \\ \hline
     \end{tabular}
     \begin{tablenotes}
+      \item{$*$ \small{The function call and index operators are technically
+          binary, but their right-hand arguments are contained within them.}}
       \item{$\dagger$ \small{The cast operator is binary, but requires special treatment.
           Because it is impossible to know if a given word is a name or a type, the
           cast operator requires a special ``dummy value'' to represent the type. The
@@ -756,10 +824,49 @@ The following operators may be overloaded:
 \texttt{\^{}=},
 \texttt{|=},
 \texttt{++},
-\texttt{--}
+\texttt{--},
+\texttt{[]}
 
+%%%%%%%%%%%%%%%
+% FUNCTION CALL
+\subsection{Call (~\texttt{()}~)}
+\label{sub:operators:call}
+The function call operator is used to call a function (of course). See
+\textref{sub:scope:resolution}{Name resolution} for information on how function
+names are resolved.
+
+%%%%%%%
+% INDEX
+\subsection{Index (~\texttt{[]}~)}
+\label{sub:operators:index}
+The index operator is used to access an element of an array, or a pointer, or
+a collection object. It allows multiple arguments just like a function call,
+though this is only useful when used with an object. When overloading, its name
+is \texttt{[]} --- the first parameter is the left-hand operand, and further
+parameters take the arguments in the brackets. When accessing an array or a
+pointer, there must be only a single argument, which can be implicitly casted
+to \texttt{size}.
+
+In standard mode, bounds-checking must be performed on array accesses. If an
+invalid element is accessed, the program should print the message ``Error:
+Invalid array access.'' (or a localised variant, if the platform has a standard
+localisation system) and exit with {\sc abrt} (or the equivalent on the
+platform), unless the program specifies
+an error handler (see \textref{sub:methods:handlers}{Error handlers}).
+
+Bounds-checking should be disabled in systems mode (\texttt{-sm} option) and
+when the \texttt{-noboundck} option is given.
+
+When a \texttt{foreach} loop is used on an array, bounds-checking on the loop
+iterator may be skipped.
+
+%%%%%%%%%%%
+% CAST / AS
 \subsection{Cast (\texttt{as})}
 \label{sub:operators:cast}
+The cast operator (\texttt{as}) converts a value from one type to another. See
+\textref{sub:types:casting}{Casting} for more information. It is used thus:
+\texttt{value~as~type}
 
 %%%%%%%%
 % ASSIGN
@@ -1005,6 +1112,47 @@ negates the operand.
 % NEW
 \subsection{New (\texttt{new})}
 \label{sub:operators:new}
+The instantiation/allocation operator is ``\texttt{new}''. This operator has
+an unusual syntax: it takes a right-hand type operand, like \texttt{as}, and
+the operator itself is callable. Example:
+
+\begin{verbatim}
+new i8[] (2)
+\end{verbatim}
+
+The various formats and their meanings:
+
+\begin{itemize}
+\item{\texttt{new $primitive$} --- allocate one $primitive$. The type of this
+  expression is $primitive^*$. The contents of the returned memory is
+  undefined.}
+\item{\texttt{new $primitive$ (n)} --- allocate $n$ consecutive
+  $primitive$s. $n$ is any value which can be implicitly cast to \texttt{size}.
+  The type of this expression is $primitive^*$. The contents of the returned
+  memory are undefined.}
+\item{\texttt{new $T$[] (n)} --- allocate an array of $n$ $T$s. $n$ is
+  any value which can be implicitly cast to \texttt{size}. The type of this
+  expression is $T^{[]}$. The contents of the array are undefined.}
+\item{\texttt{new $T$[] (p, n)} --- create an array of $n$ $T$s, backed by
+  pointer $p$. $n$ is any value which can be implicitly cast to
+  \texttt{size}; $p$ is a value of type $T^*$. This essentially wraps a C
+  array as an Alpha array.}
+\item{\texttt{new $T$[] (a)} --- create a copy of array $a$. $a$ must be an
+  array of identical type.}
+\end{itemize}
+
+If the system is out of memory, the following actions should be performed:
+
+\begin{itemize}
+\item{If the compiler is in standard mode, then the program should print the
+message ``Error: Out of memory.'' (or a localised variant, if the platform has
+a standard localisation system and this can be accessed without allocating
+memory) and exit with {\sc sigabrt} (or the
+equivalent on the platform), unless the program specifies an error handler
+(see \textref{sub:methods:handlers}{Error handlers}).}
+\item{If the compiler is in systems mode (\texttt{-sm} option), then the
+allocation should return \texttt{null}. The program should check for this.}
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % EXPRESSIONS
@@ -1234,6 +1382,22 @@ and the \texttt{continue} statement skips to the bottom inside. If a number is
 given, the statements skip that many nested loops; it is a compile error to
 use these outside the correct number of loops.
 
+\subsection{Deallocation (\texttt{delete})}
+\label{sub:statements:delete}
+\begin{verbatim}
+Delete = "delete", Expression, [{",", Expression}], ";" ;
+\end{verbatim}
+The \texttt{delete} statement explicitly deallocates memory. This is normally
+unnecessary, because Alpha uses a garbage collector, but may still be done if
+desired, and is required in systems mode (\texttt{-sm} option). Each expression
+must be either a pointer, which is passed directly to the correct ``free''
+function, or an array, which is properly deallocated. Note that when deleting
+an array, this statement must be able to differentiate between a standard array,
+in which case the entire array must be deleted, and an externally-backed array,
+in which case only the information structure must be deleted. A simple way to
+manage this is by allocating the information structure and actual array all
+together with one ``malloc''.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SCOPE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1350,6 +1514,39 @@ Standard-defined attributes are:
 
 \subsection{Static methods}
 \label{sub:methods:static}
+
+\subsection{Error handlers}
+\label{sub:methods:handlers}
+Certain functions can be defined as error handlers. These are emergency handlers
+which are not used in the course of normal execution, but may be used to present
+a specific message in exceptional circumstances. An error handler is only valid
+in the file in which it is defined. Error handlers are defined as functions
+with special names and signatures. They are:
+
+\begin{itemize}
+\item{\texttt{bool @oom (size sz, unsigned line, unsigned col)} ---
+  called on out-of-memory.
+  See \textref{sub:operators:new}{Operator \texttt{new}} for the default
+  behaviour when this is not specified.
+  Parameter \texttt{sz} is the number of bytes attempted.
+  Parameters \texttt{line} and \texttt{col} are the one-based line and column
+  numbers at which the allocation was attempted.
+  The return value is \texttt{true} if the program should go ahead and exit,
+  or \texttt{false} if it should attempt to continue. If \texttt{@oom} returns
+  \texttt{false}, the allocation attempt must return \texttt{null}.}
+\item{\texttt{void @bounds (unsigned line, unsigned col)} ---
+  out-of-bounds on a bounds-checked operation. See
+  \textref{sub:operators:index}{Operator \texttt{[]}} for the default
+  behaviour when this is not specified.
+  Parameters \texttt{line} and \texttt{col} are the one-based line and column
+  numbers at which the access was attempted.}
+\item{\texttt{void @cast (unsigned line, unsigned col)} ---
+  bad cast from \texttt{variant}. See
+  \textref{sub:operators:cast}{Operator \texttt{as}} for the default
+  behaviour when this is not specified.
+  Parameters \texttt{line} and \texttt{col} are the one-based line and column
+  numbers at which the cast was attempted.}
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CALLING CONVENTION
@@ -1677,8 +1874,23 @@ on Windows), but these names must be present.
 \texttt{-nomemabort} & Do not automatically display an error message on
   out-of-memory and abort. Instead, \texttt{new} should return \texttt{null}
   in this case. See \textref{sub:operators:new}{New (\texttt{new})}. \\
+\texttt{-noboundck} & Do not use bounds checking. \\
+\texttt{-sm} & Run in systems programming mode. \\
+\texttt{-malloc {\it func}} & Use {\it func} as the memory allocator. This must
+be a function declared \texttt{u8*~{\it func}~(size)~nomangle} \\
+\texttt{-free {\it func}} & Use {\it func} as the memory deallocator. This must
+be a function declared \texttt{void*~{\it func}~(u8*)~nomangle} \\
 \hline
 \end{tabular}
 \end{center}
+
+\subsubsection{Systems programming mode}
+The compiler must support the so-called ``systems programming mode''. This is
+a mode that, when selected with \texttt{-sm}, enables a more C-like behaviour.
+\begin{itemize}
+\item{Bounds-checking is disabled}
+\item{Garbage collection is disabled}
+\item{Operator \texttt{new} returns \texttt{null} on out-of-memory}
+\end{itemize}
 
 \end{document}

@@ -23,6 +23,7 @@ public class Resolver
     Map<String, Token> declared;
     Map<String, Variable> variables;
     List<FunctionLike> functions;
+    boolean handler_oom;
     int[] globalCounter;
 
     /**
@@ -45,6 +46,7 @@ public class Resolver
         variables = new HashMap<String, Variable> (other.variables);
         functions = new ArrayList<FunctionLike> (other.functions);
         globalCounter = other.globalCounter;
+        handler_oom = other.handler_oom;
     }
 
     /**
@@ -52,6 +54,18 @@ public class Resolver
      * running on a method. */
     public void clear () {
         variableCounts.clear ();
+    }
+
+    /**
+     * Return whether an OOM handler has been declared */
+    public boolean getHandleOOM () {
+        return handler_oom;
+    }
+
+    /**
+     * Set whether an OOM handler has been declared */
+    public void setHandleOOM (boolean b) {
+        handler_oom = b;
     }
 
     /**

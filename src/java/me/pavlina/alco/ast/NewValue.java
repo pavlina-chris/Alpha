@@ -29,6 +29,7 @@ public class NewValue extends Expression
     Cast szCast;
     NewArray newarray;
     NewBackedArray newbackedarray;
+    boolean handleOOM;
 
     /**
      * Create a NewValue from the stream */
@@ -120,6 +121,7 @@ public class NewValue extends Expression
         default:
             throw Unexpected.at ("array or primitive type", token);
         }
+        handleOOM = resolver.getHandleOOM ();
     }
 
     public Type getType () {
@@ -164,10 +166,20 @@ public class NewValue extends Expression
                     .rhs (Integer.toString (env.getBits () / 8));
                 function.add (number);
             }
-            Instruction call = new CALL ()
-                .type ("i8*")
-                .fun ("@" + env.getMalloc ())
-                .arg (number);
+            Instruction call;
+            if (env.getNullOOM ()) {
+                call = new CALL ()
+                    .type ("i8*").fun ("@" + env.getMalloc ()).arg (number);
+            } else {
+                call = new CALL ()
+                    .type ("i8*").fun ("@$$new").arg (number)
+                    .arg ("i32", Integer.toString (token.line + 1))
+                    .arg ("i32", Integer.toString (token.col + 1))
+                    .arg ("i8(i" + env.getBits () + ",i32,i32)*",
+                          handleOOM ? "@$$oom" : "null")
+                    .arg ("i8*(i" + env.getBits () + ")*",
+                          "@" + env.getMalloc ());
+            }
             function.add (call);
             Instruction bc = new CONVERT ()
                 .op ("bitcast")

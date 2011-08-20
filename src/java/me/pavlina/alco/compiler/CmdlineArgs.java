@@ -96,6 +96,24 @@ public class CmdlineArgs
     @Parameter(names = "-c")
     public boolean      objfile        = false;
 
+    @Parameter(names = "-nogc")
+    public boolean      nogc           = false;
+
+    @Parameter(names = "-nomemabort")
+    public boolean      nomemabort     = false;
+
+    @Parameter(names = "-noboundck")
+    public boolean      noboundck      = false;
+
+    @Parameter(names = "-sm")
+    public boolean      sm             = false;
+
+    @Parameter(names = "-malloc")
+    public String       malloc         = "";
+
+    @Parameter(names = "-free")
+    public String       free           = "";
+
     /**
      * Run in debug mode. Currently, this means that the compiler will pause and
      * allow inspection of temporary files before processing them.

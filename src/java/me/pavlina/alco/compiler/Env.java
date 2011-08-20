@@ -14,7 +14,7 @@ public class Env
     @SuppressWarnings("unused")
     PrintStream out, err;
     int         bits;
-    boolean     debug;
+    boolean     debug, boundck, nulloom;
     String      malloc_fn, free_fn;
 
     /**
@@ -33,6 +33,31 @@ public class Env
         // TODO: Custom malloc
         malloc_fn = "GC_malloc";
         free_fn = "GC_free";
+        boundck = true;
+    }
+
+    /**
+     * Return whether to use bounds-checking */
+    public boolean getBoundCheck () {
+        return boundck;
+    }
+
+    /**
+     * Set whether to use bounds-checking */
+    public void setBoundCheck (boolean bc) {
+        boundck = bc;
+    }
+
+    /**
+     * Get whether null should be returned on OOM */
+    public boolean getNullOOM () {
+        return nulloom;
+    }
+
+    /**
+     * Set whether null should be returned on OOM */
+    public void setNullOOM (boolean n) {
+        nulloom = n;
     }
 
     /**
@@ -42,6 +67,18 @@ public class Env
     public int getBits ()
     {
         return bits;
+    }
+
+    /**
+     * Set the malloc function */
+    public void setMalloc (String m) {
+        malloc_fn = m;
+    }
+
+    /**
+     * Set the free function */
+    public void setFree (String f) {
+        free_fn = f;
     }
 
     /**
