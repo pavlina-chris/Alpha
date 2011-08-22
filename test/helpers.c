@@ -15,6 +15,13 @@ void * $$new (size_t n, unsigned int line, unsigned int col,
   return p;
 }
 
+void $$oobmsg (unsigned int line, unsigned int col,
+               void (*bounds) (unsigned int, unsigned int)) {
+  if (bounds) bounds (line, col);
+  fputs ("Error: Invalid array access.\n", stderr);
+  abort ();
+}
+
 void putint (int i) {
   printf ("%d\n", i);
 }

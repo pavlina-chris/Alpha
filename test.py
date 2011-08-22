@@ -11,11 +11,11 @@ ALCO_STD_CMDLINE = ["./alco", "-path=runtime-32:Doxyfile",
                     "-path=runtime-64:Doxyfile"] + ALCO_C_HELPERS_O
 CC = "clang"
 
-def start (name):
+def start (filename, name):
     """
     Output a message about starting the given test.
     """
-    msg = "%-70s" % name
+    msg = "%s %-63s" % (filename[1:5], name)
     sys.stderr.write (msg)
     sys.stderr.flush ()
 
@@ -87,7 +87,7 @@ def run_alpha_test (filename):
             elif tag == "PEXIT":
                 pexit = int (rest)
 
-    start (name)
+    start (os.path.basename (filename), name)
     # Compile
     cmdline = ALCO_STD_CMDLINE + [filename] + cmdline
     compiler = subprocess.Popen (cmdline,

@@ -1,5 +1,5 @@
 // NAME Instantiation/allocation of array
-// COMPILE ["-o", "testout"]
+// COMPILE ["-o", "testout", "-noboundck"]
 // RUN ./testout
 // DELETE testout
 // POUT 1

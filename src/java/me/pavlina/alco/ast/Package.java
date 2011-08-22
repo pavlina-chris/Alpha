@@ -139,6 +139,22 @@ public class Package extends AST
                             ("out-of-memory handler must take (size, unsigned,"
                              + " unsigned)", m.getToken ());
                     resolver.setHandleOOM (true);
+                } else if (m.getName ().equals ("@bounds")) {
+                    // OOB handler
+                    List<Type> mTypes = m.getTypes ();
+                    if (mTypes.size () != 0)
+                        throw CError.at
+                            ("out-of-bounds handler must return void",
+                             m.getToken ());
+                    List<Type> aTypes = m.getArgTypes ();
+                    Type unsigned_t = new Type (env, "unsigned", null);
+                    if (aTypes.size () != 2 ||
+                        !aTypes.get (0).equals (unsigned_t) ||
+                        !aTypes.get (1).equals (unsigned_t))
+                        throw CError.at
+                            ("out-of-bounds handler must take (unsigned,"
+                             + " unsigned)", m.getToken ());
+                    resolver.setHandleOOB (true);
                 } else
                     resolver.addFunction ((Method) i, i.getToken ());
             }
@@ -190,6 +206,9 @@ public class Package extends AST
                      .addParameter ("i32").addParameter ("i32")
                      .addParameter ("i8(i" + env.getBits () + ",i32,i32)*")
                      .addParameter ("i8*(i" + env.getBits () + ")*"));
+        emitter.add (new FDeclare ("@$$oobmsg", "void")
+                     .addParameter ("i32").addParameter ("i32")
+                     .addParameter ("void(i32,i32)*"));
 
         for (AST i: children) {
             i.genLLVM (env, emitter, function);

@@ -86,9 +86,9 @@ public class Method extends FunctionLike
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
         if (name.startsWith ("@")) {
-            if (!name.equals ("@oom")) {
+            if (!name.equals ("@oom") && !name.equals ("@bounds")) {
                 throw CError.at
-                    ("only special functions (@oom) may start with @",
+                    ("only special functions (@oom, @bounds) may start with @",
                      token);
             }
         }

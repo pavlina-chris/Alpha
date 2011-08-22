@@ -20,3 +20,13 @@ u8* $$name "$$new" (size n, unsigned line, unsigned col,
     }
   return p;
 }
+
+
+void $$oobmsg (uint32_t line, uint32_t col,
+               void (*bounds) (uint32_t, uint32_t));
+
+void $$name "$$oobmsg" (unsigned line, unsigned col,
+                        function (void)(unsigned, unsigned) bounds);
+
+If bounds is non-null, call bounds(line, col). Print
+"Error: Invalid array access.\n" to stderr, then abort ().
