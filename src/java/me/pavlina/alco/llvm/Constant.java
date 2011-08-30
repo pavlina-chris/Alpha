@@ -42,7 +42,7 @@ public class Constant extends RootObject implements Instruction {
     
     public String getId () { return name; }
 
-    public String getType () { return type; }
+    public String getType () { return type + "*"; }
 
     public String toString () {
         return String.format ("%s = %s constant %s %s\n",

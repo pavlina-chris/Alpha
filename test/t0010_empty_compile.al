@@ -1,5 +1,6 @@
 // NAME Empty file compilation
-// COMPILE ["-o", "testout"]
-// DELETE testout
+// COMPILE []
+// CEXIT 1
+// CERR error: file must contain code items
 
 package testout;

@@ -117,8 +117,10 @@ public class Package extends AST
     }
 
     public void checkTypes (Env env, Resolver resolver) throws CError {
+        boolean foundGenItem = false;
         for (AST i: children) {
             if (Method.class.isInstance (i)) {
+                foundGenItem = true;
                 Method m = (Method) i;
                 if (m.getName ().equals ("@oom")) {
                     // OOM handler
@@ -161,6 +163,9 @@ public class Package extends AST
             else if (Extern.class.isInstance (i)) {
                 resolver.addFunction ((Extern) i, i.getToken ());
             }
+        }
+        if (!foundGenItem) {
+            throw new CError ("file must contain code items");
         }
         for (AST i: children) {
             resolver.clear ();

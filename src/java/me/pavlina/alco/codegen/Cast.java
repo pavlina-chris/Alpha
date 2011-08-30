@@ -208,7 +208,7 @@ public class Cast {
                    dstE == Type.Encoding.POINTER &&
                    srcT.getSubtype ().equals (dstT.getSubtype ())) {
             // T[] to T*
-            throw new RuntimeException ("NOT IMPLEMENTED YET");
+            // OK
 
         } else if (srcE == Type.Encoding.ARRAY &&
                    dstE == Type.Encoding.BOOL) {
@@ -447,7 +447,43 @@ public class Cast {
                    dstE == Type.Encoding.POINTER &&
                    srcT.getSubtype ().equals (dstT.getSubtype ())) {
             // T[] to T*
-            throw new RuntimeException ("NOT IMPLEMENTED YET");
+            // If the array is null, the pointer is null. Otherwise, get the
+            // internal array pointer
+            Block Lcheck = new Block ();
+            Block Lderef = new Block ();
+            Block Lbot = new Block ();
+
+            String size_t = "i" + env.getBits ();
+            String struct_t = "{" + size_t + ", " + dty + "}";
+            Instruction converted = new CONVERT ()
+                .op ("bitcast").stype ("%.nonprim")
+                .dtype (struct_t + "*")
+                .value (sval);
+            function.add (converted);
+
+            function.add (new BRANCH ().dest (Lcheck));
+
+            function.add (Lcheck);
+            Instruction isNull = new BINARY ()
+                .op ("icmp eq").type (struct_t + "*").lhs (converted)
+                .rhs ("null");
+            function.add (isNull);
+            function.add (new BRANCH ().cond (isNull).T (Lbot).F (Lderef));
+
+            function.add (Lderef);
+            Instruction ptrToArr = new GETELEMENTPTR ()
+                .type (struct_t).rtype (dty + "*").value (converted)
+                .addIndex (0).addIndex (1);
+            Instruction arr = new LOAD ()
+                .type (dty).pointer (ptrToArr);
+            function.add (ptrToArr);
+            function.add (arr);
+            function.add (new BRANCH ().dest (Lbot));
+
+            function.add (Lbot);
+            instruction = new PHI ()
+                .type (dty).pairs (arr, Lderef, "null", Lcheck);
+            function.add (instruction);
 
         } else if (srcE == Type.Encoding.NULL &&
                    dstE == Type.Encoding.SINT) {

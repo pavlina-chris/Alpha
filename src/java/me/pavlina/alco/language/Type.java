@@ -182,6 +182,18 @@ public class Type implements HasType {
     }
 
     /**
+     * Get an array type to this type. */
+    public Type getArray (Env env) {
+        Type t = new Type ();
+        t.name = "";
+        t.size = OBJECT_SIZE;
+        t.encoding = Encoding.ARRAY;
+        t.subtypes = new ArrayList<Type> (1);
+        t.subtypes.add (this);
+        return t;
+    }
+
+    /**
      * Get the size in bytes. */
     public int getSize () {
         return size;
@@ -737,7 +749,7 @@ public class Type implements HasType {
 
     private static Map<String, Encoding> PRIMITIVE_ENCODINGS;
     private static Map<String, Integer> PRIMITIVE_SIZES;
-    public static final int OBJECT_SIZE = 16;
+    public static final int OBJECT_SIZE = 8;
     static {
         PRIMITIVE_ENCODINGS = new HashMap<String, Encoding> ();
         PRIMITIVE_SIZES = new HashMap<String, Integer> ();

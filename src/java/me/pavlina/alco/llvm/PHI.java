@@ -34,7 +34,7 @@ public class PHI implements Instruction {
         } else throw new ClassCastException ();
         if (String.class.isInstance (label)) {
             this.label = (String) label;
-        } else if (Block.class.isInstance (value)) {
+        } else if (Block.class.isInstance (label)) {
             this.bLabel = (Block) label;
         } else throw new ClassCastException ();
         if (pairs.length % 2 != 0)
@@ -51,7 +51,7 @@ public class PHI implements Instruction {
             } else throw new ClassCastException ();
             if (String.class.isInstance (pairs[i + 1])) {
                 labels[i / 2] = (String) pairs[i + 1];
-            } else if (Block.class.isInstance (pairs[i])) {
+            } else if (Block.class.isInstance (pairs[i + 1])) {
                 bLabels[i / 2] = (Block) pairs[i + 1];
             } else throw new ClassCastException ();
         }
@@ -85,5 +85,5 @@ public class PHI implements Instruction {
     public boolean needsId () { return true; }
     public void setId (String id) { this.id = id; }
     public String getId () { return id; }
-    public String getType () { return type + "*"; }
+    public String getType () { return type; }
 }

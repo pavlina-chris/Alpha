@@ -8,7 +8,8 @@ import os, sys, subprocess, json
 ALCO_C_HELPERS = ["test/helpers.c"]
 ALCO_C_HELPERS_O = ["test/helpers.o"]
 ALCO_STD_CMDLINE = ["./alco", "-path=runtime-32:Doxyfile",
-                    "-path=runtime-64:Doxyfile"] + ALCO_C_HELPERS_O
+                    "-path=runtime-64:Doxyfile",
+                    "-path=llc:/usr/bin/llc-2.7"] + ALCO_C_HELPERS_O
 CC = "clang"
 
 def start (filename, name):
