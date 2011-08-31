@@ -1,27 +1,27 @@
 // Copyright (c) 2011, Christopher Pavlina. All rights reserved.
 
 package me.pavlina.alco.ast;
-import me.pavlina.alco.compiler.errors.*;
-import me.pavlina.alco.compiler.Env;
-import me.pavlina.alco.lex.TokenStream;
-import me.pavlina.alco.lex.Token;
-import me.pavlina.alco.language.Resolver;
-import me.pavlina.alco.language.IntLimits;
-import me.pavlina.alco.language.Type;
-import static me.pavlina.alco.language.Type.Encoding;
-import me.pavlina.alco.parse.TypeParser;
-import me.pavlina.alco.parse.ExpressionParser;
+import java.io.PrintStream;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import me.pavlina.alco.codegen.Cast;
 import me.pavlina.alco.codegen.NewArray;
 import me.pavlina.alco.codegen.NewBackedArray;
+import me.pavlina.alco.compiler.Env;
+import me.pavlina.alco.compiler.errors.*;
+import me.pavlina.alco.language.IntLimits;
+import me.pavlina.alco.language.Resolver;
+import me.pavlina.alco.language.Type;
+import me.pavlina.alco.lex.Token;
+import me.pavlina.alco.lex.TokenStream;
 import me.pavlina.alco.llvm.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.io.PrintStream;
-import java.math.BigInteger;
+import me.pavlina.alco.parse.ExpressionParser;
+import me.pavlina.alco.parse.TypeParser;
+import static me.pavlina.alco.language.Type.Encoding;
 
 /**
- * Array and string literals */
+ * Array literals */
 public class ArrayValue extends Expression
 {
     Token token;
@@ -30,20 +30,10 @@ public class ArrayValue extends Expression
     List<Expression> items;
     List<Boolean> isLiteral;
 
-    /**
-     * Create an ArrayValue from the stream */
-    public ArrayValue (Env env, TokenStream stream, Method method)
-        throws CError
-    {
-        if (stream.peek ().is (Token.OPER, "{")) {
-            initArrayLiteral (env, stream, method);
-        } // else "
-    }
-
-    private void initArrayLiteral (Env env, TokenStream stream, Method method)
-        throws CError
+    public ArrayValue (Env env, TokenStream stream, Method method) throws CError
     {
         token = stream.next ();
+        assert token.is (Token.OPER, "{");
         items = new ArrayList<Expression> ();
         isLiteral = new ArrayList<Boolean> ();
         for (;;) {

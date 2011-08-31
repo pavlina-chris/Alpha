@@ -595,7 +595,7 @@ public class Type implements HasType {
                    && dtype.encoding == Encoding.POINTER
                    && vtype.getSubtype ().equals (dtype.getSubtype ())) {
             // T[] to T*
-            throw new RuntimeException ("T[] to T* cast not implemented yet");
+            return true;
 
         } else if (vtype.encoding == Encoding.NULL
                    && (dtype.encoding == Encoding.SINT ||

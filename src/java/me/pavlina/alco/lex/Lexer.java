@@ -170,6 +170,9 @@ public class Lexer implements ErrorAnnotator
                 case '?':
                     consumeOper ();
                     break;
+                case '"':
+                    consumeString ();
+                    break;
                 default:
                     throw new UnexpectedChar
                         (lines.get (line).charAt (col), line, col, this);
@@ -364,6 +367,22 @@ public class Lexer implements ErrorAnnotator
         String val = collector.toString ();
         collector.clear ();
         tokens.add (new Token (type, val, line, firstCol, this));
+    }
+
+    private void consumeString () throws CError {
+        int firstCol = col;
+        boolean inEscape = false;
+        for (; col < lines.get (line).length (); ++col) {
+            char ch = lines.get (line).charAt (col);
+            if (ch < ' ' || ch > '~')
+                throw new UnexpectedChar (ch, line, col, this);
+            collector.append (ch);
+            if (ch == '"' && !inEscape && col != firstCol) break;
+            if (ch == '\\') inEscape = !inEscape;
+        }
+        String val = collector.toString ();
+        collector.clear ();
+        tokens.add (new Token (Token.STRING, val, line, firstCol, this));
     }
 
     private void consumeWord () throws CError {

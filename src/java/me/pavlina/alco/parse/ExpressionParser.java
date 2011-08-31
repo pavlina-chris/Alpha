@@ -153,6 +153,10 @@ public class ExpressionParser {
             output.push (new ArrayValue (env, stream, method));
             callPossible = unaryPossible = false;
 
+        } else if (token.is (Token.STRING)) {
+            output.push (new StringValue (env, stream, method));
+            callPossible = unaryPossible = false;
+
         } else if (token.is (Token.WORD, "true") ||
                    token.is (Token.WORD, "false")) {
             output.push (new BoolValue (env, stream));
