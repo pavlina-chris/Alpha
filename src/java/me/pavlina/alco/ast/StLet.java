@@ -62,6 +62,8 @@ public class StLet extends Statement
             else if (!token.is (Token.WORD) ||
                 Keywords.isKeyword (token.value, true))
                 throw Unexpected.at ("name", token);
+            else if (token.value.startsWith ("@"))
+                throw Unexpected.at ("name", token);
             name = token.value;
 
             // Type and colon

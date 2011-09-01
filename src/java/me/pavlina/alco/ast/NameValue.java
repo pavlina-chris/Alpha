@@ -37,6 +37,8 @@ public class NameValue extends Expression
             assert token.is (Token.WORD);
             if (Keywords.isKeyword (token.value, true))
                 throw Unexpected.at ("name", token);
+            if (token.value.startsWith ("@"))
+                throw Unexpected.at ("name", token);
             name = token.value;
         }
     }
